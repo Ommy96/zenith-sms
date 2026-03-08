@@ -60,7 +60,7 @@ export default function Finance() {
   const schoolId = profile?.school_id;
 
   const [invoices, setInvoices] = useState<(Invoice & { student?: { first_name: string; last_name: string; grade: string | null } })[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
+  const [students, setStudents] = useState<StudentOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
