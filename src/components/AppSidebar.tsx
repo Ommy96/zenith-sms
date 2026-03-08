@@ -18,23 +18,29 @@ import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-interface NavItem { title: string; url: string; icon: any; }
-interface NavSection { label: string; items: NavItem[]; }
+type AppRole = "super_admin" | "school_admin" | "teacher" | "parent" | "student";
+
+interface NavItem { title: string; url: string; icon: any; roles?: AppRole[]; }
+interface NavSection { label: string; items: NavItem[]; roles?: AppRole[]; }
+
+const allRoles: AppRole[] = ["super_admin", "school_admin", "teacher", "parent", "student"];
+const adminOnly: AppRole[] = ["super_admin", "school_admin"];
+const staffUp: AppRole[] = ["super_admin", "school_admin", "teacher"];
 
 const sections: NavSection[] = [
   { label: "Overview", items: [{ title: "Dashboard", url: "/", icon: LayoutDashboard }] },
-  { label: "Academics", items: [
+  { label: "Academics", roles: staffUp, items: [
     { title: "Classes & Subjects", url: "/academics", icon: BookOpen },
     { title: "Attendance", url: "/attendance", icon: UserCog },
     { title: "Examinations", url: "/examinations", icon: ClipboardList },
     { title: "Timetable", url: "/timetable", icon: CalendarDays },
   ]},
-  { label: "People", items: [
+  { label: "People", roles: adminOnly, items: [
     { title: "Students", url: "/students", icon: Users },
     { title: "Admissions", url: "/admissions", icon: UserPlus },
     { title: "Staff & HR", url: "/staff", icon: Briefcase },
   ]},
-  { label: "Finance", items: [
+  { label: "Finance", roles: adminOnly, items: [
     { title: "Fee Management", url: "/fees", icon: DollarSign },
     { title: "Invoices", url: "/invoices", icon: Receipt },
     { title: "Reports", url: "/finance-reports", icon: FileText },
@@ -43,16 +49,27 @@ const sections: NavSection[] = [
     { title: "Announcements", url: "/announcements", icon: Megaphone },
     { title: "Messaging", url: "/messaging", icon: Mail },
   ]},
-  { label: "Operations", items: [
+  { label: "Operations", roles: adminOnly, items: [
     { title: "Transport", url: "/transport", icon: Bus },
     { title: "Library", url: "/library", icon: Library },
     { title: "Inventory", url: "/inventory", icon: Package },
   ]},
   { label: "System", items: [
-    { title: "Reports", url: "/reports", icon: BarChart3 },
-    { title: "Settings", url: "/settings", icon: Settings },
+    { title: "Reports", url: "/reports", icon: BarChart3, roles: adminOnly },
+    { title: "Settings", url: "/settings", icon: Settings, roles: adminOnly },
   ]},
 ];
+
+function filterSections(role: AppRole | null): NavSection[] {
+  const userRole = role || "school_admin"; // default for backward compat
+  return sections
+    .filter(s => !s.roles || s.roles.includes(userRole as AppRole))
+    .map(s => ({
+      ...s,
+      items: s.items.filter(i => !i.roles || i.roles.includes(userRole as AppRole)),
+    }))
+    .filter(s => s.items.length > 0);
+}
 
 function SidebarSection({ section, collapsed }: { section: NavSection; collapsed: boolean }) {
   const location = useLocation();
@@ -150,7 +167,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-2 gap-1">
-        {sections.map((section) => (
+        {filterSections(role as AppRole | null).map((section) => (
           <SidebarGroup key={section.label} className="py-0">
             <SidebarGroupContent>
               <SidebarSection section={section} collapsed={collapsed} />
