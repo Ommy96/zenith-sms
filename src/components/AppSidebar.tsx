@@ -25,6 +25,7 @@ const sections: NavSection[] = [
   { label: "Overview", items: [{ title: "Dashboard", url: "/", icon: LayoutDashboard }] },
   { label: "Academics", items: [
     { title: "Classes & Subjects", url: "/academics", icon: BookOpen },
+    { title: "Attendance", url: "/attendance", icon: UserCog },
     { title: "Examinations", url: "/examinations", icon: ClipboardList },
     { title: "Timetable", url: "/timetable", icon: CalendarDays },
   ]},

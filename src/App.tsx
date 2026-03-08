@@ -10,6 +10,7 @@ import Students from "./pages/Students";
 import Finance from "./pages/Finance";
 import Academics from "./pages/Academics";
 import Examinations from "./pages/Examinations";
+import Attendance from "./pages/Attendance";
 import Staff from "./pages/Staff";
 import Communication from "./pages/Communication";
 import Admissions from "./pages/Admissions";
