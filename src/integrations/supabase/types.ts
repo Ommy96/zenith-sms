@@ -372,6 +372,53 @@ export type Database = {
           },
         ]
       }
+      inventory_assets: {
+        Row: {
+          category: string | null
+          condition: string
+          created_at: string | null
+          id: string
+          last_audit_date: string | null
+          location: string | null
+          name: string
+          quantity: number | null
+          school_id: string
+          value: number | null
+        }
+        Insert: {
+          category?: string | null
+          condition?: string
+          created_at?: string | null
+          id?: string
+          last_audit_date?: string | null
+          location?: string | null
+          name: string
+          quantity?: number | null
+          school_id: string
+          value?: number | null
+        }
+        Update: {
+          category?: string | null
+          condition?: string
+          created_at?: string | null
+          id?: string
+          last_audit_date?: string | null
+          location?: string | null
+          name?: string
+          quantity?: number | null
+          school_id?: string
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_assets_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
           academic_year: string | null
@@ -431,6 +478,50 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_books: {
+        Row: {
+          created_at: string | null
+          due_date: string | null
+          id: string
+          isbn: string | null
+          issued_to: string | null
+          school_id: string
+          shelf_location: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          isbn?: string | null
+          issued_to?: string | null
+          school_id: string
+          shelf_location?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          isbn?: string | null
+          issued_to?: string | null
+          school_id?: string
+          shelf_location?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_books_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
             referencedColumns: ["id"]
           },
         ]
@@ -683,6 +774,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "students_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_routes: {
+        Row: {
+          avg_trip_minutes: number | null
+          created_at: string | null
+          driver_name: string | null
+          id: string
+          name: string
+          school_id: string
+          status: string
+          student_count: number | null
+          vehicle_number: string | null
+        }
+        Insert: {
+          avg_trip_minutes?: number | null
+          created_at?: string | null
+          driver_name?: string | null
+          id?: string
+          name: string
+          school_id: string
+          status?: string
+          student_count?: number | null
+          vehicle_number?: string | null
+        }
+        Update: {
+          avg_trip_minutes?: number | null
+          created_at?: string | null
+          driver_name?: string | null
+          id?: string
+          name?: string
+          school_id?: string
+          status?: string
+          student_count?: number | null
+          vehicle_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_routes_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
             referencedRelation: "schools"
