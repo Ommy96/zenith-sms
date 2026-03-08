@@ -10,6 +10,7 @@ import Students from "./pages/Students";
 import Finance from "./pages/Finance";
 import Academics from "./pages/Academics";
 import Examinations from "./pages/Examinations";
+import Attendance from "./pages/Attendance";
 import Staff from "./pages/Staff";
 import Communication from "./pages/Communication";
 import Admissions from "./pages/Admissions";
@@ -74,6 +75,7 @@ function AppRoutes() {
       <Route path="/students" element={<ProtectedRoute><DashboardLayout><Students /></DashboardLayout></ProtectedRoute>} />
       <Route path="/admissions" element={<ProtectedRoute><DashboardLayout><Admissions /></DashboardLayout></ProtectedRoute>} />
       <Route path="/academics" element={<ProtectedRoute><DashboardLayout><Academics /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/attendance" element={<ProtectedRoute><DashboardLayout><Attendance /></DashboardLayout></ProtectedRoute>} />
       <Route path="/examinations" element={<ProtectedRoute><DashboardLayout><Examinations /></DashboardLayout></ProtectedRoute>} />
       <Route path="/timetable" element={<ProtectedRoute><DashboardLayout><Academics /></DashboardLayout></ProtectedRoute>} />
       <Route path="/fees" element={<ProtectedRoute><DashboardLayout><Finance /></DashboardLayout></ProtectedRoute>} />
