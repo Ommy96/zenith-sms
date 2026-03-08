@@ -1,1 +1,4 @@
 project_id = "jsbksehucfqanzseeddc"
+
+[functions.get-education-system]
+verify_jwt = false

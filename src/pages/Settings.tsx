@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Building, Palette, Globe, GraduationCap, Shield, Bell } from "lucide-react";
+import { Building, Palette, Globe, GraduationCap, Shield, Bell, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,11 @@ export default function SettingsPage() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Settings</h1>
         <p className="text-sm text-muted-foreground mt-1">Manage your school's configuration and preferences</p>
+        <Link to="/setup">
+          <Button variant="outline" size="sm" className="mt-3 gap-1.5 text-xs">
+            <Sparkles className="h-3.5 w-3.5" /> Run Setup Wizard
+          </Button>
+        </Link>
       </motion.div>
 
       <Tabs defaultValue="school">
