@@ -5,7 +5,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DashboardLayout } from "./components/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
-import ModulePage from "./pages/ModulePage";
+import Students from "./pages/Students";
+import Finance from "./pages/Finance";
+import Academics from "./pages/Academics";
+import Examinations from "./pages/Examinations";
+import Staff from "./pages/Staff";
+import Communication from "./pages/Communication";
+import Admissions from "./pages/Admissions";
+import Operations from "./pages/Operations";
+import Reports from "./pages/Reports";
+import SettingsPage from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,17 +28,22 @@ const App = () => (
         <DashboardLayout>
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/students" element={<ModulePage />} />
-            <Route path="/admissions" element={<ModulePage />} />
-            <Route path="/academics" element={<ModulePage />} />
-            <Route path="/examinations" element={<ModulePage />} />
-            <Route path="/fees" element={<ModulePage />} />
-            <Route path="/communication" element={<ModulePage />} />
-            <Route path="/staff" element={<ModulePage />} />
-            <Route path="/transport" element={<ModulePage />} />
-            <Route path="/library" element={<ModulePage />} />
-            <Route path="/reports" element={<ModulePage />} />
-            <Route path="/settings" element={<ModulePage />} />
+            <Route path="/students" element={<Students />} />
+            <Route path="/admissions" element={<Admissions />} />
+            <Route path="/academics" element={<Academics />} />
+            <Route path="/examinations" element={<Examinations />} />
+            <Route path="/timetable" element={<Academics />} />
+            <Route path="/fees" element={<Finance />} />
+            <Route path="/invoices" element={<Finance />} />
+            <Route path="/finance-reports" element={<Finance />} />
+            <Route path="/announcements" element={<Communication />} />
+            <Route path="/messaging" element={<Communication />} />
+            <Route path="/staff" element={<Staff />} />
+            <Route path="/transport" element={<Operations />} />
+            <Route path="/library" element={<Operations />} />
+            <Route path="/inventory" element={<Operations />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </DashboardLayout>
