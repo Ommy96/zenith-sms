@@ -455,8 +455,9 @@ export default function SchoolSetup() {
 
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setStep(5)} className="gap-1.5"><ChevronLeft className="h-4 w-4" /> Back</Button>
-              <Button onClick={handleComplete} className="gap-1.5">
-                <CheckCircle className="h-4 w-4" /> Complete Setup
+              <Button onClick={handleComplete} disabled={loading} className="gap-1.5">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                {loading ? "Saving..." : "Complete Setup"}
               </Button>
             </div>
           </motion.div>
