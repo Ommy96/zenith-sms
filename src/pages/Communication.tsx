@@ -20,7 +20,8 @@ const priorityColors: Record<string, string> = {
 };
 
 export default function Communication() {
-  const { user, schoolId } = useAuth();
+  const { user, profile } = useAuth();
+  const schoolId = profile?.school_id;
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [title, setTitle] = useState("");
