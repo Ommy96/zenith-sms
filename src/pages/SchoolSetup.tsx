@@ -12,6 +12,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -99,9 +100,44 @@ export default function SchoolSetup() {
     }
   };
 
-  const handleComplete = () => {
-    toast({ title: "School Setup Complete", description: `${schoolName} has been configured with ${country}'s education system.` });
-    navigate("/settings");
+  const handleComplete = async () => {
+    if (!eduData) return;
+    setLoading(true);
+    try {
+      // Create school record
+      const { data: school, error: schoolErr } = await supabase.from("schools").insert({
+        name: schoolName,
+        email: schoolEmail || null,
+        phone: schoolPhone || null,
+        country: eduData.country,
+        language_of_instruction: eduData.language_of_instruction,
+        regulatory_body: eduData.regulatory_body,
+        academic_year_start: eduData.academic_calendar.school_year_start,
+        academic_year_end: eduData.academic_calendar.school_year_end,
+        grading_system: eduData.grading_system,
+        academic_calendar: eduData.academic_calendar,
+        payment_config: eduData.payment_methods,
+        subjects: eduData.common_subjects,
+        school_levels: eduData.school_levels,
+      }).select().single();
+
+      if (schoolErr) throw schoolErr;
+
+      // Link user profile to this school
+      const { error: profileErr } = await supabase
+        .from("profiles")
+        .update({ school_id: school.id })
+        .eq("id", (await supabase.auth.getUser()).data.user?.id);
+
+      if (profileErr) throw profileErr;
+
+      toast({ title: "School Setup Complete", description: `${schoolName} has been configured with ${country}'s education system.` });
+      navigate("/");
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to save school", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const steps = [
@@ -419,8 +455,9 @@ export default function SchoolSetup() {
 
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setStep(5)} className="gap-1.5"><ChevronLeft className="h-4 w-4" /> Back</Button>
-              <Button onClick={handleComplete} className="gap-1.5">
-                <CheckCircle className="h-4 w-4" /> Complete Setup
+              <Button onClick={handleComplete} disabled={loading} className="gap-1.5">
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                {loading ? "Saving..." : "Complete Setup"}
               </Button>
             </div>
           </motion.div>
