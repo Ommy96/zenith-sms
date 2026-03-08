@@ -16,6 +16,11 @@ export default function SettingsPage() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Settings</h1>
         <p className="text-sm text-muted-foreground mt-1">Manage your school's configuration and preferences</p>
+        <Link to="/setup">
+          <Button variant="outline" size="sm" className="mt-3 gap-1.5 text-xs">
+            <Sparkles className="h-3.5 w-3.5" /> Run Setup Wizard
+          </Button>
+        </Link>
       </motion.div>
 
       <Tabs defaultValue="school">
