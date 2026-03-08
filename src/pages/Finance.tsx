@@ -32,7 +32,7 @@ import { toast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Invoice = Tables<"invoices">;
-type Student = Tables<"students">;
+type StudentOption = { id: string; first_name: string; last_name: string; grade: string | null };
 
 const PAGE_SIZE = 20;
 
