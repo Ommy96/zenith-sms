@@ -15,39 +15,38 @@ export default function Dashboard() {
   const firstName = profile?.full_name?.split(" ")[0] || "there";
 
   const [stats, setStats] = useState({
-    students: 0,
-    staff: 0,
-    staffOnLeave: 0,
-    collected: 0,
-    outstanding: 0,
-    pendingInvoices: 0,
-    totalRevenue: 0,
+    students: 0, staff: 0, staffOnLeave: 0,
+    collected: 0, outstanding: 0, pendingInvoices: 0, totalRevenue: 0,
+    attendanceRate: 0, hasAttendance: false,
   });
 
   useEffect(() => {
     if (!schoolId) return;
-
     const fetchAll = async () => {
-      const [studentsRes, staffRes, invoicesRes] = await Promise.all([
+      const [studentsRes, staffRes, invoicesRes, attendanceRes] = await Promise.all([
         supabase.from("students").select("id", { count: "exact", head: true }).eq("school_id", schoolId).eq("status", "active"),
         supabase.from("staff").select("id, status").eq("school_id", schoolId),
         supabase.from("invoices").select("amount, paid_amount, status").eq("school_id", schoolId),
+        supabase.from("attendance").select("status").eq("school_id", schoolId).eq("date", new Date().toISOString().split("T")[0]),
       ]);
 
       const studentCount = studentsRes.count || 0;
       const staffData = staffRes.data || [];
       const staffCount = staffData.length;
-      const staffOnLeave = staffData.filter((s) => s.status === "on leave").length;
+      const staffOnLeave = staffData.filter(s => s.status === "on leave").length;
 
       const invData = invoicesRes.data || [];
       const totalRevenue = invData.reduce((s, i) => s + Number(i.amount), 0);
       const collected = invData.reduce((s, i) => s + Number(i.paid_amount || 0), 0);
       const outstanding = totalRevenue - collected;
-      const pendingInvoices = invData.filter((i) => i.status === "pending" || i.status === "overdue").length;
+      const pendingInvoices = invData.filter(i => i.status === "pending" || i.status === "overdue").length;
 
-      setStats({ students: studentCount, staff: staffCount, staffOnLeave, collected, outstanding, pendingInvoices, totalRevenue });
+      const attData = attendanceRes.data || [];
+      const hasAttendance = attData.length > 0;
+      const attendanceRate = hasAttendance ? Math.round((attData.filter(a => a.status === "present").length / attData.length) * 100) : 0;
+
+      setStats({ students: studentCount, staff: staffCount, staffOnLeave, collected, outstanding, pendingInvoices, totalRevenue, attendanceRate, hasAttendance });
     };
-
     fetchAll();
   }, [schoolId]);
 
@@ -64,25 +63,20 @@ export default function Dashboard() {
         <p className="text-sm text-muted-foreground mt-1">Welcome back, {firstName}. Here's what's happening today.</p>
       </motion.div>
 
-      {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatCard title="Total Students" value={stats.students.toLocaleString()} change="active students" changeType="neutral" icon={Users} color="primary" />
         <StatCard title="Fees Collected" value={fmt(stats.collected)} change="total payments" changeType="positive" icon={CreditCard} color="success" />
         <StatCard title="Outstanding" value={fmt(stats.outstanding)} change={`${stats.pendingInvoices} pending`} changeType={stats.pendingInvoices > 0 ? "negative" : "neutral"} icon={AlertCircle} color="warning" />
-        <StatCard title="Attendance" value="—" change="no data yet" changeType="neutral" icon={UserCheck} color="info" />
+        <StatCard title="Attendance" value={stats.hasAttendance ? `${stats.attendanceRate}%` : "—"} change={stats.hasAttendance ? "today" : "no data yet"} changeType={stats.attendanceRate >= 90 ? "positive" : stats.hasAttendance ? "negative" : "neutral"} icon={UserCheck} color="info" />
         <StatCard title="Staff" value={stats.staff.toLocaleString()} change={stats.staffOnLeave > 0 ? `${stats.staffOnLeave} on leave` : "all active"} changeType="neutral" icon={GraduationCap} color="primary" />
         <StatCard title="Revenue" value={fmt(stats.totalRevenue)} change="total invoiced" changeType="positive" icon={TrendingUp} color="success" />
       </div>
 
-      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
-          <RevenueChart />
-        </div>
+        <div className="lg:col-span-2"><RevenueChart /></div>
         <RecentActivity />
       </div>
 
-      {/* Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <AttendanceChart />
         <UpcomingEvents />
