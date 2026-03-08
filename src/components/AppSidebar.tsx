@@ -167,7 +167,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-2 gap-1">
-        {sections.map((section) => (
+        {filterSections(role as AppRole | null).map((section) => (
           <SidebarGroup key={section.label} className="py-0">
             <SidebarGroupContent>
               <SidebarSection section={section} collapsed={collapsed} />
