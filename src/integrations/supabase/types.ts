@@ -96,6 +96,71 @@ export type Database = {
           },
         ]
       }
+      applications: {
+        Row: {
+          applied_grade: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          first_name: string
+          gender: string | null
+          guardian_email: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
+          guardian_relationship: string | null
+          id: string
+          last_name: string
+          notes: string | null
+          previous_school: string | null
+          school_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          applied_grade?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          first_name: string
+          gender?: string | null
+          guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          guardian_relationship?: string | null
+          id?: string
+          last_name: string
+          notes?: string | null
+          previous_school?: string | null
+          school_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          applied_grade?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          first_name?: string
+          gender?: string | null
+          guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          guardian_relationship?: string | null
+          id?: string
+          last_name?: string
+          notes?: string | null
+          previous_school?: string | null
+          school_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance: {
         Row: {
           class_id: string | null
