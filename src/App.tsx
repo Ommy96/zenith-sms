@@ -45,6 +45,7 @@ const App = () => (
             <Route path="/inventory" element={<Operations />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/setup" element={<SchoolSetup />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </DashboardLayout>
