@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { seedDemoData } from "@/lib/demoSeed";
 
 const countries = [
   "Afghanistan","Albania","Algeria","Angola","Argentina","Armenia","Australia","Austria",
@@ -131,8 +132,17 @@ export default function SchoolSetup() {
 
       if (profileErr) throw profileErr;
 
-      toast({ title: "School Setup Complete", description: `${schoolName} has been configured with ${country}'s education system.` });
+      // Seed demo data so the new tenant has something to explore
+      try {
+        await seedDemoData(school.id);
+      } catch (seedErr) {
+        console.warn("Demo seed failed", seedErr);
+      }
+
+      toast({ title: "School Setup Complete", description: `${schoolName} is ready with sample data to explore.` });
       navigate("/");
+      // Force a reload so AuthContext picks up new school_id and is_demo flag
+      setTimeout(() => window.location.reload(), 100);
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "Failed to save school", variant: "destructive" });
     } finally {

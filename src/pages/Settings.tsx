@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Building, Palette, Globe, GraduationCap, Shield, Bell, Sparkles } from "lucide-react";
+import { Building, Palette, GraduationCap, Bell, Sparkles, RotateCcw, Trash2, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +10,45 @@ import { Switch } from "@/components/ui/switch";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { clearDemoData, seedDemoData } from "@/lib/demoSeed";
 
 export default function SettingsPage() {
+  const { profile, role, refreshSchool } = useAuth();
+  const { toast } = useToast();
+  const isAdmin = role === "school_admin" || role === "super_admin";
+  const [busy, setBusy] = useState<null | "reset" | "clear">(null);
+
+  const handleReset = async () => {
+    if (!profile?.school_id) return;
+    setBusy("reset");
+    try {
+      await clearDemoData(profile.school_id);
+      await seedDemoData(profile.school_id);
+      await refreshSchool();
+      toast({ title: "Demo data restored", description: "Sample students, fees and activity have been re-seeded." });
+    } catch (e: any) {
+      toast({ title: "Reset failed", description: e.message, variant: "destructive" });
+    } finally { setBusy(null); }
+  };
+
+  const handleClear = async () => {
+    if (!profile?.school_id) return;
+    setBusy("clear");
+    try {
+      await clearDemoData(profile.school_id);
+      await refreshSchool();
+      toast({ title: "Demo data cleared", description: "Your workspace is now empty and ready for real data." });
+    } catch (e: any) {
+      toast({ title: "Clear failed", description: e.message, variant: "destructive" });
+    } finally { setBusy(null); }
+  };
+
   return (
     <div className="space-y-6 max-w-4xl">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -23,13 +61,71 @@ export default function SettingsPage() {
         </Link>
       </motion.div>
 
-      <Tabs defaultValue="school">
+      <Tabs defaultValue="general">
         <TabsList className="flex-wrap">
+          <TabsTrigger value="general" className="text-sm gap-1.5"><Building className="h-3.5 w-3.5" /> General</TabsTrigger>
           <TabsTrigger value="school" className="text-sm gap-1.5"><Building className="h-3.5 w-3.5" /> School</TabsTrigger>
           <TabsTrigger value="academic" className="text-sm gap-1.5"><GraduationCap className="h-3.5 w-3.5" /> Academic</TabsTrigger>
           <TabsTrigger value="branding" className="text-sm gap-1.5"><Palette className="h-3.5 w-3.5" /> Branding</TabsTrigger>
           <TabsTrigger value="notifications" className="text-sm gap-1.5"><Bell className="h-3.5 w-3.5" /> Notifications</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="general" className="mt-6">
+          <div className="rounded-xl border border-border bg-card p-6 space-y-6">
+            <div>
+              <h3 className="text-sm font-semibold text-card-foreground">Demo Data</h3>
+              <p className="text-xs text-muted-foreground mt-1">Reset or remove the sample data that ships with new schools.</p>
+            </div>
+
+            {!isAdmin && (
+              <p className="text-xs text-muted-foreground">Only school administrators can manage demo data.</p>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={!isAdmin || busy !== null} className="gap-1.5">
+                    {busy === "reset" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
+                    Reset to demo data
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Reset to demo data?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will erase all current students, staff, attendance, invoices, exams and announcements, then re-seed fresh sample data.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleReset}>Reset</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" disabled={!isAdmin || busy !== null} className="gap-1.5 text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive">
+                    {busy === "clear" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    Clear all demo data
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Clear all demo data?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This permanently removes all sample students, staff, attendance, invoices, exams and announcements. Your school configuration is kept.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClear} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Clear</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+        </TabsContent>
 
         <TabsContent value="school" className="mt-6">
           <div className="rounded-xl border border-border bg-card p-6 space-y-6">
