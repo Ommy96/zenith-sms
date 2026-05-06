@@ -580,6 +580,7 @@ export type Database = {
           grading_system: Json | null
           id: string
           is_active: boolean | null
+          is_demo: boolean
           language_of_instruction: string | null
           logo_url: string | null
           motto: string | null
@@ -604,6 +605,7 @@ export type Database = {
           grading_system?: Json | null
           id?: string
           is_active?: boolean | null
+          is_demo?: boolean
           language_of_instruction?: string | null
           logo_url?: string | null
           motto?: string | null
@@ -628,6 +630,7 @@ export type Database = {
           grading_system?: Json | null
           id?: string
           is_active?: boolean | null
+          is_demo?: boolean
           language_of_instruction?: string | null
           logo_url?: string | null
           motto?: string | null
