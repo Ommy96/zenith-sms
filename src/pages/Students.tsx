@@ -60,6 +60,7 @@ const emptyForm = {
 };
 
 export default function Students() {
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const schoolId = profile?.school_id;
 
