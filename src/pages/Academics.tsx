@@ -268,10 +268,10 @@ export default function Academics() {
             </div>
             <div className="space-y-2">
               <Label>Class Teacher</Label>
-              <Select value={form.teacher_id} onValueChange={(v) => setForm({ ...form, teacher_id: v })}>
+              <Select value={form.teacher_id || "__none__"} onValueChange={(v) => setForm({ ...form, teacher_id: v === "__none__" ? "" : v })}>
                 <SelectTrigger><SelectValue placeholder="Select teacher" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="__none__">None</SelectItem>
                   {teachers.map((t) => (
                     <SelectItem key={t.id} value={t.id}>{t.first_name} {t.last_name}</SelectItem>
                   ))}
