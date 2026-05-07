@@ -57,7 +57,8 @@ function normalizeDate(v: unknown): string | null {
 
 export default function StudentsImport() {
   const navigate = useNavigate();
-  const { user, schoolId } = useAuth() as { user: { id: string } | null; schoolId: string | null };
+  const { user, profile } = useAuth();
+  const schoolId = profile?.school_id ?? null;
   const [step, setStep] = useState<Step>("upload");
   const [fileName, setFileName] = useState("");
   const [headers, setHeaders] = useState<string[]>([]);
