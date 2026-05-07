@@ -372,6 +372,39 @@ export type Database = {
           },
         ]
       }
+      import_mappings: {
+        Row: {
+          created_at: string
+          header_signature: string
+          id: string
+          last_used_at: string
+          mapping: Json
+          school_id: string
+          source_type: string
+          use_count: number
+        }
+        Insert: {
+          created_at?: string
+          header_signature: string
+          id?: string
+          last_used_at?: string
+          mapping?: Json
+          school_id: string
+          source_type?: string
+          use_count?: number
+        }
+        Update: {
+          created_at?: string
+          header_signature?: string
+          id?: string
+          last_used_at?: string
+          mapping?: Json
+          school_id?: string
+          source_type?: string
+          use_count?: number
+        }
+        Relationships: []
+      }
       inventory_assets: {
         Row: {
           category: string | null
