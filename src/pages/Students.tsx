@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Search, Plus, Download, MoreHorizontal, Mail, Eye, Edit, Trash2,
+  Search, Plus, Download, Upload, MoreHorizontal, Mail, Eye, Edit, Trash2,
   ChevronLeft, ChevronRight, Users, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -226,6 +227,9 @@ export default function Students() {
           <p className="text-sm text-muted-foreground mt-1">{total} students enrolled</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => navigate("/students/import")}>
+            <Upload className="h-3.5 w-3.5" /> Import
+          </Button>
           <Button variant="outline" size="sm" className="gap-1.5 text-xs">
             <Download className="h-3.5 w-3.5" /> Export
           </Button>
