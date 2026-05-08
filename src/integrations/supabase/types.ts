@@ -559,6 +559,168 @@ export type Database = {
           },
         ]
       }
+      mpesa_config: {
+        Row: {
+          consumer_key: string | null
+          consumer_secret: string | null
+          created_at: string
+          environment: string
+          id: string
+          initiator_name: string | null
+          is_active: boolean
+          passkey: string | null
+          school_id: string
+          shortcode: string | null
+          shortcode_type: string
+          updated_at: string
+        }
+        Insert: {
+          consumer_key?: string | null
+          consumer_secret?: string | null
+          created_at?: string
+          environment?: string
+          id?: string
+          initiator_name?: string | null
+          is_active?: boolean
+          passkey?: string | null
+          school_id: string
+          shortcode?: string | null
+          shortcode_type?: string
+          updated_at?: string
+        }
+        Update: {
+          consumer_key?: string | null
+          consumer_secret?: string | null
+          created_at?: string
+          environment?: string
+          id?: string
+          initiator_name?: string | null
+          is_active?: boolean
+          passkey?: string | null
+          school_id?: string
+          shortcode?: string | null
+          shortcode_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      mpesa_stk_requests: {
+        Row: {
+          account_reference: string | null
+          amount: number
+          checkout_request_id: string | null
+          created_at: string
+          id: string
+          invoice_id: string | null
+          merchant_request_id: string | null
+          mpesa_receipt: string | null
+          phone: string
+          result_code: string | null
+          result_desc: string | null
+          school_id: string
+          status: string
+          student_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_reference?: string | null
+          amount: number
+          checkout_request_id?: string | null
+          created_at?: string
+          id?: string
+          invoice_id?: string | null
+          merchant_request_id?: string | null
+          mpesa_receipt?: string | null
+          phone: string
+          result_code?: string | null
+          result_desc?: string | null
+          school_id: string
+          status?: string
+          student_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_reference?: string | null
+          amount?: number
+          checkout_request_id?: string | null
+          created_at?: string
+          id?: string
+          invoice_id?: string | null
+          merchant_request_id?: string | null
+          mpesa_receipt?: string | null
+          phone?: string
+          result_code?: string | null
+          result_desc?: string | null
+          school_id?: string
+          status?: string
+          student_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      mpesa_transactions: {
+        Row: {
+          account_reference: string | null
+          amount: number
+          bill_ref_number: string | null
+          created_at: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          matched_invoice_id: string | null
+          matched_student_id: string | null
+          middle_name: string | null
+          mpesa_receipt: string
+          org_account_balance: number | null
+          phone: string | null
+          raw_payload: Json | null
+          school_id: string
+          status: string
+          transaction_time: string
+          transaction_type: string | null
+        }
+        Insert: {
+          account_reference?: string | null
+          amount?: number
+          bill_ref_number?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          matched_invoice_id?: string | null
+          matched_student_id?: string | null
+          middle_name?: string | null
+          mpesa_receipt: string
+          org_account_balance?: number | null
+          phone?: string | null
+          raw_payload?: Json | null
+          school_id: string
+          status?: string
+          transaction_time?: string
+          transaction_type?: string | null
+        }
+        Update: {
+          account_reference?: string | null
+          amount?: number
+          bill_ref_number?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          matched_invoice_id?: string | null
+          matched_student_id?: string | null
+          middle_name?: string | null
+          mpesa_receipt?: string
+          org_account_balance?: number | null
+          phone?: string | null
+          raw_payload?: Json | null
+          school_id?: string
+          status?: string
+          transaction_time?: string
+          transaction_type?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
