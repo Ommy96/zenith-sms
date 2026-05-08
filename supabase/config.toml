@@ -2,3 +2,9 @@ project_id = "jsbksehucfqanzseeddc"
 
 [functions.get-education-system]
 verify_jwt = false
+
+[functions.mpesa-c2b-callback]
+verify_jwt = false
+
+[functions.mpesa-stk-callback]
+verify_jwt = false
