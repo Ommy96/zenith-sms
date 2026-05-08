@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Users, GraduationCap, CreditCard, ClipboardList,
   BookOpen, MessageSquare, UserCog, Bus, Library, BarChart3, Settings,
   ChevronRight, Briefcase, FileText, CalendarDays, UserPlus,
-  Megaphone, Mail, DollarSign, Receipt, Package,
+  Megaphone, Mail, DollarSign, Receipt, Package, Smartphone,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -43,6 +43,7 @@ const sections: NavSection[] = [
   { label: "Finance", roles: adminOnly, items: [
     { title: "Fee Management", url: "/fees", icon: DollarSign },
     { title: "Invoices", url: "/invoices", icon: Receipt },
+    { title: "Mobile Money", url: "/finance/mobile-money", icon: Smartphone },
     { title: "Reports", url: "/finance-reports", icon: FileText },
   ]},
   { label: "Communication", items: [
