@@ -10,6 +10,7 @@ import Students from "./pages/Students";
 import StudentsImport from "./pages/StudentsImport";
 import Finance from "./pages/Finance";
 import MobileMoney from "./pages/MobileMoney";
+import WhatsApp from "./pages/WhatsApp";
 import Academics from "./pages/Academics";
 import Examinations from "./pages/Examinations";
 import Attendance from "./pages/Attendance";
@@ -87,6 +88,7 @@ function AppRoutes() {
       <Route path="/finance/mobile-money" element={<ProtectedRoute><DashboardLayout><MobileMoney /></DashboardLayout></ProtectedRoute>} />
       <Route path="/announcements" element={<ProtectedRoute><DashboardLayout><Communication /></DashboardLayout></ProtectedRoute>} />
       <Route path="/messaging" element={<ProtectedRoute><DashboardLayout><Communication /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/communication/whatsapp" element={<ProtectedRoute><DashboardLayout><WhatsApp /></DashboardLayout></ProtectedRoute>} />
       <Route path="/staff" element={<ProtectedRoute><DashboardLayout><Staff /></DashboardLayout></ProtectedRoute>} />
       <Route path="/transport" element={<ProtectedRoute><DashboardLayout><Operations /></DashboardLayout></ProtectedRoute>} />
       <Route path="/library" element={<ProtectedRoute><DashboardLayout><Operations /></DashboardLayout></ProtectedRoute>} />
