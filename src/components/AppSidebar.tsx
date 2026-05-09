@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Users, GraduationCap, CreditCard, ClipboardList,
   BookOpen, MessageSquare, UserCog, Bus, Library, BarChart3, Settings,
   ChevronRight, Briefcase, FileText, CalendarDays, UserPlus,
-  Megaphone, Mail, DollarSign, Receipt, Package, Smartphone,
+  Megaphone, Mail, DollarSign, Receipt, Package, Smartphone, MessageCircle,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -49,6 +49,7 @@ const sections: NavSection[] = [
   { label: "Communication", items: [
     { title: "Announcements", url: "/announcements", icon: Megaphone },
     { title: "Messaging", url: "/messaging", icon: Mail },
+    { title: "WhatsApp", url: "/communication/whatsapp", icon: MessageCircle },
   ]},
   { label: "Operations", roles: adminOnly, items: [
     { title: "Transport", url: "/transport", icon: Bus },
