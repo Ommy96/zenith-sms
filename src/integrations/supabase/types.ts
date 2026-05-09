@@ -1041,6 +1041,209 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_broadcasts: {
+        Row: {
+          audience_filter: Json
+          audience_type: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          failed_count: number
+          id: string
+          recipient_count: number
+          school_id: string
+          sent_count: number
+          started_at: string | null
+          status: string
+          template_id: string | null
+        }
+        Insert: {
+          audience_filter?: Json
+          audience_type: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          failed_count?: number
+          id?: string
+          recipient_count?: number
+          school_id: string
+          sent_count?: number
+          started_at?: string | null
+          status?: string
+          template_id?: string | null
+        }
+        Update: {
+          audience_filter?: Json
+          audience_type?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          failed_count?: number
+          id?: string
+          recipient_count?: number
+          school_id?: string
+          sent_count?: number
+          started_at?: string | null
+          status?: string
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_broadcasts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_config: {
+        Row: {
+          access_token: string | null
+          business_account_id: string | null
+          created_at: string
+          daily_message_limit: number
+          display_phone_number: string | null
+          id: string
+          is_active: boolean
+          last_reset_date: string
+          messages_sent_today: number
+          phone_number_id: string | null
+          school_id: string
+          updated_at: string
+          webhook_verify_token: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          business_account_id?: string | null
+          created_at?: string
+          daily_message_limit?: number
+          display_phone_number?: string | null
+          id?: string
+          is_active?: boolean
+          last_reset_date?: string
+          messages_sent_today?: number
+          phone_number_id?: string | null
+          school_id: string
+          updated_at?: string
+          webhook_verify_token?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          business_account_id?: string | null
+          created_at?: string
+          daily_message_limit?: number
+          display_phone_number?: string | null
+          id?: string
+          is_active?: boolean
+          last_reset_date?: string
+          messages_sent_today?: number
+          phone_number_id?: string | null
+          school_id?: string
+          updated_at?: string
+          webhook_verify_token?: string | null
+        }
+        Relationships: []
+      }
+      whatsapp_messages: {
+        Row: {
+          body: string | null
+          broadcast_id: string | null
+          created_at: string
+          direction: string
+          error: string | null
+          from_phone: string | null
+          id: string
+          raw_payload: Json | null
+          school_id: string
+          status: string
+          student_id: string | null
+          template_id: string | null
+          to_phone: string | null
+          wa_message_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          broadcast_id?: string | null
+          created_at?: string
+          direction: string
+          error?: string | null
+          from_phone?: string | null
+          id?: string
+          raw_payload?: Json | null
+          school_id: string
+          status?: string
+          student_id?: string | null
+          template_id?: string | null
+          to_phone?: string | null
+          wa_message_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          broadcast_id?: string | null
+          created_at?: string
+          direction?: string
+          error?: string | null
+          from_phone?: string | null
+          id?: string
+          raw_payload?: Json | null
+          school_id?: string
+          status?: string
+          student_id?: string | null
+          template_id?: string | null
+          to_phone?: string | null
+          wa_message_id?: string | null
+        }
+        Relationships: []
+      }
+      whatsapp_templates: {
+        Row: {
+          body_template: string
+          category: string
+          created_at: string
+          id: string
+          language: string
+          last_used_at: string | null
+          name: string
+          placeholder_count: number
+          placeholder_labels: Json
+          school_id: string
+          status: string
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          body_template: string
+          category?: string
+          created_at?: string
+          id?: string
+          language?: string
+          last_used_at?: string | null
+          name: string
+          placeholder_count?: number
+          placeholder_labels?: Json
+          school_id: string
+          status?: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          body_template?: string
+          category?: string
+          created_at?: string
+          id?: string
+          language?: string
+          last_used_at?: string | null
+          name?: string
+          placeholder_count?: number
+          placeholder_labels?: Json
+          school_id?: string
+          status?: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
