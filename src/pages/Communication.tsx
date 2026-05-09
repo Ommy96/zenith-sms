@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Megaphone, Plus, Trash2, Loader2 } from "lucide-react";
+import { Megaphone, Plus, Trash2, Loader2, MessageCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 const priorityColors: Record<string, string> = {
   high: "bg-destructive/10 text-destructive border-destructive/20",
@@ -40,6 +41,22 @@ export default function Communication() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
+    },
+    enabled: !!schoolId,
+  });
+
+  const { data: waInbox = [] } = useQuery({
+    queryKey: ["wa-inbox", schoolId],
+    queryFn: async () => {
+      if (!schoolId) return [];
+      const { data } = await (supabase as any)
+        .from("whatsapp_messages")
+        .select("id, from_phone, body, created_at, student_id, direction")
+        .eq("school_id", schoolId)
+        .eq("direction", "in")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      return data || [];
     },
     enabled: !!schoolId,
   });
@@ -152,6 +169,33 @@ export default function Communication() {
             <p className="text-xs text-muted-foreground">{s.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* WhatsApp inbox preview */}
+      <div className="rounded-xl border border-border bg-card">
+        <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold">Recent WhatsApp messages</h2>
+          </div>
+          <Link to="/communication/whatsapp" className="text-xs text-primary inline-flex items-center gap-1">
+            Open inbox <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+        {waInbox.length === 0 ? (
+          <div className="p-4 text-xs text-muted-foreground">No incoming WhatsApp messages yet.</div>
+        ) : (
+          <ul className="divide-y">
+            {waInbox.map((m: any) => (
+              <li key={m.id} className="p-3 text-sm flex items-center gap-3">
+                <Badge variant="outline" className="text-[10px]">WA</Badge>
+                <span className="font-medium text-xs">{m.from_phone}</span>
+                <span className="flex-1 truncate text-muted-foreground text-xs">{m.body}</span>
+                <span className="text-[10px] text-muted-foreground">{new Date(m.created_at).toLocaleString()}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* Announcements list */}
