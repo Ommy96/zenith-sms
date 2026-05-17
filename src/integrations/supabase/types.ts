@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      academic_years: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          is_current: boolean
+          name: string
+          start_date: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          is_current?: boolean
+          name: string
+          start_date: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          is_current?: boolean
+          name?: string
+          start_date?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       activity_logs: {
         Row: {
           action: string
@@ -191,6 +224,110 @@ export type Database = {
           },
         ]
       }
+      assessment_outcomes: {
+        Row: {
+          assessment_id: string
+          learning_outcome_id: string
+        }
+        Insert: {
+          assessment_id: string
+          learning_outcome_id: string
+        }
+        Update: {
+          assessment_id?: string
+          learning_outcome_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_outcomes_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_outcomes_learning_outcome_id_fkey"
+            columns: ["learning_outcome_id"]
+            isOneToOne: false
+            referencedRelation: "learning_outcomes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessments: {
+        Row: {
+          class_id: string | null
+          created_at: string
+          due_date: string | null
+          id: string
+          max_marks: number
+          subject_id: string | null
+          teacher_id: string | null
+          tenant_id: string
+          term_id: string | null
+          title: string
+          type: Database["public"]["Enums"]["assessment_type_enum"]
+          weight: number
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          max_marks?: number
+          subject_id?: string | null
+          teacher_id?: string | null
+          tenant_id: string
+          term_id?: string | null
+          title: string
+          type?: Database["public"]["Enums"]["assessment_type_enum"]
+          weight?: number
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          max_marks?: number
+          subject_id?: string | null
+          teacher_id?: string | null
+          tenant_id?: string
+          term_id?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["assessment_type_enum"]
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessments_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessments_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessments_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "terms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance: {
         Row: {
           class_id: string | null
@@ -299,38 +436,208 @@ export type Database = {
           },
         ]
       }
+      cbc_assessment_scores: {
+        Row: {
+          comment: string | null
+          id: string
+          learning_outcome_id: string
+          performance_level: number
+          recorded_at: string
+          student_id: string
+          teacher_id: string | null
+          tenant_id: string
+          term_id: string | null
+        }
+        Insert: {
+          comment?: string | null
+          id?: string
+          learning_outcome_id: string
+          performance_level: number
+          recorded_at?: string
+          student_id: string
+          teacher_id?: string | null
+          tenant_id: string
+          term_id?: string | null
+        }
+        Update: {
+          comment?: string | null
+          id?: string
+          learning_outcome_id?: string
+          performance_level?: number
+          recorded_at?: string
+          student_id?: string
+          teacher_id?: string | null
+          tenant_id?: string
+          term_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cbc_assessment_scores_learning_outcome_id_fkey"
+            columns: ["learning_outcome_id"]
+            isOneToOne: false
+            referencedRelation: "learning_outcomes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cbc_assessment_scores_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cbc_assessment_scores_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "terms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cbc_values: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
+      class_subjects: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          periods_per_week: number
+          subject_id: string
+          teacher_id: string | null
+          tenant_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          periods_per_week?: number
+          subject_id: string
+          teacher_id?: string | null
+          tenant_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          periods_per_week?: number
+          subject_id?: string
+          teacher_id?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_subjects_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_subjects_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_subjects_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classes: {
         Row: {
           academic_year: string | null
           capacity: number | null
+          class_teacher_id: string | null
           created_at: string | null
+          current_enrollment: number
           grade_level: string | null
+          grade_level_id: string | null
           id: string
           name: string
+          room_id: string | null
+          stream: string | null
           teacher_id: string | null
           tenant_id: string
         }
         Insert: {
           academic_year?: string | null
           capacity?: number | null
+          class_teacher_id?: string | null
           created_at?: string | null
+          current_enrollment?: number
           grade_level?: string | null
+          grade_level_id?: string | null
           id?: string
           name: string
+          room_id?: string | null
+          stream?: string | null
           teacher_id?: string | null
           tenant_id: string
         }
         Update: {
           academic_year?: string | null
           capacity?: number | null
+          class_teacher_id?: string | null
           created_at?: string | null
+          current_enrollment?: number
           grade_level?: string | null
+          grade_level_id?: string | null
           id?: string
           name?: string
+          room_id?: string | null
+          stream?: string | null
           teacher_id?: string | null
           tenant_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "classes_class_teacher_id_fkey"
+            columns: ["class_teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_grade_level_id_fkey"
+            columns: ["grade_level_id"]
+            isOneToOne: false
+            referencedRelation: "grade_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "classes_school_id_fkey"
             columns: ["tenant_id"]
@@ -346,6 +653,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      core_competencies: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          tenant_id?: string
+        }
+        Relationships: []
       }
       documents: {
         Row: {
@@ -450,6 +781,58 @@ export type Database = {
           },
         ]
       }
+      exam_subjects: {
+        Row: {
+          created_at: string
+          exam_id: string
+          grading_scale_id: string | null
+          id: string
+          max_marks: number
+          subject_id: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          exam_id: string
+          grading_scale_id?: string | null
+          id?: string
+          max_marks?: number
+          subject_id: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          exam_id?: string
+          grading_scale_id?: string | null
+          id?: string
+          max_marks?: number
+          subject_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_subjects_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_subjects_grading_scale_id_fkey"
+            columns: ["grading_scale_id"]
+            isOneToOne: false
+            referencedRelation: "grading_scales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_subjects_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exams: {
         Row: {
           academic_year: string | null
@@ -461,7 +844,9 @@ export type Database = {
           status: string | null
           tenant_id: string
           term: string | null
+          term_id: string | null
           type: string | null
+          weight: number | null
         }
         Insert: {
           academic_year?: string | null
@@ -473,7 +858,9 @@ export type Database = {
           status?: string | null
           tenant_id: string
           term?: string | null
+          term_id?: string | null
           type?: string | null
+          weight?: number | null
         }
         Update: {
           academic_year?: string | null
@@ -485,7 +872,9 @@ export type Database = {
           status?: string | null
           tenant_id?: string
           term?: string | null
+          term_id?: string | null
           type?: string | null
+          weight?: number | null
         }
         Relationships: [
           {
@@ -495,7 +884,112 @@ export type Database = {
             referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "exams_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "terms"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      grade_bands: {
+        Row: {
+          created_at: string
+          grade: string
+          grading_scale_id: string
+          id: string
+          max_pct: number
+          min_pct: number
+          points: number
+          remark: string | null
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          grade: string
+          grading_scale_id: string
+          id?: string
+          max_pct: number
+          min_pct: number
+          points?: number
+          remark?: string | null
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          grade?: string
+          grading_scale_id?: string
+          id?: string
+          max_pct?: number
+          min_pct?: number
+          points?: number
+          remark?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grade_bands_grading_scale_id_fkey"
+            columns: ["grading_scale_id"]
+            isOneToOne: false
+            referencedRelation: "grading_scales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grade_levels: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          stage: Database["public"]["Enums"]["grade_stage_enum"] | null
+          tenant_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          stage?: Database["public"]["Enums"]["grade_stage_enum"] | null
+          tenant_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          stage?: Database["public"]["Enums"]["grade_stage_enum"] | null
+          tenant_id?: string
+        }
+        Relationships: []
+      }
+      grading_scales: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          tenant_id?: string
+        }
+        Relationships: []
       }
       guardians: {
         Row: {
@@ -690,6 +1184,180 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learning_areas: {
+        Row: {
+          code: string
+          created_at: string
+          grade_level_id: string | null
+          id: string
+          name: string
+          sort_order: number
+          tenant_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          grade_level_id?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          tenant_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          grade_level_id?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_areas_grade_level_id_fkey"
+            columns: ["grade_level_id"]
+            isOneToOne: false
+            referencedRelation: "grade_levels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learning_outcomes: {
+        Row: {
+          code: string | null
+          created_at: string
+          description: string
+          id: string
+          sort_order: number
+          sub_strand_id: string
+          tenant_id: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          sort_order?: number
+          sub_strand_id: string
+          tenant_id: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          sort_order?: number
+          sub_strand_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_outcomes_sub_strand_id_fkey"
+            columns: ["sub_strand_id"]
+            isOneToOne: false
+            referencedRelation: "sub_strands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_plans: {
+        Row: {
+          assessment: string | null
+          class_id: string | null
+          conclusion: string | null
+          created_at: string
+          date: string
+          development: string | null
+          hod_id: string | null
+          hod_status: Database["public"]["Enums"]["lesson_status_enum"]
+          homework: string | null
+          id: string
+          introduction: string | null
+          learning_outcome_ids: string[] | null
+          materials: string | null
+          objectives: string | null
+          period_id: string | null
+          reflection: string | null
+          subject_id: string | null
+          teacher_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          assessment?: string | null
+          class_id?: string | null
+          conclusion?: string | null
+          created_at?: string
+          date: string
+          development?: string | null
+          hod_id?: string | null
+          hod_status?: Database["public"]["Enums"]["lesson_status_enum"]
+          homework?: string | null
+          id?: string
+          introduction?: string | null
+          learning_outcome_ids?: string[] | null
+          materials?: string | null
+          objectives?: string | null
+          period_id?: string | null
+          reflection?: string | null
+          subject_id?: string | null
+          teacher_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          assessment?: string | null
+          class_id?: string | null
+          conclusion?: string | null
+          created_at?: string
+          date?: string
+          development?: string | null
+          hod_id?: string | null
+          hod_status?: Database["public"]["Enums"]["lesson_status_enum"]
+          homework?: string | null
+          id?: string
+          introduction?: string | null
+          learning_outcome_ids?: string[] | null
+          materials?: string | null
+          objectives?: string | null
+          period_id?: string | null
+          reflection?: string | null
+          subject_id?: string | null
+          teacher_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_plans_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_plans_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_plans_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_plans_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]
@@ -900,6 +1568,42 @@ export type Database = {
         }
         Relationships: []
       }
+      periods: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_break: boolean
+          name: string
+          sort_order: number
+          start_time: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_break?: boolean
+          name: string
+          sort_order?: number
+          start_time: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_break?: boolean
+          name?: string
+          sort_order?: number
+          start_time?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
           category: string | null
@@ -958,6 +1662,154 @@ export type Database = {
             columns: ["default_tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_card_runs: {
+        Row: {
+          class_id: string | null
+          completed: number
+          created_at: string
+          error: string | null
+          id: string
+          requested_by: string | null
+          status: Database["public"]["Enums"]["report_run_status_enum"]
+          template_id: string | null
+          tenant_id: string
+          term_id: string | null
+          total: number
+          updated_at: string
+          zip_url: string | null
+        }
+        Insert: {
+          class_id?: string | null
+          completed?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["report_run_status_enum"]
+          template_id?: string | null
+          tenant_id: string
+          term_id?: string | null
+          total?: number
+          updated_at?: string
+          zip_url?: string | null
+        }
+        Update: {
+          class_id?: string | null
+          completed?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          requested_by?: string | null
+          status?: Database["public"]["Enums"]["report_run_status_enum"]
+          template_id?: string | null
+          tenant_id?: string
+          term_id?: string | null
+          total?: number
+          updated_at?: string
+          zip_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_card_runs_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_card_runs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "report_card_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_card_runs_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "terms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_card_templates: {
+        Row: {
+          created_at: string
+          curriculum_kind: string
+          id: string
+          is_default: boolean
+          layout: Json
+          name: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          curriculum_kind?: string
+          id?: string
+          is_default?: boolean
+          layout?: Json
+          name: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          curriculum_kind?: string
+          id?: string
+          is_default?: boolean
+          layout?: Json
+          name?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
+      report_cards: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          pdf_url: string | null
+          run_id: string
+          status: string
+          student_id: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          pdf_url?: string | null
+          run_id: string
+          status?: string
+          student_id: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          pdf_url?: string | null
+          run_id?: string
+          status?: string
+          student_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_cards_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "report_card_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_cards_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -1023,6 +1875,100 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          capacity: number | null
+          created_at: string
+          id: string
+          name: string
+          tenant_id: string
+          type: Database["public"]["Enums"]["room_type_enum"]
+        }
+        Insert: {
+          capacity?: number | null
+          created_at?: string
+          id?: string
+          name: string
+          tenant_id: string
+          type?: Database["public"]["Enums"]["room_type_enum"]
+        }
+        Update: {
+          capacity?: number | null
+          created_at?: string
+          id?: string
+          name?: string
+          tenant_id?: string
+          type?: Database["public"]["Enums"]["room_type_enum"]
+        }
+        Relationships: []
+      }
+      schemes_of_work: {
+        Row: {
+          approved_by: string | null
+          created_at: string
+          file_url: string | null
+          grade_level_id: string | null
+          id: string
+          rich_text: string | null
+          status: Database["public"]["Enums"]["scheme_status_enum"]
+          subject_id: string | null
+          tenant_id: string
+          term_id: string | null
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string
+          file_url?: string | null
+          grade_level_id?: string | null
+          id?: string
+          rich_text?: string | null
+          status?: Database["public"]["Enums"]["scheme_status_enum"]
+          subject_id?: string | null
+          tenant_id: string
+          term_id?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string
+          file_url?: string | null
+          grade_level_id?: string | null
+          id?: string
+          rich_text?: string | null
+          status?: Database["public"]["Enums"]["scheme_status_enum"]
+          subject_id?: string | null
+          tenant_id?: string
+          term_id?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schemes_of_work_grade_level_id_fkey"
+            columns: ["grade_level_id"]
+            isOneToOne: false
+            referencedRelation: "grade_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schemes_of_work_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schemes_of_work_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "terms"
             referencedColumns: ["id"]
           },
         ]
@@ -1179,6 +2125,41 @@ export type Database = {
           },
         ]
       }
+      strands: {
+        Row: {
+          created_at: string
+          id: string
+          learning_area_id: string
+          name: string
+          sort_order: number
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          learning_area_id: string
+          name: string
+          sort_order?: number
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          learning_area_id?: string
+          name?: string
+          sort_order?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strands_learning_area_id_fkey"
+            columns: ["learning_area_id"]
+            isOneToOne: false
+            referencedRelation: "learning_areas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_activity: {
         Row: {
           actor_user_id: string | null
@@ -1214,6 +2195,133 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      student_assessment_scores: {
+        Row: {
+          assessment_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          score: number | null
+          student_id: string
+          tenant_id: string
+        }
+        Insert: {
+          assessment_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          score?: number | null
+          student_id: string
+          tenant_id: string
+        }
+        Update: {
+          assessment_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          score?: number | null
+          student_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_assessment_scores_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_assessment_scores_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_exam_results: {
+        Row: {
+          created_at: string
+          entered_at: string | null
+          entered_by: string | null
+          exam_id: string
+          grade: string | null
+          id: string
+          locked: boolean
+          max_marks: number | null
+          points: number | null
+          position_in_class: number | null
+          position_in_stream: number | null
+          raw_marks: number | null
+          student_id: string
+          subject_id: string
+          teacher_comment: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entered_at?: string | null
+          entered_by?: string | null
+          exam_id: string
+          grade?: string | null
+          id?: string
+          locked?: boolean
+          max_marks?: number | null
+          points?: number | null
+          position_in_class?: number | null
+          position_in_stream?: number | null
+          raw_marks?: number | null
+          student_id: string
+          subject_id: string
+          teacher_comment?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entered_at?: string | null
+          entered_by?: string | null
+          exam_id?: string
+          grade?: string | null
+          id?: string
+          locked?: boolean
+          max_marks?: number | null
+          points?: number | null
+          position_in_class?: number | null
+          position_in_stream?: number | null
+          raw_marks?: number | null
+          student_id?: string
+          subject_id?: string
+          teacher_comment?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_exam_results_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_exam_results_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_exam_results_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       student_guardians: {
         Row: {
@@ -1496,6 +2604,77 @@ export type Database = {
           },
         ]
       }
+      sub_strands: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          strand_id: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          strand_id: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          strand_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_strands_strand_id_fkey"
+            columns: ["strand_id"]
+            isOneToOne: false
+            referencedRelation: "strands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subjects: {
+        Row: {
+          assessment_type: Database["public"]["Enums"]["subject_assessment_enum"]
+          category: Database["public"]["Enums"]["subject_category_enum"]
+          code: string
+          created_at: string
+          curriculum_tag: string | null
+          id: string
+          is_assessed: boolean
+          name: string
+          tenant_id: string
+        }
+        Insert: {
+          assessment_type?: Database["public"]["Enums"]["subject_assessment_enum"]
+          category?: Database["public"]["Enums"]["subject_category_enum"]
+          code: string
+          created_at?: string
+          curriculum_tag?: string | null
+          id?: string
+          is_assessed?: boolean
+          name: string
+          tenant_id: string
+        }
+        Update: {
+          assessment_type?: Database["public"]["Enums"]["subject_assessment_enum"]
+          category?: Database["public"]["Enums"]["subject_category_enum"]
+          code?: string
+          created_at?: string
+          curriculum_tag?: string | null
+          id?: string
+          is_assessed?: boolean
+          name?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       tenant_settings: {
         Row: {
           created_at: string
@@ -1676,6 +2855,129 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      terms: {
+        Row: {
+          academic_year_id: string
+          created_at: string
+          end_date: string
+          id: string
+          is_current: boolean
+          name: string
+          start_date: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year_id: string
+          created_at?: string
+          end_date: string
+          id?: string
+          is_current?: boolean
+          name: string
+          start_date: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year_id?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          is_current?: boolean
+          name?: string
+          start_date?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "terms_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timetable_slots: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          period_id: string
+          room_id: string | null
+          subject_id: string | null
+          teacher_id: string | null
+          tenant_id: string
+          term_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          period_id: string
+          room_id?: string | null
+          subject_id?: string | null
+          teacher_id?: string | null
+          tenant_id: string
+          term_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          period_id?: string
+          room_id?: string | null
+          subject_id?: string | null
+          teacher_id?: string | null
+          tenant_id?: string
+          term_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timetable_slots_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timetable_slots_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timetable_slots_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timetable_slots_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timetable_slots_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timetable_slots_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "terms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transport_routes: {
         Row: {
@@ -1968,6 +3270,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      compute_grade: {
+        Args: { _pct: number; _scale: string }
+        Returns: {
+          grade: string
+          points: number
+          remark: string
+        }[]
+      }
+      current_academic_year: { Args: { _tenant: string }; Returns: string }
+      current_term: { Args: { _tenant: string }; Returns: string }
       generate_admission_number: { Args: { _tenant: string }; Returns: string }
       has_perm: {
         Args: { _perm: string; _tenant: string; _user?: string }
@@ -1982,8 +3294,24 @@ export type Database = {
         Args: { _tenant: string; _user?: string }
         Returns: boolean
       }
+      recompute_exam_positions: { Args: { _exam: string }; Returns: undefined }
+      seed_cbc_competencies_and_values: {
+        Args: { _tenant: string }
+        Returns: undefined
+      }
+      seed_grade_levels: {
+        Args: { _curriculum: string; _tenant: string }
+        Returns: undefined
+      }
     }
     Enums: {
+      assessment_type_enum:
+        | "assignment"
+        | "quiz"
+        | "project"
+        | "practical"
+        | "oral"
+        | "other"
       blood_group_enum:
         | "A+"
         | "A-"
@@ -2011,7 +3339,32 @@ export type Database = {
         | "suspended"
         | "deceased"
         | "on_leave"
+      exam_status_enum:
+        | "planned"
+        | "in_progress"
+        | "marking"
+        | "published"
+        | "archived"
+      exam_type_enum:
+        | "cat"
+        | "midterm"
+        | "end_term"
+        | "mock"
+        | "knec_mock"
+        | "internal"
+        | "other"
       gender_enum: "male" | "female" | "other" | "prefer_not_to_say"
+      grade_stage_enum:
+        | "pre_primary"
+        | "lower_primary"
+        | "upper_primary"
+        | "junior_secondary"
+        | "senior_secondary"
+        | "primary"
+        | "secondary"
+        | "o_level"
+        | "a_level"
+        | "other"
       guardian_relationship_enum:
         | "father"
         | "mother"
@@ -2026,6 +3379,16 @@ export type Database = {
         | "boarder"
         | "weekly_boarder"
         | "special_needs"
+      lesson_status_enum: "draft" | "pending_review" | "approved" | "rejected"
+      report_run_status_enum: "queued" | "running" | "ready" | "failed"
+      room_type_enum:
+        | "classroom"
+        | "lab"
+        | "hall"
+        | "sports"
+        | "library"
+        | "other"
+      scheme_status_enum: "draft" | "pending_review" | "approved" | "rejected"
       school_type:
         | "primary"
         | "junior_secondary"
@@ -2034,6 +3397,12 @@ export type Database = {
         | "tertiary"
         | "tvet"
         | "international"
+      subject_assessment_enum: "continuous" | "exam" | "both"
+      subject_category_enum:
+        | "core"
+        | "elective"
+        | "co_curricular"
+        | "life_skills"
       subscription_plan: "free" | "starter" | "standard" | "pro" | "enterprise"
       subscription_status: "trial" | "active" | "past_due" | "cancelled"
     }
@@ -2163,6 +3532,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      assessment_type_enum: [
+        "assignment",
+        "quiz",
+        "project",
+        "practical",
+        "oral",
+        "other",
+      ],
       blood_group_enum: [
         "A+",
         "A-",
@@ -2193,7 +3570,35 @@ export const Constants = {
         "deceased",
         "on_leave",
       ],
+      exam_status_enum: [
+        "planned",
+        "in_progress",
+        "marking",
+        "published",
+        "archived",
+      ],
+      exam_type_enum: [
+        "cat",
+        "midterm",
+        "end_term",
+        "mock",
+        "knec_mock",
+        "internal",
+        "other",
+      ],
       gender_enum: ["male", "female", "other", "prefer_not_to_say"],
+      grade_stage_enum: [
+        "pre_primary",
+        "lower_primary",
+        "upper_primary",
+        "junior_secondary",
+        "senior_secondary",
+        "primary",
+        "secondary",
+        "o_level",
+        "a_level",
+        "other",
+      ],
       guardian_relationship_enum: [
         "father",
         "mother",
@@ -2210,6 +3615,17 @@ export const Constants = {
         "weekly_boarder",
         "special_needs",
       ],
+      lesson_status_enum: ["draft", "pending_review", "approved", "rejected"],
+      report_run_status_enum: ["queued", "running", "ready", "failed"],
+      room_type_enum: [
+        "classroom",
+        "lab",
+        "hall",
+        "sports",
+        "library",
+        "other",
+      ],
+      scheme_status_enum: ["draft", "pending_review", "approved", "rejected"],
       school_type: [
         "primary",
         "junior_secondary",
@@ -2218,6 +3634,13 @@ export const Constants = {
         "tertiary",
         "tvet",
         "international",
+      ],
+      subject_assessment_enum: ["continuous", "exam", "both"],
+      subject_category_enum: [
+        "core",
+        "elective",
+        "co_curricular",
+        "life_skills",
       ],
       subscription_plan: ["free", "starter", "standard", "pro", "enterprise"],
       subscription_status: ["trial", "active", "past_due", "cancelled"],
