@@ -103,7 +103,7 @@ export default function Finance() {
         <StatCard icon={<AlertCircle className="h-4 w-4" />} label="Overdue invoices" value={stats.overdueCount} accent="text-destructive" />
       </div>
 
-      <Tabs defaultValue="invoices">
+      <Tabs defaultValue="dashboard">
         <TabsList>
           <TabsTrigger value="dashboard"><TrendingUp className="h-3 w-3 mr-1" />Dashboard</TabsTrigger>
           <TabsTrigger value="invoices"><FileText className="h-3 w-3 mr-1" />Invoices</TabsTrigger>
