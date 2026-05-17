@@ -939,22 +939,34 @@ export type Database = {
           address: string | null
           code: string | null
           country: string | null
+          country_code: string
           created_at: string | null
+          currency_code: string
+          curriculum: Database["public"]["Enums"]["curriculum_type"] | null
           email: string | null
           grading_system: Json | null
           id: string
           is_active: boolean | null
           is_demo: boolean
           language_of_instruction: string | null
+          locale: string
           logo_url: string | null
           motto: string | null
           name: string
+          nemis_code: string | null
           payment_config: Json | null
           phone: string | null
           primary_color: string | null
+          registration_number: string | null
           regulatory_body: string | null
           school_levels: Json | null
+          school_type: Database["public"]["Enums"]["school_type"] | null
+          slug: string | null
           subjects: Json | null
+          subscription_plan: Database["public"]["Enums"]["subscription_plan"]
+          subscription_status: Database["public"]["Enums"]["subscription_status"]
+          timezone: string
+          trial_ends_at: string | null
           updated_at: string | null
         }
         Insert: {
@@ -964,22 +976,34 @@ export type Database = {
           address?: string | null
           code?: string | null
           country?: string | null
+          country_code?: string
           created_at?: string | null
+          currency_code?: string
+          curriculum?: Database["public"]["Enums"]["curriculum_type"] | null
           email?: string | null
           grading_system?: Json | null
           id?: string
           is_active?: boolean | null
           is_demo?: boolean
           language_of_instruction?: string | null
+          locale?: string
           logo_url?: string | null
           motto?: string | null
           name: string
+          nemis_code?: string | null
           payment_config?: Json | null
           phone?: string | null
           primary_color?: string | null
+          registration_number?: string | null
           regulatory_body?: string | null
           school_levels?: Json | null
+          school_type?: Database["public"]["Enums"]["school_type"] | null
+          slug?: string | null
           subjects?: Json | null
+          subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
+          subscription_status?: Database["public"]["Enums"]["subscription_status"]
+          timezone?: string
+          trial_ends_at?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -989,22 +1013,34 @@ export type Database = {
           address?: string | null
           code?: string | null
           country?: string | null
+          country_code?: string
           created_at?: string | null
+          currency_code?: string
+          curriculum?: Database["public"]["Enums"]["curriculum_type"] | null
           email?: string | null
           grading_system?: Json | null
           id?: string
           is_active?: boolean | null
           is_demo?: boolean
           language_of_instruction?: string | null
+          locale?: string
           logo_url?: string | null
           motto?: string | null
           name?: string
+          nemis_code?: string | null
           payment_config?: Json | null
           phone?: string | null
           primary_color?: string | null
+          registration_number?: string | null
           regulatory_body?: string | null
           school_levels?: Json | null
+          school_type?: Database["public"]["Enums"]["school_type"] | null
+          slug?: string | null
           subjects?: Json | null
+          subscription_plan?: Database["public"]["Enums"]["subscription_plan"]
+          subscription_status?: Database["public"]["Enums"]["subscription_status"]
+          timezone?: string
+          trial_ends_at?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1264,7 +1300,17 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      curriculum_type: "cbc" | "8-4-4" | "igcse" | "ib" | "cambridge" | "mixed"
+      school_type:
+        | "primary"
+        | "junior_secondary"
+        | "senior_secondary"
+        | "combined"
+        | "tertiary"
+        | "tvet"
+        | "international"
+      subscription_plan: "free" | "starter" | "standard" | "pro" | "enterprise"
+      subscription_status: "trial" | "active" | "past_due" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1391,6 +1437,19 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      curriculum_type: ["cbc", "8-4-4", "igcse", "ib", "cambridge", "mixed"],
+      school_type: [
+        "primary",
+        "junior_secondary",
+        "senior_secondary",
+        "combined",
+        "tertiary",
+        "tvet",
+        "international",
+      ],
+      subscription_plan: ["free", "starter", "standard", "pro", "enterprise"],
+      subscription_status: ["trial", "active", "past_due", "cancelled"],
+    },
   },
 } as const
