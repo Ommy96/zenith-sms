@@ -893,6 +893,242 @@ export type Database = {
           },
         ]
       }
+      expense_approvals: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          expense_id: string
+          id: string
+          notes: string | null
+          tenant_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          expense_id: string
+          id?: string
+          notes?: string | null
+          tenant_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          expense_id?: string
+          id?: string
+          notes?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_approvals_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_approvals_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_categories: {
+        Row: {
+          code: string | null
+          created_at: string
+          gl_account_code: string | null
+          id: string
+          is_active: boolean
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          gl_account_code?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          gl_account_code?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_vendors: {
+        Row: {
+          bank_account: string | null
+          bank_name: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          mpesa_number: string | null
+          name: string
+          notes: string | null
+          tax_pin: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          bank_account?: string | null
+          bank_name?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          mpesa_number?: string | null
+          name: string
+          notes?: string | null
+          tax_pin?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          bank_account?: string | null
+          bank_name?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          mpesa_number?: string | null
+          name?: string
+          notes?: string | null
+          tax_pin?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_vendors_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          attachment_url: string | null
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          expense_date: string
+          expense_number: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          payment_method: Database["public"]["Enums"]["expense_payment_method_enum"]
+          payment_reference: string | null
+          status: Database["public"]["Enums"]["expense_status_enum"]
+          tax_amount: number
+          tenant_id: string
+          total_amount: number | null
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          attachment_url?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          expense_date?: string
+          expense_number?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: Database["public"]["Enums"]["expense_payment_method_enum"]
+          payment_reference?: string | null
+          status?: Database["public"]["Enums"]["expense_status_enum"]
+          tax_amount?: number
+          tenant_id: string
+          total_amount?: number | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          attachment_url?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          expense_date?: string
+          expense_number?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          payment_method?: Database["public"]["Enums"]["expense_payment_method_enum"]
+          payment_reference?: string | null
+          status?: Database["public"]["Enums"]["expense_status_enum"]
+          tax_amount?: number
+          tenant_id?: string
+          total_amount?: number | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "expense_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fee_categories: {
         Row: {
           created_at: string
@@ -4318,6 +4554,7 @@ export type Database = {
       current_academic_year: { Args: { _tenant: string }; Returns: string }
       current_term: { Args: { _tenant: string }; Returns: string }
       generate_admission_number: { Args: { _tenant: string }; Returns: string }
+      generate_expense_number: { Args: { _tenant: string }; Returns: string }
       generate_invoice_number: { Args: { _tenant: string }; Returns: string }
       generate_receipt_number: { Args: { _tenant: string }; Returns: string }
       has_perm: {
@@ -4356,6 +4593,7 @@ export type Database = {
         Args: { _tenant: string }
         Returns: undefined
       }
+      seed_expense_categories: { Args: { _tenant: string }; Returns: undefined }
       seed_fee_categories: { Args: { _tenant: string }; Returns: undefined }
       seed_grade_levels: {
         Args: { _curriculum: string; _tenant: string }
@@ -4412,6 +4650,20 @@ export type Database = {
         | "knec_mock"
         | "internal"
         | "other"
+      expense_payment_method_enum:
+        | "cash"
+        | "mpesa"
+        | "bank_transfer"
+        | "cheque"
+        | "card"
+        | "other"
+      expense_status_enum:
+        | "draft"
+        | "submitted"
+        | "approved"
+        | "rejected"
+        | "paid"
+        | "void"
       fee_category_enum:
         | "tuition"
         | "transport"
@@ -4675,6 +4927,22 @@ export const Constants = {
         "knec_mock",
         "internal",
         "other",
+      ],
+      expense_payment_method_enum: [
+        "cash",
+        "mpesa",
+        "bank_transfer",
+        "cheque",
+        "card",
+        "other",
+      ],
+      expense_status_enum: [
+        "draft",
+        "submitted",
+        "approved",
+        "rejected",
+        "paid",
+        "void",
       ],
       fee_category_enum: [
         "tuition",
