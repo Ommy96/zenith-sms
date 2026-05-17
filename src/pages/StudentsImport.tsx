@@ -218,6 +218,13 @@ export default function StudentsImport() {
       } else if (field === "gender") {
         const g = String(val).trim().toLowerCase();
         record[field] = g.startsWith("m") ? "male" : g.startsWith("f") ? "female" : g;
+      } else if (field === "learner_category") {
+        const g = String(val).trim().toLowerCase();
+        record[field] = g.includes("board") ? "boarder" : g.includes("day") ? "day_scholar" : g;
+      } else if (field === "blood_group") {
+        const g = String(val).trim().toUpperCase().replace(/\s+/g, "");
+        const allowed = ["A+","A-","B+","B-","AB+","AB-","O+","O-"];
+        record[field] = allowed.includes(g) ? g : "unknown";
       } else {
         record[field] = String(val).trim();
       }
