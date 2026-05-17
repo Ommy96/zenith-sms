@@ -113,6 +113,7 @@ export default function Finance() {
           <TabsTrigger value="payments"><Receipt className="h-3 w-3 mr-1" />Payments</TabsTrigger>
           <TabsTrigger value="structures"><Layers className="h-3 w-3 mr-1" />Fee Structures</TabsTrigger>
           <TabsTrigger value="reminders"><Bell className="h-3 w-3 mr-1" />Reminders</TabsTrigger>
+          {can("payroll.view") && <TabsTrigger value="payroll"><Users className="h-3 w-3 mr-1" />Payroll</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-4">
@@ -144,6 +145,12 @@ export default function Finance() {
         <TabsContent value="reminders" className="mt-4">
           <RemindersTab tenantId={tenantId!} canConfigure={can("finance.configure")} />
         </TabsContent>
+
+        {can("payroll.view") && (
+          <TabsContent value="payroll" className="mt-4">
+            <PayrollTab tenantId={tenantId!} canManage={can("payroll.manage")} />
+          </TabsContent>
+        )}
       </Tabs>
     </motion.div>
   );
