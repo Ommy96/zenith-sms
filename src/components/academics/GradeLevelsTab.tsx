@@ -39,7 +39,7 @@ export function GradeLevelsTab() {
   useEffect(() => { load(); }, [load]);
 
   const seed = async () => {
-    if (!tenantId) return;
+    if (!tenantId) return toast({ title: "No school selected", description: "Finish school setup first.", variant: "destructive" });
     setSeeding(true);
     const { error } = await supabase.rpc("seed_grade_levels" as any, { _tenant: tenantId, _curriculum: preset });
     setSeeding(false);
@@ -49,7 +49,10 @@ export function GradeLevelsTab() {
   };
 
   const add = async () => {
-    if (!tenantId || !form.code || !form.name) return;
+    if (!tenantId) return toast({ title: "No school selected", description: "Finish school setup first.", variant: "destructive" });
+    if (!form.code || !form.name) {
+      return toast({ title: "Missing fields", description: "Enter both a code and a name.", variant: "destructive" });
+    }
     const sort_order = (levels[levels.length - 1]?.sort_order || 0) + 1;
     const { error } = await supabase.from("grade_levels").insert({ ...form, sort_order, tenant_id: tenantId });
     if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });

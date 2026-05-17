@@ -35,14 +35,20 @@ export function CalendarTab() {
   useEffect(() => { load(); }, [load]);
 
   const addYear = async () => {
-    if (!tenantId || !yForm.name || !yForm.start_date || !yForm.end_date) return;
+    if (!tenantId) return toast({ title: "No school selected", description: "Finish school setup first.", variant: "destructive" });
+    if (!yForm.name || !yForm.start_date || !yForm.end_date) {
+      return toast({ title: "Missing fields", description: "Enter a year name, start date and end date.", variant: "destructive" });
+    }
     const { error } = await supabase.from("academic_years").insert({ ...yForm, tenant_id: tenantId });
     if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
     setYForm({ name: "", start_date: "", end_date: "" });
     load();
   };
   const addTerm = async () => {
-    if (!tenantId || !tForm.academic_year_id || !tForm.name) return;
+    if (!tenantId) return toast({ title: "No school selected", description: "Finish school setup first.", variant: "destructive" });
+    if (!tForm.academic_year_id || !tForm.name || !tForm.start_date || !tForm.end_date) {
+      return toast({ title: "Missing fields", description: "Pick a year and enter term name, start date and end date.", variant: "destructive" });
+    }
     const { error } = await supabase.from("terms").insert({ ...tForm, tenant_id: tenantId });
     if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
     setTForm({ academic_year_id: "", name: "", start_date: "", end_date: "" });

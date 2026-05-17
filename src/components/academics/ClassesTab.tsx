@@ -32,7 +32,8 @@ export function ClassesTab() {
   useEffect(() => { load(); }, [load]);
 
   const add = async () => {
-    if (!tenantId || !form.name) return;
+    if (!tenantId) return toast({ title: "No school selected", description: "Finish school setup first.", variant: "destructive" });
+    if (!form.name) return toast({ title: "Missing name", description: "Enter a class name.", variant: "destructive" });
     const { error } = await supabase.from("classes").insert({
       tenant_id: tenantId,
       name: form.name,

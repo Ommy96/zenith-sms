@@ -25,7 +25,8 @@ export function RoomsTab() {
   useEffect(() => { load(); }, [load]);
 
   const add = async () => {
-    if (!tenantId || !form.name) return;
+    if (!tenantId) return toast({ title: "No school selected", description: "Finish school setup first.", variant: "destructive" });
+    if (!form.name) return toast({ title: "Missing name", description: "Enter a room name.", variant: "destructive" });
     const { error } = await supabase.from("rooms").insert({
       tenant_id: tenantId, name: form.name, type: form.type as any, capacity: form.capacity ? parseInt(form.capacity) : null,
     });
