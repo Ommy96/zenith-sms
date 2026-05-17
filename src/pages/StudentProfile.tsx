@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Edit, Loader2, Mail, Phone, Calendar, MapPin, Shield, FileText, Activity, Heart, GraduationCap, DollarSign } from "lucide-react";
+import { ArrowLeft, Edit, Loader2, Mail, Phone, Calendar, MapPin, Shield, FileText, Activity, Heart, GraduationCap, DollarSign, Smartphone, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
@@ -23,9 +25,14 @@ export default function StudentProfile() {
   const [guardians, setGuardians] = useState<any[]>([]);
   const [classRow, setClassRow] = useState<any>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
   const [activity, setActivity] = useState<any[]>([]);
   const [docs, setDocs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stkOpen, setStkOpen] = useState(false);
+  const [stkForm, setStkForm] = useState({ amount: "", phone: "", invoice_id: "" });
+  const [stkBusy, setStkBusy] = useState(false);
+  const [stmtBusy, setStmtBusy] = useState(false);
 
   const canViewMedical = can("students.view_medical");
 
@@ -37,16 +44,18 @@ export default function StudentProfile() {
       if (error || !s) { toast({ title: "Student not found", variant: "destructive" }); navigate("/students"); return; }
       setStudent(s);
 
-      const [{ data: sg }, { data: cls }, { data: inv }, { data: act }, { data: dd }] = await Promise.all([
+      const [{ data: sg }, { data: cls }, { data: inv }, { data: pay }, { data: act }, { data: dd }] = await Promise.all([
         supabase.from("student_guardians").select("*, guardians(*)").eq("student_id", id),
         s.current_class_id ? supabase.from("classes").select("*").eq("id", s.current_class_id).maybeSingle() : Promise.resolve({ data: null }),
-        supabase.from("invoices").select("*").eq("student_id", id).order("created_at", { ascending: false }).limit(20),
+        supabase.from("student_invoices").select("*, terms:term_id(name), academic_years:academic_year_id(name)").eq("student_id", id).order("created_at", { ascending: false }).limit(50),
+        supabase.from("student_payments").select("*").eq("student_id", id).order("paid_at", { ascending: false }).limit(50),
         supabase.from("student_activity").select("*").eq("student_id", id).order("occurred_at", { ascending: false }).limit(50),
         supabase.from("documents").select("*").eq("owner_type", "student").eq("owner_id", id).order("created_at", { ascending: false }),
       ]);
       setGuardians(sg ?? []);
       setClassRow(cls);
       setInvoices(inv ?? []);
+      setPayments(pay ?? []);
       setActivity(act ?? []);
       setDocs(dd ?? []);
       setLoading(false);
@@ -60,7 +69,61 @@ export default function StudentProfile() {
   const govFields = getStudentGovIdFields(tenant?.country_code);
   const populatedGovFields = govFields.filter(f => student[f.key]);
   const age = student.date_of_birth ? Math.floor((Date.now() - new Date(student.date_of_birth).getTime()) / (365.25 * 24 * 3600 * 1000)) : null;
-  const balance = invoices.reduce((acc, i) => acc + Number(i.amount || 0) - Number(i.paid_amount || 0), 0);
+  const balance = invoices
+    .filter((i: any) => i.status !== "void")
+    .reduce((acc, i) => acc + Number(i.balance || 0), 0);
+  const totalBilled = invoices.filter((i: any) => i.status !== "void" && i.status !== "draft").reduce((a, i) => a + Number(i.total || 0), 0);
+  const totalPaid = invoices.reduce((a, i) => a + Number(i.paid_total || 0), 0);
+  const outstandingInvoices = invoices.filter((i: any) => Number(i.balance) > 0 && i.status !== "void");
+
+  const openPay = (invoiceId?: string, amount?: number) => {
+    const primaryGuardianPhone = guardians.find((g: any) => g.is_primary_contact)?.guardians?.phone_primary
+      || guardians[0]?.guardians?.phone_primary || "";
+    setStkForm({
+      invoice_id: invoiceId || "",
+      amount: amount ? String(amount) : String(balance || ""),
+      phone: primaryGuardianPhone,
+    });
+    setStkOpen(true);
+  };
+
+  const requestStk = async () => {
+    const amt = Number(stkForm.amount);
+    if (!amt || amt <= 0) return toast({ title: "Enter a valid amount", variant: "destructive" });
+    if (!stkForm.phone) return toast({ title: "Phone required", variant: "destructive" });
+    setStkBusy(true);
+    const { data, error } = await supabase.functions.invoke("mpesa-stk-push", {
+      body: {
+        student_id: student.id,
+        amount: amt,
+        phone: stkForm.phone,
+        invoice_id: stkForm.invoice_id || null,
+        account_reference: student.admission_number,
+      },
+    });
+    setStkBusy(false);
+    if (error) return toast({ title: "STK failed", description: error.message, variant: "destructive" });
+    toast({ title: "STK push sent", description: "Ask the parent to enter their M-Pesa PIN." });
+    setStkOpen(false);
+  };
+
+  const downloadStatement = async () => {
+    setStmtBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-statement-pdf", {
+        body: { student_id: student.id },
+      });
+      if (error) throw error;
+      // edge function returns { url }
+      const url = (data as any)?.url;
+      if (url) window.open(url, "_blank");
+      else toast({ title: "Statement generated", description: "Saved to documents." });
+    } catch (e: any) {
+      toast({ title: "Failed", description: e.message, variant: "destructive" });
+    } finally {
+      setStmtBusy(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -147,27 +210,105 @@ export default function StudentProfile() {
 
             <TabsContent value="fees" className="mt-4 space-y-3">
               <Card className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold flex items-center gap-2"><DollarSign className="h-4 w-4" /> Outstanding balance</h3>
-                  <span className={`text-lg font-semibold ${balance > 0 ? "text-destructive" : "text-success"}`}><Money amount={balance} /></span>
+                <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                  <div>
+                    <h3 className="text-sm font-semibold flex items-center gap-2"><DollarSign className="h-4 w-4" /> Fee account</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">Billed <Money amount={totalBilled} /> · Paid <Money amount={totalPaid} /></p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Outstanding balance</p>
+                    <p className={`text-2xl font-bold ${balance > 0 ? "text-destructive" : "text-emerald-600"}`}><Money amount={balance} /></p>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  {invoices.length === 0 ? <p className="text-sm text-muted-foreground">No invoices.</p> :
-                    invoices.map(inv => (
-                      <div key={inv.id} className="flex items-center justify-between text-sm py-2 border-b last:border-0">
-                        <div>
-                          <p className="font-medium">{inv.description || inv.invoice_number || "Invoice"}</p>
-                          <p className="text-xs text-muted-foreground">{inv.term} {inv.academic_year}</p>
-                        </div>
-                        <div className="text-right">
-                          <p><Money amount={Number(inv.amount)} /></p>
-                          <Badge variant="outline" className="text-[10px] capitalize">{inv.status}</Badge>
-                        </div>
-                      </div>
-                    ))
-                  }
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" onClick={() => openPay()} disabled={balance <= 0} className="gap-1.5">
+                    <Smartphone className="h-3.5 w-3.5" /> Pay via M-Pesa
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={downloadStatement} disabled={stmtBusy} className="gap-1.5">
+                    {stmtBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} Statement
+                  </Button>
                 </div>
               </Card>
+
+              <Card className="p-5">
+                <h4 className="text-sm font-semibold mb-3">Invoices</h4>
+                {invoices.length === 0 ? <p className="text-sm text-muted-foreground">No invoices yet.</p> : (
+                  <div className="space-y-2">
+                    {invoices.map((inv: any) => (
+                      <div key={inv.id} className="flex items-center justify-between gap-3 text-sm py-2 border-b last:border-0">
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{inv.invoice_number || "Invoice"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {inv.terms?.name || ""} {inv.academic_years?.name || ""}
+                            {inv.due_date && ` · due ${inv.due_date}`}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-medium"><Money amount={Number(inv.total)} /></p>
+                          <p className="text-xs">Bal <Money amount={Number(inv.balance)} /></p>
+                          <Badge variant={inv.status === "paid" ? "default" : inv.status === "overdue" ? "destructive" : "outline"} className="text-[10px] capitalize mt-0.5">{inv.status}</Badge>
+                        </div>
+                        {Number(inv.balance) > 0 && inv.status !== "void" && (
+                          <Button size="sm" variant="ghost" className="shrink-0" onClick={() => openPay(inv.id, Number(inv.balance))}>Pay</Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+
+              <Card className="p-5">
+                <h4 className="text-sm font-semibold mb-3">Recent payments</h4>
+                {payments.length === 0 ? <p className="text-sm text-muted-foreground">No payments recorded.</p> : (
+                  <div className="space-y-2">
+                    {payments.map((p: any) => (
+                      <div key={p.id} className="flex items-center justify-between text-sm py-2 border-b last:border-0">
+                        <div>
+                          <p className="font-medium capitalize">{p.method?.replace("_", " ")}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(p.paid_at).toLocaleString()} {p.reference ? `· ${p.reference}` : ""}</p>
+                        </div>
+                        <p className="font-semibold text-emerald-600"><Money amount={Number(p.amount)} /></p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+
+              <Dialog open={stkOpen} onOpenChange={setStkOpen}>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Request M-Pesa payment</DialogTitle></DialogHeader>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground">Phone (2547XXXXXXXX)</label>
+                      <Input value={stkForm.phone} onChange={(e) => setStkForm({ ...stkForm, phone: e.target.value })} placeholder="2547XXXXXXXX" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Amount</label>
+                      <Input type="number" value={stkForm.amount} onChange={(e) => setStkForm({ ...stkForm, amount: e.target.value })} />
+                    </div>
+                    {outstandingInvoices.length > 0 && (
+                      <div>
+                        <label className="text-xs text-muted-foreground">Apply to invoice (optional)</label>
+                        <select className="w-full border rounded px-2 py-1.5 text-sm bg-background"
+                          value={stkForm.invoice_id}
+                          onChange={(e) => setStkForm({ ...stkForm, invoice_id: e.target.value })}>
+                          <option value="">Auto-allocate to oldest</option>
+                          {outstandingInvoices.map((i: any) => (
+                            <option key={i.id} value={i.id}>{i.invoice_number} — bal {Number(i.balance).toFixed(2)}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setStkOpen(false)}>Cancel</Button>
+                    <Button onClick={requestStk} disabled={stkBusy} className="gap-1.5">
+                      {stkBusy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                      Send STK push
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </TabsContent>
 
             {canViewMedical && (
