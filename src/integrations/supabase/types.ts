@@ -50,7 +50,7 @@ export type Database = {
             foreignKeyName: "activity_logs_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
-            referencedRelation: "schools"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -121,7 +121,7 @@ export type Database = {
             foreignKeyName: "announcements_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
-            referencedRelation: "schools"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -186,7 +186,7 @@ export type Database = {
             foreignKeyName: "applications_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
-            referencedRelation: "schools"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -237,7 +237,7 @@ export type Database = {
             foreignKeyName: "attendance_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
-            referencedRelation: "schools"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
           {
@@ -285,7 +285,7 @@ export type Database = {
             foreignKeyName: "classes_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
-            referencedRelation: "schools"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
           {
@@ -343,7 +343,7 @@ export type Database = {
             foreignKeyName: "exam_results_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
-            referencedRelation: "schools"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
           {
@@ -397,7 +397,7 @@ export type Database = {
             foreignKeyName: "exams_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
-            referencedRelation: "schools"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -477,7 +477,7 @@ export type Database = {
             foreignKeyName: "inventory_assets_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
-            referencedRelation: "schools"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -533,7 +533,7 @@ export type Database = {
             foreignKeyName: "invoices_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
-            referencedRelation: "schools"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
           {
@@ -584,7 +584,7 @@ export type Database = {
             foreignKeyName: "library_books_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
-            referencedRelation: "schools"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -787,88 +787,10 @@ export type Database = {
             foreignKeyName: "profiles_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
-            referencedRelation: "schools"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
-      }
-      schools: {
-        Row: {
-          academic_calendar: Json | null
-          academic_year_end: string | null
-          academic_year_start: string | null
-          address: string | null
-          code: string | null
-          country: string | null
-          created_at: string | null
-          email: string | null
-          grading_system: Json | null
-          id: string
-          is_active: boolean | null
-          is_demo: boolean
-          language_of_instruction: string | null
-          logo_url: string | null
-          motto: string | null
-          name: string
-          payment_config: Json | null
-          phone: string | null
-          primary_color: string | null
-          regulatory_body: string | null
-          school_levels: Json | null
-          subjects: Json | null
-          updated_at: string | null
-        }
-        Insert: {
-          academic_calendar?: Json | null
-          academic_year_end?: string | null
-          academic_year_start?: string | null
-          address?: string | null
-          code?: string | null
-          country?: string | null
-          created_at?: string | null
-          email?: string | null
-          grading_system?: Json | null
-          id?: string
-          is_active?: boolean | null
-          is_demo?: boolean
-          language_of_instruction?: string | null
-          logo_url?: string | null
-          motto?: string | null
-          name: string
-          payment_config?: Json | null
-          phone?: string | null
-          primary_color?: string | null
-          regulatory_body?: string | null
-          school_levels?: Json | null
-          subjects?: Json | null
-          updated_at?: string | null
-        }
-        Update: {
-          academic_calendar?: Json | null
-          academic_year_end?: string | null
-          academic_year_start?: string | null
-          address?: string | null
-          code?: string | null
-          country?: string | null
-          created_at?: string | null
-          email?: string | null
-          grading_system?: Json | null
-          id?: string
-          is_active?: boolean | null
-          is_demo?: boolean
-          language_of_instruction?: string | null
-          logo_url?: string | null
-          motto?: string | null
-          name?: string
-          payment_config?: Json | null
-          phone?: string | null
-          primary_color?: string | null
-          regulatory_body?: string | null
-          school_levels?: Json | null
-          subjects?: Json | null
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       staff: {
         Row: {
@@ -921,7 +843,7 @@ export type Database = {
             foreignKeyName: "staff_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
-            referencedRelation: "schools"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -1004,10 +926,88 @@ export type Database = {
             foreignKeyName: "students_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
-            referencedRelation: "schools"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
+      }
+      tenants: {
+        Row: {
+          academic_calendar: Json | null
+          academic_year_end: string | null
+          academic_year_start: string | null
+          address: string | null
+          code: string | null
+          country: string | null
+          created_at: string | null
+          email: string | null
+          grading_system: Json | null
+          id: string
+          is_active: boolean | null
+          is_demo: boolean
+          language_of_instruction: string | null
+          logo_url: string | null
+          motto: string | null
+          name: string
+          payment_config: Json | null
+          phone: string | null
+          primary_color: string | null
+          regulatory_body: string | null
+          school_levels: Json | null
+          subjects: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          academic_calendar?: Json | null
+          academic_year_end?: string | null
+          academic_year_start?: string | null
+          address?: string | null
+          code?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
+          grading_system?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_demo?: boolean
+          language_of_instruction?: string | null
+          logo_url?: string | null
+          motto?: string | null
+          name: string
+          payment_config?: Json | null
+          phone?: string | null
+          primary_color?: string | null
+          regulatory_body?: string | null
+          school_levels?: Json | null
+          subjects?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          academic_calendar?: Json | null
+          academic_year_end?: string | null
+          academic_year_start?: string | null
+          address?: string | null
+          code?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
+          grading_system?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_demo?: boolean
+          language_of_instruction?: string | null
+          logo_url?: string | null
+          motto?: string | null
+          name?: string
+          payment_config?: Json | null
+          phone?: string | null
+          primary_color?: string | null
+          regulatory_body?: string | null
+          school_levels?: Json | null
+          subjects?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       transport_routes: {
         Row: {
@@ -1048,28 +1048,10 @@ export type Database = {
             foreignKeyName: "transport_routes_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
-            referencedRelation: "schools"
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
-      }
-      user_roles: {
-        Row: {
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
       }
       whatsapp_broadcasts: {
         Row: {
@@ -1279,22 +1261,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_user_school_id: { Args: { _user_id: string }; Returns: string }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      app_role:
-        | "super_admin"
-        | "school_admin"
-        | "teacher"
-        | "parent"
-        | "student"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1421,8 +1391,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["super_admin", "school_admin", "teacher", "parent", "student"],
-    },
+    Enums: {},
   },
 } as const
