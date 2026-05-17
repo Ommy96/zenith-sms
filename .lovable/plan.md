@@ -1,90 +1,132 @@
-# Student Information System — Build Plan
+# Academic Engine — Build Plan
 
-This is the identity layer for SomaSphere. Scope is large; I'll ship it in 4 migration + UI phases so each phase is reviewable and the app stays usable between phases.
+Massive scope. I'll ship in 5 phases, each independently usable. Phase 1 is one big migration that everything else depends on; later phases mix small migrations + UI.
 
-## Phase 1 — Data model (one migration)
+## Phase 1 — Schema foundation (one migration)
 
-Extend/replace existing thin `students` and `staff` tables. Add new tables. All tables tenant-scoped with RLS using existing `is_tenant_member` / `has_perm` helpers.
+### Academic calendar
+- `academic_years` (tenant_id, name, start_date, end_date, is_current). Unique partial index for one current per tenant.
+- `terms` (tenant_id, academic_year_id, name, start_date, end_date, is_current). Same partial-unique trick.
 
-### `students` (extended)
-Identity, government IDs (all countries' fields in one table — UI hides by country), academic, contact, medical, special needs.
-- Adds: `middle_name, preferred_name, nationality, photo_url`
-- Gov IDs: `nemis_upi, birth_certificate_number, birth_certificate_serial, knec_assessment_number, kcpe_index_number, kcse_index_number, huduma_number, national_id_number, lin, une_index_number, prems_number, necta_index_number, reb_student_id, moe_student_id`
-- Academic: `current_class_id, stream, admission_grade, previous_school, house, enrollment_status, expected_graduation_year, learner_category`
-- Contact: `residential_address, city, county_or_region, postal_code, country, emergency_contact_name/phone/relation`
-- Medical (gated by `students.view_medical` perm): `blood_group, allergies, chronic_conditions, medications, doctor_name, doctor_phone, nhif_or_shif_number, insurance_provider, insurance_policy_number, last_medical_checkup, immunization_status jsonb`
-- SEN: `has_special_needs, special_needs_details, iep_on_file, accommodations`
-- Enums: `gender_enum, enrollment_status_enum, learner_category_enum, blood_group_enum, guardian_relationship_enum, employment_type_enum`
+### Structure
+- `grade_levels` (tenant_id, code, name, sort_order, stage). Seeded via a `seed_grade_levels(tenant, curriculum)` SQL function (CBC, 8-4-4, UG, TZ, RW, IGCSE).
+- `rooms` (tenant_id, name, type enum [classroom, lab, hall, sports], capacity).
+- `classes` extended: add `grade_level_id`, `stream`, `class_teacher_id`, `room_id`, `current_enrollment` (kept fresh by trigger when `students.current_class_id` changes).
+- `subjects` extended: `code`, `category` enum (core, elective, co_curricular, life_skills), `curriculum_tag`, `is_assessed`, `assessment_type` enum (continuous, exam, both).
+- `class_subjects` junction (class_id, subject_id, teacher_id, periods_per_week).
 
-### `guardians` + `student_guardians`
-Guardian profile + many-to-many junction with flags (`is_primary_contact, has_pickup_authorization, has_financial_responsibility, receives_communications`). Partial unique index enforces one primary per student.
+### CBC vocabulary (only used when `tenants.curriculum = 'cbc'`)
+- `learning_areas` (tenant_id, code, name, grade_level_id nullable, sort_order)
+- `strands`, `sub_strands`, `learning_outcomes` — nested fk chain.
+- `core_competencies`, `values_cbc` — tenant-level, pre-seeded with the 7 + 7.
+- `cbc_assessment_scores` (tenant_id, student_id, learning_outcome_id, term_id, performance_level smallint 1–4, teacher_id, comment, recorded_at).
 
-### `documents` (polymorphic)
-`tenant_id, owner_type ('student'|'staff'|'guardian'), owner_id, doc_type, file_url, file_name, mime_type, size_bytes, uploaded_by, notes`. Storage bucket `documents` (private) with per-tenant path prefix RLS.
+### Traditional grading
+- `grading_scales` (tenant_id, name, is_default). Bands stored as `grade_bands` rows (min_pct, max_pct, grade, points, remark).
 
-### `staff` (extended)
-Adds: `staff_number, tsc_number, kra_pin, nssf_number, nhif_or_shif_number, bank_*, employment_type, date_employed, date_of_confirmation, job_title, reports_to, subjects_taught jsonb, classes_taught jsonb, highest_qualification, institution, year_qualified, professional_certifications jsonb, salary_scale, gross_salary, next_of_kin_*`.
+### Exams
+- `exams` already exists — extend with `term_id`, `type` enum, `status` enum, `weight`.
+- `exam_subjects` (exam_id, subject_id, max_marks, grading_scale_id nullable).
+- Replace existing `exam_results` shape with `student_exam_results`: per-subject row with `raw_marks`, `max_marks`, `grade`, `points`, `position_in_class`, `position_in_stream`, `teacher_comment`, `entered_by`, `locked`. Keep old table compatible by re-using and adding cols.
 
-### `student_activity` (timeline)
-`tenant_id, student_id, event_type, title, description, metadata jsonb, occurred_at`. Read-only feed populated by triggers + app code.
+### Continuous assessment
+- `assessments` (tenant_id, class_id, subject_id, teacher_id, type, title, max_marks, weight, due_date).
+- `student_assessment_scores` (assessment_id, student_id, score, comment).
+- `assessment_outcomes` junction → `learning_outcomes` for CBC.
+
+### Report cards
+- `report_card_templates` (tenant_id, name, curriculum_kind, layout jsonb, is_default).
+- `report_card_runs` (tenant_id, class_id, term_id, status enum [queued, running, ready, failed], requested_by, total, completed, zip_url).
+- `report_cards` (run_id, student_id, pdf_url, status, error).
+- Storage bucket `reports` (private, tenant-prefixed RLS).
+
+### Timetable
+- `periods` (tenant_id, name, start_time, end_time, day_of_week 0–6, is_break, sort_order).
+- `timetable_slots` (tenant_id, term_id, class_id, period_id, subject_id, teacher_id, room_id). Unique partial indexes:
+  - (term_id, teacher_id, period_id) WHERE teacher_id NOT NULL
+  - (term_id, room_id, period_id) WHERE room_id NOT NULL
+  - (term_id, class_id, period_id)
+
+### Lesson plans / schemes of work
+- `schemes_of_work` (tenant_id, subject_id, grade_level_id, term_id, file_url, rich_text, uploaded_by, approved_by, status enum).
+- `lesson_plans` (tenant_id, teacher_id, subject_id, class_id, date, period_id, learning_outcome_ids uuid[], objectives, materials, intro, development, conclusion, assessment, homework, reflection, hod_status enum, hod_id).
 
 ### Permissions added
-`students.view_medical`, `students.import`, `staff.view_sensitive`. Mapped to `school_admin`, `registrar`, `nurse`, `bursar` (medical only for admin/nurse).
+`academics.configure`, `exams.lock`, `exams.unlock`, `reports.generate`, `reports.publish`, `timetable.edit`, `lessons.approve`. Mapped to existing roles.
 
-### Admission number generator
-SQL function `generate_admission_number(tenant_id)` — reads `tenant_settings.admission_number_format` (default `{CODE}/{YYYY}/{####}`), atomically increments a counter row in `tenant_settings` key=`admission_number_seq:{year}`.
+### Helpers (SQL functions)
+- `current_academic_year(tenant)` / `current_term(tenant)` — used by UI.
+- `seed_grade_levels(tenant, curriculum)` — invoked from setup.
+- `recompute_exam_positions(exam_id)` — recompute class & stream positions in bulk.
+- `compute_grade(scale_id, pct)` — returns (grade, points, remark).
 
-## Phase 2 — Student list + profile pages
+## Phase 2 — Setup + Structure UI
 
-**`src/pages/Students.tsx`** (replace existing):
-- DataTable with column toggle, filters (class, stream, status, gender, balance, learner_category, admission_year, house), debounced search across name/admission#/NEMIS/guardian phone+name (via Postgres `or` filter joined to guardians).
-- Bulk actions menu, saved views stored in `tenant_settings` key=`saved_views:students:{user_id}`.
-- Export CSV/XLSX client-side (existing `xlsx` deps); PDF via `jspdf`.
+`src/pages/Academics.tsx` (replace stub) becomes a hub with sub-tabs:
+- **Calendar** — manage academic years & terms, set current.
+- **Grade Levels** — seed by curriculum, manual add/edit.
+- **Classes** — list/grid, assign class teacher + room + capacity.
+- **Subjects** — list, CBC-aware (categories), assign to classes via class_subjects matrix.
+- **Rooms** — simple CRUD.
 
-**`src/pages/StudentProfile.tsx`** (new, route `/students/:id`):
-- Header card (photo, name, admission#, class, status badge, quick actions).
-- Tabs: Overview, Academics, Attendance, Fees, Discipline, Health (perm-gated), Documents, Activity.
-- Right rail: guardians, emergency contacts, key dates.
-- Inline edit fields → write through + audit_logs row.
+`src/components/academics/CbcCurriculumEditor.tsx` — only renders for CBC tenants; tree view of learning_areas → strands → sub_strands → learning_outcomes with inline add.
 
-**Country-aware fields**: small helper `useCountryFields()` returns which gov-ID inputs to render based on `tenant.country_code`.
+## Phase 3 — Exams + grade entry
 
-## Phase 3 — Admission wizard + Quick Add
+`src/pages/Examinations.tsx` (replace): list of exams with status, "New exam" wizard that picks term, exam_subjects + max marks.
 
-**`src/pages/AdmissionWizard.tsx`** (route `/admissions/new`):
-8 steps in `<Tabs>` with form state in single `react-hook-form` + `zod` schema. Step 7 uploads documents to storage. On submit:
-1. Insert student → returns id + admission_number
-2. Insert guardians + junction rows
-3. Insert documents
-4. Insert initial invoice (look up class fee template if exists)
-5. Insert activity_log "admitted"
-6. Fire-and-forget edge function `send-welcome-sms` (skipped if no WhatsApp config — just logs)
-7. Optionally render NEMIS CSV row downloadable button
+`src/pages/ExamGradeEntry.tsx` (new, route `/examinations/:examId/entry`):
+- Spreadsheet grid (custom, not heavy lib). Rows = students in class, cols = subjects.
+- Per-cell debounced auto-save (250ms). Out-of-range red border. Tab/Enter navigation. Excel paste handler.
+- Lock toggle requires `exams.lock`. Locked cells read-only.
+- "Recompute positions" button calls SQL helper.
+- Mobile fallback: subject-by-subject view with swipe (`framer-motion` drag).
 
-**Quick Add**: drawer with 3 fields (name, class, guardian phone) on the Students page.
+`src/pages/CbcAssessmentEntry.tsx` (new, `/cbc/assess`):
+- Pick learning_area → strand → sub_strand → outcomes.
+- Student list with 4-button performance level selector per outcome + comment textarea.
+- "Apply to selection" bulk action.
 
-## Phase 4 — Bulk import with AI mapping + Staff
+## Phase 4 — Report cards
 
-**`src/pages/StudentsImport.tsx`** (refactor existing):
-- Step 1 upload, Step 2 AI mapping preview (uses existing `suggest-import-mapping` edge fn, extend canonical fields to include NEMIS UPI + guardian fields), Step 3 validation table with row errors, Step 4 import.
-- Detect NEMIS progression CSV by header signature; ship a hardcoded mapping for it.
-- Cache mapping in existing `import_mappings` table (already exists).
+`src/pages/ReportCards.tsx` — pick class + term + template → "Generate". Lists runs with progress.
 
-**`src/pages/Staff.tsx`** + **`src/pages/StaffProfile.tsx`**: mirror student structure with staff-specific fields.
+Edge function `generate-report-cards` (background):
+- Iterates students in class, builds PDF per student with `pdf-lib` (using stored layout jsonb or built-in template), uploads to `reports/{tenant}/{run}/{student}.pdf`, updates `report_cards`. When done, zips via deno (`compress` from `jsr:@std/archive` or manual) and stores zip_url.
+- Picks template by `tenants.curriculum` if not specified: cbc / 8-4-4 / a-level / international.
+- AI comment uses existing `generate-report-comment` edge fn.
+- Each report_card row also stores per-student delivery URL.
 
-## Notes / out-of-scope-for-now
+Trigger from UI is `supabase.functions.invoke`; the function returns immediately (202) and works async (uses `EdgeRuntime.waitUntil`).
 
-- Portal user provisioning for guardians/students is stubbed (`portal_user_id` left null; no auth.users created).
-- Discipline tab shows empty state until discipline module exists.
-- PDF ID card / transfer letter use simple `jspdf` templates.
+Template editor — minimal v1: select from 4 built-in layouts + tweak header/footer text + colour. Drag-drop block editor deferred (gated behind Pro plan later).
 
-## Files I'll create/edit
+## Phase 5 — Timetable + lesson plans
 
-Migrations: 1 large
-New pages: `StudentProfile.tsx`, `AdmissionWizard.tsx`, `StaffProfile.tsx`
-Replaced: `Students.tsx`, `Staff.tsx`, `StudentsImport.tsx`
-New components: `StudentHeader`, `GuardianCard`, `DocumentsList`, `ActivityFeed`, `CountryAwareFields`, `QuickAddStudentDrawer`, `BulkActionsBar`, `SavedViewsMenu`
-Edge fn edits: extend `suggest-import-mapping` canonical schema
-Routes added in `App.tsx`
+`src/pages/Timetable.tsx` (new, `/timetable` route — currently aliased to Academics; we replace):
+- Grid view (rows = periods, cols = days), one grid per class.
+- Drag a "subject chip" from a side palette onto a cell; chip carries subject + teacher.
+- Real-time conflict detection: on drop, query for conflicting teacher/room/class slot in the same period/term and refuse (toast). Use the unique indexes as final guardrail.
+- Tabs: Class view / Teacher view / Room view / Student view.
+- Periods config drawer.
 
-After Phase 1 migration approves, I'll implement Phases 2–4 sequentially in one continuous build, pausing only if I hit a question I can't answer from existing conventions.
+AI auto-generator stub: button calls edge fn `auto-timetable` that returns a basic round-robin assignment respecting class_subjects.periods_per_week (heavy CP-SAT deferred).
+
+`src/pages/Schemes.tsx` + `src/pages/LessonPlans.tsx`:
+- Schemes: upload + simple list + HOD approval.
+- Lesson plans: form per date + period with CBC outcome multi-select if curriculum=cbc. "AI draft" calls a new edge fn `draft-lesson-plan` (Lovable AI) seeded with selected outcomes/objectives.
+
+## Phase 6 — Out of scope for this pass
+- Drag-drop visual report card editor (Pro feature).
+- True constraint-solver timetabling.
+- Parent-portal report card delivery (delivered via existing comms once portals are built).
+- Multi-version report card history & re-issuance.
+
+## Files
+Migrations: 1 large (phase 1) + small ones per phase as needed.
+New pages: `ExamGradeEntry`, `CbcAssessmentEntry`, `ReportCards`, `Timetable`, `Schemes`, `LessonPlans`.
+Replaced pages: `Academics`, `Examinations`.
+New edge fns: `generate-report-cards`, `auto-timetable`, `draft-lesson-plan`.
+New buckets: `reports` (private).
+
+I'll start with Phase 1 (migration), then build phases 2–5 sequentially without pausing unless I hit a question I can't infer from existing conventions.
