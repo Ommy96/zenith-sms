@@ -16,6 +16,12 @@ import MobileMoney from "./pages/MobileMoney";
 import WhatsApp from "./pages/WhatsApp";
 import Academics from "./pages/Academics";
 import Examinations from "./pages/Examinations";
+import ExamGradeEntry from "./pages/ExamGradeEntry";
+import CbcAssessment from "./pages/CbcAssessment";
+import ReportCards from "./pages/ReportCards";
+import Timetable from "./pages/Timetable";
+import SchemesOfWork from "./pages/SchemesOfWork";
+import LessonPlans from "./pages/LessonPlans";
 import Attendance from "./pages/Attendance";
 import Staff from "./pages/Staff";
 import StaffProfile from "./pages/StaffProfile";
@@ -87,7 +93,12 @@ function AppRoutes() {
       <Route path="/academics" element={<ProtectedRoute><DashboardLayout><Academics /></DashboardLayout></ProtectedRoute>} />
       <Route path="/attendance" element={<ProtectedRoute><DashboardLayout><Attendance /></DashboardLayout></ProtectedRoute>} />
       <Route path="/examinations" element={<ProtectedRoute><DashboardLayout><Examinations /></DashboardLayout></ProtectedRoute>} />
-      <Route path="/timetable" element={<ProtectedRoute><DashboardLayout><Academics /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/examinations/:examId/entry" element={<ProtectedRoute><DashboardLayout><ExamGradeEntry /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/cbc/assess" element={<ProtectedRoute><DashboardLayout><CbcAssessment /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/report-cards" element={<ProtectedRoute><DashboardLayout><ReportCards /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/timetable" element={<ProtectedRoute><DashboardLayout><Timetable /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/schemes" element={<ProtectedRoute><DashboardLayout><SchemesOfWork /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/lesson-plans" element={<ProtectedRoute><DashboardLayout><LessonPlans /></DashboardLayout></ProtectedRoute>} />
       <Route path="/fees" element={<ProtectedRoute><DashboardLayout><Finance /></DashboardLayout></ProtectedRoute>} />
       <Route path="/invoices" element={<ProtectedRoute><DashboardLayout><Finance /></DashboardLayout></ProtectedRoute>} />
       <Route path="/finance-reports" element={<ProtectedRoute><DashboardLayout><Finance /></DashboardLayout></ProtectedRoute>} />
