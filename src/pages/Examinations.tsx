@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   ClipboardList, Calendar, TrendingUp, Award, Plus, Edit, Trash2,
-  MoreHorizontal, Loader2, Eye, FileText,
+  MoreHorizontal, Loader2, Eye, FileText, Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -23,6 +24,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -69,6 +73,19 @@ export default function Examinations() {
   const [deleteTarget, setDeleteTarget] = useState<Exam | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // AI Comment generation
+  type CommentTarget = {
+    result: ExamResult & { student?: { first_name: string; last_name: string } };
+  };
+  const [commentTarget, setCommentTarget] = useState<CommentTarget | null>(null);
+  const [commentForm, setCommentForm] = useState({
+    strengths: "", improvements: "", style: "Encouraging", length: "Medium",
+  });
+  const [generatedComment, setGeneratedComment] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [savingComment, setSavingComment] = useState(false);
+  const [aiUsage, setAiUsage] = useState<{ used: number; limit: number }>({ used: 0, limit: 50 });
+
   // Stats
   const [stats, setStats] = useState({ upcoming: 0, completed: 0, avgScore: 0, totalResults: 0 });
 
@@ -100,6 +117,21 @@ export default function Examinations() {
   }, [schoolId]);
 
   useEffect(() => { fetchExams(); fetchStats(); }, [fetchExams, fetchStats]);
+
+  // Fetch AI usage for current user/month
+  const fetchAiUsage = useCallback(async () => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u?.user) return;
+    const ym = new Date().toISOString().slice(0, 7);
+    const { data } = await supabase
+      .from("ai_comment_usage")
+      .select("count")
+      .eq("user_id", u.user.id)
+      .eq("year_month", ym)
+      .maybeSingle();
+    setAiUsage({ used: data?.count ?? 0, limit: 50 });
+  }, []);
+  useEffect(() => { fetchAiUsage(); }, [fetchAiUsage]);
 
   useEffect(() => {
     if (!schoolId) return;
@@ -160,6 +192,57 @@ export default function Examinations() {
       .order("created_at", { ascending: false });
     setResults((data as any) || []);
     setLoadingResults(false);
+  };
+
+  const openCommentPanel = (
+    result: ExamResult & { student?: { first_name: string; last_name: string } },
+  ) => {
+    setCommentTarget({ result });
+    setCommentForm({ strengths: "", improvements: "", style: "Encouraging", length: "Medium" });
+    setGeneratedComment(result.remarks || "");
+    fetchAiUsage();
+  };
+
+  const handleGenerateComment = async () => {
+    if (!commentTarget) return;
+    const r = commentTarget.result;
+    const studentName = r.student ? `${r.student.first_name} ${r.student.last_name}` : "Student";
+    setGenerating(true);
+    const { data, error } = await supabase.functions.invoke("generate-report-comment", {
+      body: {
+        studentName, subject: r.subject, grade: r.grade, score: r.score,
+        strengths: commentForm.strengths, improvements: commentForm.improvements,
+        style: commentForm.style, length: commentForm.length,
+      },
+    });
+    setGenerating(false);
+    if (error || (data as any)?.error) {
+      toast({
+        title: "Generation failed",
+        description: (data as any)?.error || error?.message || "Try again",
+        variant: "destructive",
+      });
+      return;
+    }
+    setGeneratedComment((data as any).comment || "");
+    setAiUsage({ used: (data as any).used, limit: (data as any).limit });
+  };
+
+  const handleSaveComment = async () => {
+    if (!commentTarget) return;
+    setSavingComment(true);
+    const { error } = await supabase
+      .from("exam_results")
+      .update({ remarks: generatedComment })
+      .eq("id", commentTarget.result.id);
+    setSavingComment(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Comment saved to report card" });
+    if (resultsExam) openResults(resultsExam);
+    setCommentTarget(null);
   };
 
   const handleAddResult = async () => {
@@ -344,6 +427,7 @@ export default function Examinations() {
                   <TableHead className="text-xs font-semibold">Subject</TableHead>
                   <TableHead className="text-xs font-semibold">Score</TableHead>
                   <TableHead className="text-xs font-semibold">Grade</TableHead>
+                  <TableHead className="text-xs font-semibold w-10"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -353,6 +437,15 @@ export default function Examinations() {
                     <TableCell className="text-sm">{r.subject}</TableCell>
                     <TableCell className="text-sm font-medium">{r.score != null ? r.score : "—"}</TableCell>
                     <TableCell><Badge variant="secondary" className="text-[11px]">{r.grade || "—"}</Badge></TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost" size="sm"
+                        className="h-7 gap-1 text-[11px] text-primary hover:text-primary"
+                        onClick={() => openCommentPanel(r)}
+                      >
+                        <Sparkles className="h-3 w-3" /> Generate comment
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -360,6 +453,106 @@ export default function Examinations() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* AI Comment Side Panel */}
+      <Sheet open={!!commentTarget} onOpenChange={(open) => !open && setCommentTarget(null)}>
+        <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+          {commentTarget && (
+            <>
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" /> Generate report comment
+                </SheetTitle>
+                <SheetDescription>
+                  {commentTarget.result.student
+                    ? `${commentTarget.result.student.first_name} ${commentTarget.result.student.last_name}`
+                    : "Student"}
+                  {" · "}{commentTarget.result.subject}
+                  {commentTarget.result.grade ? ` · Grade ${commentTarget.result.grade}` : ""}
+                  {commentTarget.result.score != null ? ` · ${commentTarget.result.score}%` : ""}
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="mt-4 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                {aiUsage.used} / {aiUsage.limit} AI generations used this month
+              </div>
+
+              <div className="space-y-4 mt-5">
+                <div className="space-y-2">
+                  <Label>What's going well?</Label>
+                  <Input
+                    placeholder="e.g. strong problem-solving"
+                    value={commentForm.strengths}
+                    onChange={(e) => setCommentForm({ ...commentForm, strengths: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>What needs work?</Label>
+                  <Input
+                    placeholder="e.g. show full working"
+                    value={commentForm.improvements}
+                    onChange={(e) => setCommentForm({ ...commentForm, improvements: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>House style</Label>
+                    <Select value={commentForm.style} onValueChange={(v) => setCommentForm({ ...commentForm, style: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Encouraging">Encouraging</SelectItem>
+                        <SelectItem value="Formal">Formal</SelectItem>
+                        <SelectItem value="Direct">Direct</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Length</Label>
+                    <Select value={commentForm.length} onValueChange={(v) => setCommentForm({ ...commentForm, length: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Short">Short (1 sentence)</SelectItem>
+                        <SelectItem value="Medium">Medium (2–3 sentences)</SelectItem>
+                        <SelectItem value="Long">Long (paragraph)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <Button
+                  className="w-full gap-2"
+                  onClick={handleGenerateComment}
+                  disabled={generating || aiUsage.used >= aiUsage.limit}
+                >
+                  {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  {generating ? "Generating…" : "Generate"}
+                </Button>
+
+                <div className="space-y-2">
+                  <Label>Generated comment</Label>
+                  <Textarea
+                    value={generatedComment}
+                    onChange={(e) => setGeneratedComment(e.target.value)}
+                    placeholder="Generated comment will appear here. You can edit before saving."
+                    rows={7}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" onClick={() => setCommentTarget(null)}>Cancel</Button>
+                  <Button
+                    onClick={handleSaveComment}
+                    disabled={savingComment || !generatedComment.trim()}
+                  >
+                    {savingComment && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Insert into report card
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>

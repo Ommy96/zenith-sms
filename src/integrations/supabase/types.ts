@@ -55,6 +55,36 @@ export type Database = {
           },
         ]
       }
+      ai_comment_usage: {
+        Row: {
+          count: number
+          created_at: string
+          id: string
+          school_id: string
+          updated_at: string
+          user_id: string
+          year_month: string
+        }
+        Insert: {
+          count?: number
+          created_at?: string
+          id?: string
+          school_id: string
+          updated_at?: string
+          user_id: string
+          year_month: string
+        }
+        Update: {
+          count?: number
+          created_at?: string
+          id?: string
+          school_id?: string
+          updated_at?: string
+          user_id?: string
+          year_month?: string
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           audience: string | null
