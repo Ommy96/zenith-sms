@@ -1,132 +1,61 @@
-# Academic Engine — Build Plan
+# Finance Engine — Phased Plan
 
-Massive scope. I'll ship in 5 phases, each independently usable. Phase 1 is one big migration that everything else depends on; later phases mix small migrations + UI.
+The existing migration already gives us `fee_categories`, `fee_structures`, `fee_items`, `student_invoices` (with auto-numbering and live balance triggers), `student_payments` with `payment_allocations`, `student_receipts`, `mpesa_config`, `mpesa_transactions`, `mpesa_stk_requests` and four M-Pesa edge functions. I'll **extend** rather than rebuild.
 
-## Phase 1 — Schema foundation (one migration)
+Below is what each phase ships. Each phase is independently shippable.
 
-### Academic calendar
-- `academic_years` (tenant_id, name, start_date, end_date, is_current). Unique partial index for one current per tenant.
-- `terms` (tenant_id, academic_year_id, name, start_date, end_date, is_current). Same partial-unique trick.
+## Phase A — Schema extensions & reconciliation glue
+- Add to `fee_items`: `frequency` (per_term/per_year/one_off), `applies_to_terms jsonb`, `late_fee_amount`, `late_fee_after_days`, `learner_category` (day/boarder/all).
+- Add to `fee_structures`: `grade_level_id`, `class_id`, `learner_category`.
+- Add `scholarships` (tenant, name, type, amount, criteria) and `student_fee_adjustments` (link student→scholarship, custom amount, valid_until, approved_by). Wire into the existing invoice trigger so adjustments recompute totals.
+- Add `mpesa_transactions.tenant_id`, `matched_invoice_id`, `matched_payment_id`, `status` (matched/unmatched/disputed/duplicate), `account_reference_raw` and a UNIQUE index on `mpesa_receipt_number` per tenant for idempotency.
+- Add `payment_reminders_config` (per tenant: thresholds, channels) and `reminder_log`.
+- New permissions: `payroll.*`, `expenses.*`, `mpesa.configure`.
 
-### Structure
-- `grade_levels` (tenant_id, code, name, sort_order, stage). Seeded via a `seed_grade_levels(tenant, curriculum)` SQL function (CBC, 8-4-4, UG, TZ, RW, IGCSE).
-- `rooms` (tenant_id, name, type enum [classroom, lab, hall, sports], capacity).
-- `classes` extended: add `grade_level_id`, `stream`, `class_teacher_id`, `room_id`, `current_enrollment` (kept fresh by trigger when `students.current_class_id` changes).
-- `subjects` extended: `code`, `category` enum (core, elective, co_curricular, life_skills), `curriculum_tag`, `is_assessed`, `assessment_type` enum (continuous, exam, both).
-- `class_subjects` junction (class_id, subject_id, teacher_id, periods_per_week).
+## Phase B — M-Pesa "Mobile Money" overhaul
+Rewrite `src/pages/MobileMoney.tsx` into 3 tabs:
+1. **Configuration** — paybill/till, env, credentials (write-only via vault-style RPC), callback URL with copy button, "Test connection" wired to existing `mpesa-test-connection` fn.
+2. **Transactions** — live feed of `mpesa_transactions` with filters, status badges, manual "Resolve" dialog (search student → match → triggers reconciliation RPC that creates `student_payment` + allocation + receipt).
+3. **STK Push** — student picker → autoloads outstanding invoices → guardian phone → "Send" (existing `mpesa-stk-push`) → polls request status with timeout.
 
-### CBC vocabulary (only used when `tenants.curriculum = 'cbc'`)
-- `learning_areas` (tenant_id, code, name, grade_level_id nullable, sort_order)
-- `strands`, `sub_strands`, `learning_outcomes` — nested fk chain.
-- `core_competencies`, `values_cbc` — tenant-level, pre-seeded with the 7 + 7.
-- `cbc_assessment_scores` (tenant_id, student_id, learning_outcome_id, term_id, performance_level smallint 1–4, teacher_id, comment, recorded_at).
+Backend:
+- Rewrite `supabase/functions/mpesa-c2b-callback`: idempotent on `mpesa_receipt_number`, normalize `account_reference` (regex strip spaces/dashes/case), find student by admission_number, find oldest outstanding invoice, insert payment + allocation + receipt, queue notification, mark `matched`/`unmatched`.
+- Add `manual_reconcile_mpesa(_txn, _student, _invoice)` SQL function used by the Resolve dialog.
+- Realtime: enable on `mpesa_transactions` so the feed updates live.
 
-### Traditional grading
-- `grading_scales` (tenant_id, name, is_default). Bands stored as `grade_bands` rows (min_pct, max_pct, grade, points, remark).
+## Phase C — Student fee ledger + bursar dashboard
+- `StudentProfile.tsx` — add **Fees** tab: current balance, statement (charges + payments interleaved), outstanding invoices with **Pay now** (opens STK dialog prefilled), receipt download buttons, PDF export.
+- Replace stats area of `Finance.tsx` with bursar dashboard cards: today's collections by method, term collected vs invoiced %, outstanding by class, aging buckets (0-30/31-60/61-90/90+), top defaulters, method mix donut, recent transactions feed.
+- Edge function `generate-statement-pdf` (pdf-lib).
 
-### Exams
-- `exams` already exists — extend with `term_id`, `type` enum, `status` enum, `weight`.
-- `exam_subjects` (exam_id, subject_id, max_marks, grading_scale_id nullable).
-- Replace existing `exam_results` shape with `student_exam_results`: per-subject row with `raw_marks`, `max_marks`, `grade`, `points`, `position_in_class`, `position_in_stream`, `teacher_comment`, `entered_by`, `locked`. Keep old table compatible by re-using and adding cols.
+## Phase D — Reminders & scheduling
+- `process-fee-reminders` edge function: scans invoices, sends SMS/WhatsApp per tenant config, logs to `reminder_log` (uses existing WhatsApp + SMS infra).
+- pg_cron job to run hourly. (Tenant-specific cron written via `supabase--insert`.)
 
-### Continuous assessment
-- `assessments` (tenant_id, class_id, subject_id, teacher_id, type, title, max_marks, weight, due_date).
-- `student_assessment_scores` (assessment_id, student_id, score, comment).
-- `assessment_outcomes` junction → `learning_outcomes` for CBC.
+## Phase E — Payroll (Kenya-first)
+- Tables: `payroll_runs`, `payroll_items` with `gross`, `allowances jsonb`, `paye`, `shif`, `nssf_tier1`, `nssf_tier2`, `housing_levy`, `other_deductions jsonb`, `net_pay`.
+- Pure-SQL function `compute_kenya_payroll(_gross numeric)` with current 2026 PAYE bands, SHIF 2.75%, NSSF Tier I/II caps, Housing Levy 1.5%, personal relief KES 2,400.
+- Pages: `Payroll.tsx` (runs list, "New run" → pulls active staff → previews computed slips → "Process" locks the run).
+- Edge function `generate-payslips` (PDF per staff, optional WhatsApp/email).
+- Country variants: stub functions `compute_uganda_payroll`, `compute_tanzania_payroll`, `compute_rwanda_payroll` with placeholder formulas; user can refine.
 
-### Report cards
-- `report_card_templates` (tenant_id, name, curriculum_kind, layout jsonb, is_default).
-- `report_card_runs` (tenant_id, class_id, term_id, status enum [queued, running, ready, failed], requested_by, total, completed, zip_url).
-- `report_cards` (run_id, student_id, pdf_url, status, error).
-- Storage bucket `reports` (private, tenant-prefixed RLS).
+## Phase F — Expenses
+- Tables: `expense_categories`, `expenses`, `expense_approvals`.
+- Page `Expenses.tsx`: capture → submit → approve → export.
+- Export endpoints for QuickBooks/Xero CSV.
 
-### Timetable
-- `periods` (tenant_id, name, start_time, end_time, day_of_week 0–6, is_break, sort_order).
-- `timetable_slots` (tenant_id, term_id, class_id, period_id, subject_id, teacher_id, room_id). Unique partial indexes:
-  - (term_id, teacher_id, period_id) WHERE teacher_id NOT NULL
-  - (term_id, room_id, period_id) WHERE room_id NOT NULL
-  - (term_id, class_id, period_id)
+## Technical notes (for the curious)
+- Existing trigger `recompute_invoice_totals` already keeps invoice balance/status synced — adjustments will be folded into `fee_discounts` (already there).
+- M-Pesa credentials remain in `mpesa_config` table (already RLS-protected); not moving to Vault unless explicitly requested — it would require breaking changes to existing functions.
+- Airtel Money / MTN MoMo: schema-ready (`payment_method_enum` already includes them) but I'll **stub** the actual API integration in Phase B and surface it as "coming soon" rather than half-build it. Each takes its own multi-day sprint.
+- Card payments (Pesapal/Flutterwave/Paystack): same — schema supports, integration is a follow-up phase.
 
-### Lesson plans / schemes of work
-- `schemes_of_work` (tenant_id, subject_id, grade_level_id, term_id, file_url, rich_text, uploaded_by, approved_by, status enum).
-- `lesson_plans` (tenant_id, teacher_id, subject_id, class_id, date, period_id, learning_outcome_ids uuid[], objectives, materials, intro, development, conclusion, assessment, homework, reflection, hod_status enum, hod_id).
+## Out of scope for this loop
+- True double-entry accounting (we keep operational view + export to QBO/Xero per spec).
+- B2C disbursement flows.
+- Loan management beyond a `loan_deductions` jsonb field on payroll items.
 
-### Permissions added
-`academics.configure`, `exams.lock`, `exams.unlock`, `reports.generate`, `reports.publish`, `timetable.edit`, `lessons.approve`. Mapped to existing roles.
+## Suggested execution order
+Phase A → B → C are the highest leverage (matches "Priority: M-Pesa, fee collection, reconciliation"). I'll do them in this loop and stop before Phase D so you can review. Payroll (E) and Expenses (F) ship in a follow-up.
 
-### Helpers (SQL functions)
-- `current_academic_year(tenant)` / `current_term(tenant)` — used by UI.
-- `seed_grade_levels(tenant, curriculum)` — invoked from setup.
-- `recompute_exam_positions(exam_id)` — recompute class & stream positions in bulk.
-- `compute_grade(scale_id, pct)` — returns (grade, points, remark).
-
-## Phase 2 — Setup + Structure UI
-
-`src/pages/Academics.tsx` (replace stub) becomes a hub with sub-tabs:
-- **Calendar** — manage academic years & terms, set current.
-- **Grade Levels** — seed by curriculum, manual add/edit.
-- **Classes** — list/grid, assign class teacher + room + capacity.
-- **Subjects** — list, CBC-aware (categories), assign to classes via class_subjects matrix.
-- **Rooms** — simple CRUD.
-
-`src/components/academics/CbcCurriculumEditor.tsx` — only renders for CBC tenants; tree view of learning_areas → strands → sub_strands → learning_outcomes with inline add.
-
-## Phase 3 — Exams + grade entry
-
-`src/pages/Examinations.tsx` (replace): list of exams with status, "New exam" wizard that picks term, exam_subjects + max marks.
-
-`src/pages/ExamGradeEntry.tsx` (new, route `/examinations/:examId/entry`):
-- Spreadsheet grid (custom, not heavy lib). Rows = students in class, cols = subjects.
-- Per-cell debounced auto-save (250ms). Out-of-range red border. Tab/Enter navigation. Excel paste handler.
-- Lock toggle requires `exams.lock`. Locked cells read-only.
-- "Recompute positions" button calls SQL helper.
-- Mobile fallback: subject-by-subject view with swipe (`framer-motion` drag).
-
-`src/pages/CbcAssessmentEntry.tsx` (new, `/cbc/assess`):
-- Pick learning_area → strand → sub_strand → outcomes.
-- Student list with 4-button performance level selector per outcome + comment textarea.
-- "Apply to selection" bulk action.
-
-## Phase 4 — Report cards
-
-`src/pages/ReportCards.tsx` — pick class + term + template → "Generate". Lists runs with progress.
-
-Edge function `generate-report-cards` (background):
-- Iterates students in class, builds PDF per student with `pdf-lib` (using stored layout jsonb or built-in template), uploads to `reports/{tenant}/{run}/{student}.pdf`, updates `report_cards`. When done, zips via deno (`compress` from `jsr:@std/archive` or manual) and stores zip_url.
-- Picks template by `tenants.curriculum` if not specified: cbc / 8-4-4 / a-level / international.
-- AI comment uses existing `generate-report-comment` edge fn.
-- Each report_card row also stores per-student delivery URL.
-
-Trigger from UI is `supabase.functions.invoke`; the function returns immediately (202) and works async (uses `EdgeRuntime.waitUntil`).
-
-Template editor — minimal v1: select from 4 built-in layouts + tweak header/footer text + colour. Drag-drop block editor deferred (gated behind Pro plan later).
-
-## Phase 5 — Timetable + lesson plans
-
-`src/pages/Timetable.tsx` (new, `/timetable` route — currently aliased to Academics; we replace):
-- Grid view (rows = periods, cols = days), one grid per class.
-- Drag a "subject chip" from a side palette onto a cell; chip carries subject + teacher.
-- Real-time conflict detection: on drop, query for conflicting teacher/room/class slot in the same period/term and refuse (toast). Use the unique indexes as final guardrail.
-- Tabs: Class view / Teacher view / Room view / Student view.
-- Periods config drawer.
-
-AI auto-generator stub: button calls edge fn `auto-timetable` that returns a basic round-robin assignment respecting class_subjects.periods_per_week (heavy CP-SAT deferred).
-
-`src/pages/Schemes.tsx` + `src/pages/LessonPlans.tsx`:
-- Schemes: upload + simple list + HOD approval.
-- Lesson plans: form per date + period with CBC outcome multi-select if curriculum=cbc. "AI draft" calls a new edge fn `draft-lesson-plan` (Lovable AI) seeded with selected outcomes/objectives.
-
-## Phase 6 — Out of scope for this pass
-- Drag-drop visual report card editor (Pro feature).
-- True constraint-solver timetabling.
-- Parent-portal report card delivery (delivered via existing comms once portals are built).
-- Multi-version report card history & re-issuance.
-
-## Files
-Migrations: 1 large (phase 1) + small ones per phase as needed.
-New pages: `ExamGradeEntry`, `CbcAssessmentEntry`, `ReportCards`, `Timetable`, `Schemes`, `LessonPlans`.
-Replaced pages: `Academics`, `Examinations`.
-New edge fns: `generate-report-cards`, `auto-timetable`, `draft-lesson-plan`.
-New buckets: `reports` (private).
-
-I'll start with Phase 1 (migration), then build phases 2–5 sequentially without pausing unless I hit a question I can't infer from existing conventions.
+Reply **continue** to proceed with A→B→C, or tell me which phases to include/skip.
