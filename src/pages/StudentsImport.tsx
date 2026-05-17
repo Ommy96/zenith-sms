@@ -17,21 +17,71 @@ const CANONICAL_FIELDS = [
   { value: "__skip__", label: "— Skip column —" },
   { value: "admission_number", label: "Admission Number" },
   { value: "first_name", label: "First Name" },
+  { value: "middle_name", label: "Middle Name" },
   { value: "last_name", label: "Last Name" },
+  { value: "preferred_name", label: "Preferred Name" },
   { value: "full_name", label: "Full Name (split)" },
   { value: "gender", label: "Gender" },
   { value: "date_of_birth", label: "Date of Birth" },
+  { value: "nationality", label: "Nationality" },
   { value: "grade", label: "Grade / Class" },
+  { value: "stream", label: "Stream" },
+  { value: "house", label: "House" },
+  { value: "learner_category", label: "Learner Category (day/boarder)" },
+  { value: "previous_school", label: "Previous School" },
   { value: "email", label: "Student Email" },
   { value: "phone", label: "Student Phone" },
   { value: "address", label: "Address" },
+  { value: "residential_address", label: "Residential Address" },
+  { value: "city", label: "City / Town" },
+  { value: "county_or_region", label: "County / Region" },
+  { value: "postal_code", label: "Postal Code" },
+  { value: "country", label: "Country" },
   { value: "guardian_name", label: "Guardian Name" },
   { value: "guardian_phone", label: "Guardian Phone" },
   { value: "guardian_email", label: "Guardian Email" },
   { value: "guardian_relationship", label: "Guardian Relationship" },
+  { value: "emergency_contact_name", label: "Emergency Contact Name" },
+  { value: "emergency_contact_phone", label: "Emergency Contact Phone" },
+  { value: "emergency_contact_relation", label: "Emergency Contact Relation" },
+  { value: "nemis_upi", label: "NEMIS UPI (KE)" },
+  { value: "birth_certificate_number", label: "Birth Certificate #" },
+  { value: "birth_certificate_serial", label: "Birth Certificate Serial" },
+  { value: "kcpe_index_number", label: "KCPE Index # (KE)" },
+  { value: "kcse_index_number", label: "KCSE Index # (KE)" },
+  { value: "national_id_number", label: "National ID #" },
+  { value: "lin", label: "LIN (UG)" },
+  { value: "blood_group", label: "Blood Group" },
   { value: "admission_date", label: "Admission Date" },
   { value: "status", label: "Status" },
 ];
+
+// NEMIS progression CSV (Kenya) — common header signature
+const NEMIS_HEADERS = new Set([
+  "upi", "nemis upi", "first name", "middle name", "last name",
+  "gender", "date of birth", "birth cert no", "current class", "stream",
+]);
+function detectNemisProgression(hdrs: string[]): Record<string, string> | null {
+  const lower = hdrs.map((h) => h.trim().toLowerCase());
+  const hits = lower.filter((h) => NEMIS_HEADERS.has(h)).length;
+  if (hits < 5) return null;
+  const map: Record<string, string> = {};
+  hdrs.forEach((h) => {
+    const k = h.trim().toLowerCase();
+    map[h] =
+      k === "upi" || k === "nemis upi" ? "nemis_upi" :
+      k === "first name" ? "first_name" :
+      k === "middle name" ? "middle_name" :
+      k === "last name" ? "last_name" :
+      k === "gender" ? "gender" :
+      k === "date of birth" ? "date_of_birth" :
+      k === "birth cert no" ? "birth_certificate_number" :
+      k === "current class" ? "grade" :
+      k === "stream" ? "stream" :
+      "__skip__";
+  });
+  return map;
+}
 
 type Step = "upload" | "mapping" | "review" | "complete";
 type RowError = { row: number; errors: string[]; data: Record<string, unknown> };
@@ -70,6 +120,7 @@ export default function StudentsImport() {
   const [errors, setErrors] = useState<RowError[]>([]);
   const [importedCount, setImportedCount] = useState(0);
   const [cacheHit, setCacheHit] = useState(false);
+  const [nemisDetected, setNemisDetected] = useState(false);
 
   const handleFile = async (file: File) => {
     setFileName(file.name);
@@ -84,7 +135,15 @@ export default function StudentsImport() {
     const hdrs = Object.keys(json[0]);
     setHeaders(hdrs);
     setRows(json);
-    await suggestMapping(hdrs, json.slice(0, 3));
+    const nemis = detectNemisProgression(hdrs);
+    if (nemis) {
+      setMapping(nemis);
+      setNemisDetected(true);
+      setCacheHit(false);
+    } else {
+      setNemisDetected(false);
+      await suggestMapping(hdrs, json.slice(0, 3));
+    }
     setStep("mapping");
   };
 
@@ -159,6 +218,13 @@ export default function StudentsImport() {
       } else if (field === "gender") {
         const g = String(val).trim().toLowerCase();
         record[field] = g.startsWith("m") ? "male" : g.startsWith("f") ? "female" : g;
+      } else if (field === "learner_category") {
+        const g = String(val).trim().toLowerCase();
+        record[field] = g.includes("board") ? "boarder" : g.includes("day") ? "day_scholar" : g;
+      } else if (field === "blood_group") {
+        const g = String(val).trim().toUpperCase().replace(/\s+/g, "");
+        const allowed = ["A+","A-","B+","B-","AB+","AB-","O+","O-"];
+        record[field] = allowed.includes(g) ? g : "unknown";
       } else {
         record[field] = String(val).trim();
       }
@@ -268,6 +334,11 @@ export default function StudentsImport() {
               {!aiLoading && cacheHit && (
                 <Badge className="bg-success/10 text-success border-success/20 gap-1">
                   <CheckCircle2 className="h-3 w-3" /> Cached mapping
+                </Badge>
+              )}
+              {nemisDetected && (
+                <Badge className="bg-primary/10 text-primary border-primary/20 gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> NEMIS file detected
                 </Badge>
               )}
             </div>

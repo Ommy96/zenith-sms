@@ -18,6 +18,7 @@ import Academics from "./pages/Academics";
 import Examinations from "./pages/Examinations";
 import Attendance from "./pages/Attendance";
 import Staff from "./pages/Staff";
+import StaffProfile from "./pages/StaffProfile";
 import Communication from "./pages/Communication";
 import Admissions from "./pages/Admissions";
 import Operations from "./pages/Operations";
@@ -95,6 +96,7 @@ function AppRoutes() {
       <Route path="/messaging" element={<ProtectedRoute><DashboardLayout><Communication /></DashboardLayout></ProtectedRoute>} />
       <Route path="/communication/whatsapp" element={<ProtectedRoute><DashboardLayout><WhatsApp /></DashboardLayout></ProtectedRoute>} />
       <Route path="/staff" element={<ProtectedRoute><DashboardLayout><Staff /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/staff/:id" element={<ProtectedRoute><DashboardLayout><StaffProfile /></DashboardLayout></ProtectedRoute>} />
       <Route path="/transport" element={<ProtectedRoute><DashboardLayout><Operations /></DashboardLayout></ProtectedRoute>} />
       <Route path="/library" element={<ProtectedRoute><DashboardLayout><Operations /></DashboardLayout></ProtectedRoute>} />
       <Route path="/inventory" element={<ProtectedRoute><DashboardLayout><Operations /></DashboardLayout></ProtectedRoute>} />

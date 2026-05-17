@@ -10,6 +10,13 @@ const CANONICAL_FIELDS = [
   "date_of_birth", "grade", "email", "phone", "address",
   "guardian_name", "guardian_phone", "guardian_email", "guardian_relationship",
   "admission_date", "status",
+  "middle_name", "preferred_name", "nationality",
+  "nemis_upi", "birth_certificate_number", "birth_certificate_serial",
+  "kcpe_index_number", "kcse_index_number", "national_id_number", "lin",
+  "stream", "house", "learner_category", "previous_school",
+  "residential_address", "city", "county_or_region", "postal_code", "country",
+  "emergency_contact_name", "emergency_contact_phone", "emergency_contact_relation",
+  "blood_group",
 ];
 
 serve(async (req) => {
