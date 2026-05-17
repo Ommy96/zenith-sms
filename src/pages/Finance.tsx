@@ -21,6 +21,7 @@ import {
   Layers, Trash2, Sparkles, Banknote,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { BursarDashboard } from "@/components/finance/BursarDashboard";
 
 const CATEGORIES = ["tuition","transport","boarding","lunch","exam","activity","uniform","book","development","other"] as const;
 const METHODS = ["cash","mpesa","airtel_money","bank_transfer","cheque","card","pos","other"] as const;
@@ -102,12 +103,17 @@ export default function Finance() {
         <StatCard icon={<AlertCircle className="h-4 w-4" />} label="Overdue invoices" value={stats.overdueCount} accent="text-destructive" />
       </div>
 
-      <Tabs defaultValue="invoices">
+      <Tabs defaultValue="dashboard">
         <TabsList>
+          <TabsTrigger value="dashboard"><TrendingUp className="h-3 w-3 mr-1" />Dashboard</TabsTrigger>
           <TabsTrigger value="invoices"><FileText className="h-3 w-3 mr-1" />Invoices</TabsTrigger>
           <TabsTrigger value="payments"><Receipt className="h-3 w-3 mr-1" />Payments</TabsTrigger>
           <TabsTrigger value="structures"><Layers className="h-3 w-3 mr-1" />Fee Structures</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="dashboard" className="mt-4">
+          <BursarDashboard tenantId={tenantId!} />
+        </TabsContent>
 
         <TabsContent value="invoices" className="mt-4">
           <InvoicesTab
