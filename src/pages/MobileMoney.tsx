@@ -55,7 +55,7 @@ type StkRow = {
 };
 
 type StudentLite = { id: string; first_name: string; last_name: string; admission_number: string | null };
-type InvoiceLite = { id: string; amount: number; paid_amount: number | null; status: string | null; invoice_number: string | null; student_id: string };
+type InvoiceLite = { id: string; total: number; paid_total: number; balance: number; status: string | null; invoice_number: string | null; student_id: string };
 
 const sb = supabase as any;
 
@@ -276,11 +276,17 @@ function TransactionsTab({ schoolId }: { schoolId: string }) {
 
   const saveMatch = async () => {
     if (!matchOpen || !matchStudent) return;
-    const { error } = await sb.from("mpesa_transactions").update({
-      matched_student_id: matchStudent, status: "matched",
-    }).eq("id", matchOpen.id);
+    // Calls the SQL function that atomically creates a payment, allocates
+    // it to the oldest outstanding invoice, generates a receipt, and marks
+    // the transaction as matched. Idempotent on the M-Pesa receipt number.
+    const { error } = await sb.rpc("manual_reconcile_mpesa", {
+      _txn: matchOpen.id, _student: matchStudent, _invoice: null,
+    });
     if (error) toast({ title: "Failed", description: error.message, variant: "destructive" });
-    else { toast({ title: "Matched", description: "Transaction assigned to student." }); setMatchOpen(null); setMatchStudent(""); load(); }
+    else {
+      toast({ title: "Reconciled", description: "Payment posted and receipt issued." });
+      setMatchOpen(null); setMatchStudent(""); load();
+    }
   };
 
   return (
@@ -408,9 +414,12 @@ function StkTab({ schoolId }: { schoolId: string }) {
 
   useEffect(() => {
     if (!studentId) { setInvoices([]); setInvoiceId(""); return; }
-    sb.from("invoices").select("id, amount, paid_amount, status, invoice_number, student_id")
-      .eq("tenant_id", schoolId).eq("student_id", studentId).neq("status", "paid")
-      .order("due_date", { ascending: true }).then(({ data }: any) => setInvoices(data ?? []));
+    sb.from("student_invoices")
+      .select("id, total, paid_total, balance, status, invoice_number, student_id")
+      .eq("tenant_id", schoolId).eq("student_id", studentId)
+      .gt("balance", 0).not("status", "in", "(void,draft,paid)")
+      .order("due_date", { ascending: true })
+      .then(({ data }: any) => setInvoices(data ?? []));
     sb.from("students").select("guardian_phone, phone").eq("id", studentId).maybeSingle().then(({ data }: any) => {
       if (data && !phone) setPhone(data.guardian_phone || data.phone || "");
     });
@@ -419,7 +428,7 @@ function StkTab({ schoolId }: { schoolId: string }) {
 
   useEffect(() => {
     const inv = invoices.find((i) => i.id === invoiceId);
-    if (inv) setAmount(String(Math.max(0, Number(inv.amount) - Number(inv.paid_amount ?? 0))));
+    if (inv) setAmount(String(Math.max(0, Number(inv.balance))));
   }, [invoiceId, invoices]);
 
   const send = async () => {
@@ -463,7 +472,7 @@ function StkTab({ schoolId }: { schoolId: string }) {
                 <SelectContent>
                   {invoices.map((i) => (
                     <SelectItem key={i.id} value={i.id}>
-                      {i.invoice_number ?? i.id.slice(0, 8)} · bal {(Number(i.amount) - Number(i.paid_amount ?? 0)).toLocaleString()}
+                      {i.invoice_number ?? i.id.slice(0, 8)} · bal {Number(i.balance).toLocaleString()}
                     </SelectItem>
                   ))}
                 </SelectContent>
