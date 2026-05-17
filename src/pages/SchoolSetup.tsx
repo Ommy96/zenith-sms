@@ -122,8 +122,9 @@ export default function SchoolSetup() {
         return;
       }
 
-      // Create school record
-      const { data: school, error: schoolErr } = await supabase.from("tenants").insert({
+      // Create school record without requesting the row back immediately.
+      // The backend trigger links the creator to the tenant and updates the profile.
+      const { error: schoolErr } = await supabase.from("tenants").insert({
         name: schoolName,
         email: schoolEmail || null,
         phone: schoolPhone || null,
@@ -137,21 +138,41 @@ export default function SchoolSetup() {
         payment_config: eduData.payment_methods,
         subjects: eduData.common_subjects,
         school_levels: eduData.school_levels,
-      }).select().single();
+      });
 
       if (schoolErr) throw schoolErr;
+
+      let tenantId: string | null = null;
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        const { data: profileData, error: profileReadErr } = await supabase
+          .from("profiles")
+          .select("default_tenant_id")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        if (profileReadErr) throw profileReadErr;
+
+        tenantId = (profileData as { default_tenant_id?: string | null } | null)?.default_tenant_id ?? null;
+        if (tenantId) break;
+
+        await new Promise((resolve) => window.setTimeout(resolve, 250));
+      }
+
+      if (!tenantId) {
+        throw new Error("School was created, but setup could not finish linking your account. Please try again.");
+      }
 
       // Link user profile to this school
       const { error: profileErr } = await supabase
         .from("profiles")
-        .update({ default_tenant_id: school.id })
+        .update({ default_tenant_id: tenantId })
         .eq("id", session.user.id);
 
       if (profileErr) throw profileErr;
 
       // Seed demo data so the new tenant has something to explore
       try {
-        await seedDemoData(school.id);
+        await seedDemoData(tenantId);
       } catch (seedErr) {
         console.warn("Demo seed failed", seedErr);
       }
