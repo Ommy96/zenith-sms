@@ -19,10 +19,12 @@ import { Money } from "@/components/Money";
 import {
   Loader2, Plus, Wallet, Receipt, FileText, TrendingUp, AlertCircle,
   Layers, Trash2, Sparkles, Banknote, Bell,
+  Users,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { BursarDashboard } from "@/components/finance/BursarDashboard";
 import { RemindersTab } from "@/components/finance/RemindersTab";
+import { PayrollTab } from "@/components/finance/PayrollTab";
 
 const CATEGORIES = ["tuition","transport","boarding","lunch","exam","activity","uniform","book","development","other"] as const;
 const METHODS = ["cash","mpesa","airtel_money","bank_transfer","cheque","card","pos","other"] as const;
@@ -111,6 +113,7 @@ export default function Finance() {
           <TabsTrigger value="payments"><Receipt className="h-3 w-3 mr-1" />Payments</TabsTrigger>
           <TabsTrigger value="structures"><Layers className="h-3 w-3 mr-1" />Fee Structures</TabsTrigger>
           <TabsTrigger value="reminders"><Bell className="h-3 w-3 mr-1" />Reminders</TabsTrigger>
+          {can("payroll.view") && <TabsTrigger value="payroll"><Users className="h-3 w-3 mr-1" />Payroll</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="dashboard" className="mt-4">
@@ -142,6 +145,12 @@ export default function Finance() {
         <TabsContent value="reminders" className="mt-4">
           <RemindersTab tenantId={tenantId!} canConfigure={can("finance.configure")} />
         </TabsContent>
+
+        {can("payroll.view") && (
+          <TabsContent value="payroll" className="mt-4">
+            <PayrollTab tenantId={tenantId!} canManage={can("payroll.manage")} />
+          </TabsContent>
+        )}
       </Tabs>
     </motion.div>
   );
