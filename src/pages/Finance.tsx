@@ -23,6 +23,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { BursarDashboard } from "@/components/finance/BursarDashboard";
 import { RemindersTab } from "@/components/finance/RemindersTab";
+import { PayrollTab } from "@/components/finance/PayrollTab";
 
 const CATEGORIES = ["tuition","transport","boarding","lunch","exam","activity","uniform","book","development","other"] as const;
 const METHODS = ["cash","mpesa","airtel_money","bank_transfer","cheque","card","pos","other"] as const;
