@@ -234,8 +234,11 @@ export default function Students() {
           <Button variant="outline" size="sm" className="gap-1.5 text-xs">
             <Download className="h-3.5 w-3.5" /> Export
           </Button>
-          <Button size="sm" className="gap-1.5 text-xs" onClick={openAdd}>
-            <Plus className="h-3.5 w-3.5" /> Add Student
+          <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={openAdd}>
+            <Plus className="h-3.5 w-3.5" /> Quick add
+          </Button>
+          <Button size="sm" className="gap-1.5 text-xs" onClick={() => navigate("/admissions/new")}>
+            <Plus className="h-3.5 w-3.5" /> New admission
           </Button>
         </div>
       </motion.div>
@@ -344,7 +347,7 @@ export default function Students() {
                         <DropdownMenuItem className="text-sm gap-2" onClick={() => openEdit(student)}>
                           <Edit className="h-3.5 w-3.5" /> Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-sm gap-2">
+                        <DropdownMenuItem className="text-sm gap-2" onClick={() => navigate(`/students/${student.id}`)}>
                           <Eye className="h-3.5 w-3.5" /> View Profile
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />

@@ -1,144 +1,90 @@
+# Student Information System — Build Plan
 
-# SomaSphere v2 Foundations — Destructive Overhaul
+This is the identity layer for SomaSphere. Scope is large; I'll ship it in 4 migration + UI phases so each phase is reviewable and the app stays usable between phases.
 
-This is a foundations rebuild. Existing per-school logic (`schools`, `profiles.school_id`, `user_roles` with `app_role` enum, `get_user_school_id`, `has_role`) will be replaced by a proper multi-tenant + RBAC model. Existing feature pages (Finance, MobileMoney, WhatsApp, Examinations, etc.) keep working by pointing at the new `tenant_id` column instead of `school_id`.
+## Phase 1 — Data model (one migration)
 
-Because this is destructive, demo/sample rows in current tables will be migrated where possible (1:1 `schools` → `tenants`) and otherwise wiped. **No production data exists yet**, so this is safe.
+Extend/replace existing thin `students` and `staff` tables. Add new tables. All tables tenant-scoped with RLS using existing `is_tenant_member` / `has_perm` helpers.
 
----
+### `students` (extended)
+Identity, government IDs (all countries' fields in one table — UI hides by country), academic, contact, medical, special needs.
+- Adds: `middle_name, preferred_name, nationality, photo_url`
+- Gov IDs: `nemis_upi, birth_certificate_number, birth_certificate_serial, knec_assessment_number, kcpe_index_number, kcse_index_number, huduma_number, national_id_number, lin, une_index_number, prems_number, necta_index_number, reb_student_id, moe_student_id`
+- Academic: `current_class_id, stream, admission_grade, previous_school, house, enrollment_status, expected_graduation_year, learner_category`
+- Contact: `residential_address, city, county_or_region, postal_code, country, emergency_contact_name/phone/relation`
+- Medical (gated by `students.view_medical` perm): `blood_group, allergies, chronic_conditions, medications, doctor_name, doctor_phone, nhif_or_shif_number, insurance_provider, insurance_policy_number, last_medical_checkup, immunization_status jsonb`
+- SEN: `has_special_needs, special_needs_details, iep_on_file, accommodations`
+- Enums: `gender_enum, enrollment_status_enum, learner_category_enum, blood_group_enum, guardian_relationship_enum, employment_type_enum`
 
-## 1. Database — new tenant + RBAC model
+### `guardians` + `student_guardians`
+Guardian profile + many-to-many junction with flags (`is_primary_contact, has_pickup_authorization, has_financial_responsibility, receives_communications`). Partial unique index enforces one primary per student.
 
-### New tables
+### `documents` (polymorphic)
+`tenant_id, owner_type ('student'|'staff'|'guardian'), owner_id, doc_type, file_url, file_name, mime_type, size_bytes, uploaded_by, notes`. Storage bucket `documents` (private) with per-tenant path prefix RLS.
 
-- **`tenants`** — replaces `schools`. Adds: `slug` (unique, for `/t/<slug>/...`), `country_code`, `currency_code`, `timezone`, `locale`, `school_type` enum, `curriculum` enum, `subscription_plan` enum, `subscription_status` enum, `trial_ends_at`, `registration_number`, `nemis_code`. Keeps: `name`, `logo_url`, `primary_color`.
-- **`tenant_settings`** — `(tenant_id, key, value jsonb)` for feature flags / per-tenant config.
-- **`audit_logs`** — `tenant_id, actor_user_id, entity_type, entity_id, action, before jsonb, after jsonb, ip_address, user_agent, created_at`.
-- **`roles`** — system + tenant-defined. `(id, tenant_id nullable, name, description, is_system)`. System roles seeded with `tenant_id = NULL`.
-- **`permissions`** — `(id, key text unique, description, category)`. Seeded with granular keys: `students.view|create|edit|delete`, `fees.view|collect|configure`, `attendance.view|mark`, `exams.view|enter|publish`, `comms.send`, `whatsapp.manage`, `mpesa.manage`, `settings.manage`, `users.manage`, `audit.view`, etc.
-- **`role_permissions`** — `(role_id, permission_id)` junction.
-- **`tenant_users`** — replaces `profiles.school_id` membership. `(tenant_id, user_id, is_active, joined_at)`. A user can belong to multiple tenants.
-- **`user_roles`** (rebuilt) — `(user_id, tenant_id, role_id)`. Drops the old `app_role` enum table. A user can have multiple roles within a tenant.
+### `staff` (extended)
+Adds: `staff_number, tsc_number, kra_pin, nssf_number, nhif_or_shif_number, bank_*, employment_type, date_employed, date_of_confirmation, job_title, reports_to, subjects_taught jsonb, classes_taught jsonb, highest_qualification, institution, year_qualified, professional_certifications jsonb, salary_scale, gross_salary, next_of_kin_*`.
 
-### Seeded system roles
-`super_admin, school_admin, principal, deputy_principal, bursar, accounts_clerk, registrar, hod, class_teacher, subject_teacher, librarian, transport_officer, nurse, hostel_master, parent, student, alumni` — each with a sensible default permission set.
+### `student_activity` (timeline)
+`tenant_id, student_id, event_type, title, description, metadata jsonb, occurred_at`. Read-only feed populated by triggers + app code.
 
-### Migration of existing tables
-Every domain table (`students, staff, classes, attendance, exams, exam_results, invoices, applications, announcements, library_books, inventory_assets, transport_routes, mpesa_*, whatsapp_*, ai_comment_usage, import_mappings, activity_logs`) gets:
+### Permissions added
+`students.view_medical`, `students.import`, `staff.view_sensitive`. Mapped to `school_admin`, `registrar`, `nurse`, `bursar` (medical only for admin/nurse).
 
-- New `tenant_id uuid` column, backfilled from current `school_id` (1:1 map after copying `schools` → `tenants`).
-- Old `school_id` column dropped.
-- All RLS policies rewritten to:
-  - **SELECT**: `tenant_id = current_tenant_id()` (helper reads from JWT `app_metadata.tenant_id`)
-  - **mutations**: `tenant_id = current_tenant_id() AND has_perm(auth.uid(), '<permission.key>')`
-- Super admins bypass via `is_super_admin(auth.uid())`.
+### Admission number generator
+SQL function `generate_admission_number(tenant_id)` — reads `tenant_settings.admission_number_format` (default `{CODE}/{YYYY}/{####}`), atomically increments a counter row in `tenant_settings` key=`admission_number_seq:{year}`.
 
-### Security definer helpers
-- `current_tenant_id()` — reads active tenant from `request.jwt.claims -> app_metadata -> tenant_id`.
-- `has_perm(_user uuid, _key text)` — joins `user_roles → role_permissions → permissions` scoped to current tenant.
-- `is_super_admin(_user uuid)` — has the system `super_admin` role with `tenant_id IS NULL`.
-- `has_role_in_tenant(_user uuid, _role_name text, _tenant uuid)`.
+## Phase 2 — Student list + profile pages
 
-All `SECURITY DEFINER` with `SET search_path = public` to prevent recursion.
+**`src/pages/Students.tsx`** (replace existing):
+- DataTable with column toggle, filters (class, stream, status, gender, balance, learner_category, admission_year, house), debounced search across name/admission#/NEMIS/guardian phone+name (via Postgres `or` filter joined to guardians).
+- Bulk actions menu, saved views stored in `tenant_settings` key=`saved_views:students:{user_id}`.
+- Export CSV/XLSX client-side (existing `xlsx` deps); PDF via `jspdf`.
 
----
+**`src/pages/StudentProfile.tsx`** (new, route `/students/:id`):
+- Header card (photo, name, admission#, class, status badge, quick actions).
+- Tabs: Overview, Academics, Attendance, Fees, Discipline, Health (perm-gated), Documents, Activity.
+- Right rail: guardians, emergency contacts, key dates.
+- Inline edit fields → write through + audit_logs row.
 
-## 2. Auth & active tenant
+**Country-aware fields**: small helper `useCountryFields()` returns which gov-ID inputs to render based on `tenant.country_code`.
 
-- Keep Supabase email/password. **Enable** Google OAuth (`configure_social_auth`). Magic link works out-of-the-box.
-- **Phone OTP**: enable via `configure_auth`. (SMS provider is the user's choice; we surface a banner if no SMS provider is configured — actual Twilio/AT credentials are a follow-up.)
-- **2FA enforcement** for `school_admin / principal / bursar`: gate via a `MfaRequiredRoute` wrapper that checks `aal2` and redirects to an enrollment screen if missing.
-- **Active tenant** stored in URL: `/t/:slug/*`. A `TenantProvider` resolves slug → tenant, validates membership, and calls a new edge function `set-active-tenant` that writes `tenant_id` into `auth.users.app_metadata` (then refreshes session so RLS sees it).
-- **Tenant switcher** in top bar when user has >1 membership.
-- Signup flow: create user → create tenant → insert `tenant_users` → assign `school_admin` role → trigger demo seed → redirect to `/t/<slug>/dashboard`.
+## Phase 3 — Admission wizard + Quick Add
 
----
+**`src/pages/AdmissionWizard.tsx`** (route `/admissions/new`):
+8 steps in `<Tabs>` with form state in single `react-hook-form` + `zod` schema. Step 7 uploads documents to storage. On submit:
+1. Insert student → returns id + admission_number
+2. Insert guardians + junction rows
+3. Insert documents
+4. Insert initial invoice (look up class fee template if exists)
+5. Insert activity_log "admitted"
+6. Fire-and-forget edge function `send-welcome-sms` (skipped if no WhatsApp config — just logs)
+7. Optionally render NEMIS CSV row downloadable button
 
-## 3. Locale, currency, i18n
+**Quick Add**: drawer with 3 fields (name, class, guardian phone) on the Students page.
 
-- Install `react-i18next i18next i18next-browser-languagedetector`.
-- Locale files: `src/i18n/locales/{en,sw,fr,am}/common.json` — English strings only; sw/fr/am contain the same keys with English fallbacks for now.
-- Hooks (in `src/hooks/`):
-  - `useTenant()` — returns full tenant row + settings.
-  - `useMoney(amount)` → `Intl.NumberFormat(tenant.locale, { style: 'currency', currency: tenant.currency_code })`. Supports KES, UGX, TZS, RWF, ETB, SSP, BIF, USD.
-  - `useDate()` → `format(date, fmt, { locale, timeZone: tenant.timezone })` via `date-fns-tz`.
-  - `usePermissions()` → `{ can(key): boolean }`, loaded once per session.
-- Components `<Money amount />` and `<DateTime value format />` wrap the hooks.
+## Phase 4 — Bulk import with AI mapping + Staff
 
----
+**`src/pages/StudentsImport.tsx`** (refactor existing):
+- Step 1 upload, Step 2 AI mapping preview (uses existing `suggest-import-mapping` edge fn, extend canonical fields to include NEMIS UPI + guardian fields), Step 3 validation table with row errors, Step 4 import.
+- Detect NEMIS progression CSV by header signature; ship a hardcoded mapping for it.
+- Cache mapping in existing `import_mappings` table (already exists).
 
-## 4. Design system
+**`src/pages/Staff.tsx`** + **`src/pages/StaffProfile.tsx`**: mirror student structure with staff-specific fields.
 
-- `src/index.css` + `tailwind.config.ts` extended with semantic HSL tokens: `--primary, --accent, --success, --warning, --danger, --info, --surface, --border, --muted` (light + dark). `--primary` is rewritten at runtime from `tenant.primary_color` (hex → HSL) by `TenantProvider`.
-- Fonts: Inter (UI), JetBrains Mono (codes/IDs) loaded via `<link>` in `index.html`.
-- Spacing tokens already 4-based via Tailwind defaults.
-- New reusable components in `src/components/ui-kit/`:
-  `PageHeader, StatCard, DataTable, EmptyState, FormField, Money, DateTime, UserAvatar, Badge (extended), ConfirmDialog, CommandPalette, RoleGuard`.
-- `DataTable` built on TanStack Table + shadcn `Table`, supports columns, pagination, search, filters, bulk actions.
-- `CommandPalette` uses shadcn `Command` + `cmdk`, opened with ⌘K / Ctrl+K, indexes navigation items + recent students/invoices.
+## Notes / out-of-scope-for-now
 
----
+- Portal user provisioning for guardians/students is stubbed (`portal_user_id` left null; no auth.users created).
+- Discipline tab shows empty state until discipline module exists.
+- PDF ID card / transfer letter use simple `jspdf` templates.
 
-## 5. Navigation shell
+## Files I'll create/edit
 
-- Rebuilt `AppSidebar` with grouped, role-aware sections exactly as specified (Overview, Academics, People, Finance, Communication, Operations, Insights, System). **Duplicate "Reports" removed.**
-- Each item wrapped in a permission check via `usePermissions().can()`.
-- Sidebar: collapsible (existing `SidebarProvider`), independently scrollable (`overflow-y-auto` on `SidebarContent`), pinned items stored in `localStorage` keyed by user id.
-- Top bar (`AppHeader`): tenant logo+name, ⌘K trigger, Quick Actions menu (New student / invoice / announcement), notifications bell (stub), dark mode toggle (existing), profile menu with tenant switcher.
+Migrations: 1 large
+New pages: `StudentProfile.tsx`, `AdmissionWizard.tsx`, `StaffProfile.tsx`
+Replaced: `Students.tsx`, `Staff.tsx`, `StudentsImport.tsx`
+New components: `StudentHeader`, `GuardianCard`, `DocumentsList`, `ActivityFeed`, `CountryAwareFields`, `QuickAddStudentDrawer`, `BulkActionsBar`, `SavedViewsMenu`
+Edge fn edits: extend `suggest-import-mapping` canonical schema
+Routes added in `App.tsx`
 
----
-
-## 6. Demo data seeding
-
-- Edge function `seed-tenant-demo-data` invoked on tenant create. Idempotent (checks `tenant_settings.demo_seeded`).
-- Seeds: 1 academic year + 3 terms, 4 classes, 25 students + parents, 6 teachers, 1 fee structure (4 items), 14 days attendance, 8 invoices (mixed statuses), 3 announcements, 2 events, sample timetable rows.
-- `DemoDataBanner` already exists; rewired to read `tenants.is_demo` / `tenant_settings.demo_seeded`. CTA "Replace with my school's data" routes to existing `/students/import`.
-- Settings → Data → "Clear demo data" button calls edge function `clear-tenant-demo-data` (admin permission `settings.manage` required).
-
----
-
-## 7. File changes (high level)
-
-**New:**
-- `supabase/migrations/<ts>_tenancy_rbac_overhaul.sql` (single big migration: enums, tables, helpers, RLS rewrite, seed system roles + permissions, backfill from `schools`).
-- `supabase/functions/{set-active-tenant,seed-tenant-demo-data,clear-tenant-demo-data}/index.ts`.
-- `src/contexts/TenantContext.tsx`, `src/hooks/{useTenant,useMoney,useDate,usePermissions}.ts`.
-- `src/i18n/{index.ts,locales/...}`.
-- `src/components/ui-kit/*` (PageHeader, StatCard, DataTable, EmptyState, FormField, Money, DateTime, UserAvatar, ConfirmDialog, CommandPalette, RoleGuard).
-- `src/components/MfaRequiredRoute.tsx`, `src/components/TenantSwitcher.tsx`.
-- `src/pages/TenantSelect.tsx`.
-
-**Rewritten:**
-- `src/App.tsx` — routes nested under `/t/:slug/*`, wraps in `TenantProvider`.
-- `src/contexts/AuthContext.tsx` — multi-tenant memberships, no `role` field (moved to permissions hook).
-- `src/components/AppSidebar.tsx` — new grouped structure, perm-gated, deduped.
-- `src/components/AppHeader.tsx` — ⌘K, quick actions, tenant switcher.
-- `src/lib/demoSeed.ts` — thin client wrapper that calls the edge function.
-
-**Touched (`school_id` → `tenant_id`, formatting via `<Money>`):**
-- All pages in `src/pages/*` that query domain tables.
-
----
-
-## 8. Out of scope (follow-ups)
-
-- Actually wiring an SMS provider for phone OTP and WhatsApp/SMS broadcasts.
-- Full translations for sw / fr / am (structure only in this pass).
-- Notifications bell backend (UI stub now).
-- Per-user pinned-item server persistence (localStorage now).
-- Billing/Stripe subscription enforcement (`subscription_status` is stored but not enforced).
-
----
-
-## 9. Acceptance check
-
-After this lands:
-- Signup → tenant created → demo data seeded → `/t/<slug>/dashboard` populated, under 90s.
-- `<Money>` shows `KSh 1,200.00` for KE, `USh 1,200` for UG, etc.
-- Switching `tenant_id` in JWT (or impersonating) cannot read another tenant's rows — verified by RLS-only access (no `school_id` left).
-- Sidebar items appear/disappear based on `usePermissions().can(...)`.
-- ⌘K opens `CommandPalette`.
-- No duplicate "Reports" in sidebar; sidebar scrolls independently.
-- Dark mode toggle persists (existing behavior retained).
-
-Approve to proceed — this will run one large migration and rewrite a lot of files.
+After Phase 1 migration approves, I'll implement Phases 2–4 sequentially in one continuous build, pausing only if I hit a question I can't answer from existing conventions.
