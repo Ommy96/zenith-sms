@@ -977,10 +977,17 @@ export type Database = {
       fee_items: {
         Row: {
           amount: number
+          applies_to_terms: Json | null
           category: Database["public"]["Enums"]["fee_category_enum"]
           created_at: string
+          frequency: Database["public"]["Enums"]["fee_frequency_enum"]
           id: string
           is_mandatory: boolean
+          late_fee_after_days: number | null
+          late_fee_amount: number | null
+          learner_category:
+            | Database["public"]["Enums"]["learner_category_enum"]
+            | null
           name: string
           sort_order: number
           structure_id: string
@@ -988,10 +995,17 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          applies_to_terms?: Json | null
           category?: Database["public"]["Enums"]["fee_category_enum"]
           created_at?: string
+          frequency?: Database["public"]["Enums"]["fee_frequency_enum"]
           id?: string
           is_mandatory?: boolean
+          late_fee_after_days?: number | null
+          late_fee_amount?: number | null
+          learner_category?:
+            | Database["public"]["Enums"]["learner_category_enum"]
+            | null
           name: string
           sort_order?: number
           structure_id: string
@@ -999,10 +1013,17 @@ export type Database = {
         }
         Update: {
           amount?: number
+          applies_to_terms?: Json | null
           category?: Database["public"]["Enums"]["fee_category_enum"]
           created_at?: string
+          frequency?: Database["public"]["Enums"]["fee_frequency_enum"]
           id?: string
           is_mandatory?: boolean
+          late_fee_after_days?: number | null
+          late_fee_amount?: number | null
+          learner_category?:
+            | Database["public"]["Enums"]["learner_category_enum"]
+            | null
           name?: string
           sort_order?: number
           structure_id?: string
@@ -1081,11 +1102,16 @@ export type Database = {
         Row: {
           academic_year_id: string | null
           applies_to: Database["public"]["Enums"]["structure_applies_to_enum"]
+          class_id: string | null
           created_at: string
           created_by: string | null
           currency: string
+          grade_level_id: string | null
           id: string
           is_active: boolean
+          learner_category:
+            | Database["public"]["Enums"]["learner_category_enum"]
+            | null
           name: string
           notes: string | null
           tenant_id: string
@@ -1095,11 +1121,16 @@ export type Database = {
         Insert: {
           academic_year_id?: string | null
           applies_to?: Database["public"]["Enums"]["structure_applies_to_enum"]
+          class_id?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
+          grade_level_id?: string | null
           id?: string
           is_active?: boolean
+          learner_category?:
+            | Database["public"]["Enums"]["learner_category_enum"]
+            | null
           name: string
           notes?: string | null
           tenant_id: string
@@ -1109,11 +1140,16 @@ export type Database = {
         Update: {
           academic_year_id?: string | null
           applies_to?: Database["public"]["Enums"]["structure_applies_to_enum"]
+          class_id?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
+          grade_level_id?: string | null
           id?: string
           is_active?: boolean
+          learner_category?:
+            | Database["public"]["Enums"]["learner_category_enum"]
+            | null
           name?: string
           notes?: string | null
           tenant_id?: string
@@ -1126,6 +1162,20 @@ export type Database = {
             columns: ["academic_year_id"]
             isOneToOne: false
             referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_structures_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_structures_grade_level_id_fkey"
+            columns: ["grade_level_id"]
+            isOneToOne: false
+            referencedRelation: "grade_levels"
             referencedColumns: ["id"]
           },
           {
@@ -1652,6 +1702,7 @@ export type Database = {
       }
       mpesa_config: {
         Row: {
+          callback_url: string | null
           consumer_key: string | null
           consumer_secret: string | null
           created_at: string
@@ -1660,12 +1711,14 @@ export type Database = {
           initiator_name: string | null
           is_active: boolean
           passkey: string | null
+          security_credential: string | null
           shortcode: string | null
           shortcode_type: string
           tenant_id: string
           updated_at: string
         }
         Insert: {
+          callback_url?: string | null
           consumer_key?: string | null
           consumer_secret?: string | null
           created_at?: string
@@ -1674,12 +1727,14 @@ export type Database = {
           initiator_name?: string | null
           is_active?: boolean
           passkey?: string | null
+          security_credential?: string | null
           shortcode?: string | null
           shortcode_type?: string
           tenant_id: string
           updated_at?: string
         }
         Update: {
+          callback_url?: string | null
           consumer_key?: string | null
           consumer_secret?: string | null
           created_at?: string
@@ -1688,6 +1743,7 @@ export type Database = {
           initiator_name?: string | null
           is_active?: boolean
           passkey?: string | null
+          security_credential?: string | null
           shortcode?: string | null
           shortcode_type?: string
           tenant_id?: string
@@ -1752,6 +1808,7 @@ export type Database = {
       mpesa_transactions: {
         Row: {
           account_reference: string | null
+          account_reference_raw: string | null
           amount: number
           bill_ref_number: string | null
           created_at: string
@@ -1759,12 +1816,15 @@ export type Database = {
           id: string
           last_name: string | null
           matched_invoice_id: string | null
+          matched_payment_id: string | null
           matched_student_id: string | null
           middle_name: string | null
           mpesa_receipt: string
           org_account_balance: number | null
           phone: string | null
           raw_payload: Json | null
+          resolved_at: string | null
+          resolved_by: string | null
           status: string
           tenant_id: string
           transaction_time: string
@@ -1772,6 +1832,7 @@ export type Database = {
         }
         Insert: {
           account_reference?: string | null
+          account_reference_raw?: string | null
           amount?: number
           bill_ref_number?: string | null
           created_at?: string
@@ -1779,12 +1840,15 @@ export type Database = {
           id?: string
           last_name?: string | null
           matched_invoice_id?: string | null
+          matched_payment_id?: string | null
           matched_student_id?: string | null
           middle_name?: string | null
           mpesa_receipt: string
           org_account_balance?: number | null
           phone?: string | null
           raw_payload?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           status?: string
           tenant_id: string
           transaction_time?: string
@@ -1792,6 +1856,7 @@ export type Database = {
         }
         Update: {
           account_reference?: string | null
+          account_reference_raw?: string | null
           amount?: number
           bill_ref_number?: string | null
           created_at?: string
@@ -1799,18 +1864,29 @@ export type Database = {
           id?: string
           last_name?: string | null
           matched_invoice_id?: string | null
+          matched_payment_id?: string | null
           matched_student_id?: string | null
           middle_name?: string | null
           mpesa_receipt?: string
           org_account_balance?: number | null
           phone?: string | null
           raw_payload?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           status?: string
           tenant_id?: string
           transaction_time?: string
           transaction_type?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "mpesa_transactions_matched_payment_id_fkey"
+            columns: ["matched_payment_id"]
+            isOneToOne: false
+            referencedRelation: "student_payments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payment_allocations: {
         Row: {
@@ -1853,6 +1929,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_reminders_config: {
+        Row: {
+          channels: Database["public"]["Enums"]["reminder_channel_enum"][]
+          days_after_due: number[]
+          days_before_due: number[]
+          is_active: boolean
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          channels?: Database["public"]["Enums"]["reminder_channel_enum"][]
+          days_after_due?: number[]
+          days_before_due?: number[]
+          is_active?: boolean
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          channels?: Database["public"]["Enums"]["reminder_channel_enum"][]
+          days_after_due?: number[]
+          days_before_due?: number[]
+          is_active?: boolean
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       periods: {
         Row: {
@@ -1948,6 +2051,60 @@ export type Database = {
             columns: ["default_tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reminder_log: {
+        Row: {
+          channel: Database["public"]["Enums"]["reminder_channel_enum"]
+          error: string | null
+          id: string
+          invoice_id: string | null
+          message: string | null
+          recipient: string | null
+          sent_at: string
+          status: string
+          student_id: string | null
+          tenant_id: string
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["reminder_channel_enum"]
+          error?: string | null
+          id?: string
+          invoice_id?: string | null
+          message?: string | null
+          recipient?: string | null
+          sent_at?: string
+          status?: string
+          student_id?: string | null
+          tenant_id: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["reminder_channel_enum"]
+          error?: string | null
+          id?: string
+          invoice_id?: string | null
+          message?: string | null
+          recipient?: string | null
+          sent_at?: string
+          status?: string
+          student_id?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminder_log_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "student_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminder_log_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -2258,6 +2415,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      scholarships: {
+        Row: {
+          amount: number
+          created_at: string
+          eligibility_criteria: string | null
+          id: string
+          is_active: boolean
+          name: string
+          tenant_id: string
+          type: Database["public"]["Enums"]["discount_type_enum"]
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          eligibility_criteria?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          tenant_id: string
+          type?: Database["public"]["Enums"]["discount_type_enum"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          eligibility_criteria?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          tenant_id?: string
+          type?: Database["public"]["Enums"]["discount_type_enum"]
+          updated_at?: string
+        }
+        Relationships: []
       }
       staff: {
         Row: {
@@ -2605,6 +2798,63 @@ export type Database = {
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_fee_adjustments: {
+        Row: {
+          approved_by: string | null
+          created_at: string
+          custom_amount: number | null
+          id: string
+          is_active: boolean
+          reason: string | null
+          scholarship_id: string | null
+          student_id: string
+          tenant_id: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string
+          custom_amount?: number | null
+          id?: string
+          is_active?: boolean
+          reason?: string | null
+          scholarship_id?: string | null
+          student_id: string
+          tenant_id: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string
+          custom_amount?: number | null
+          id?: string
+          is_active?: boolean
+          reason?: string | null
+          scholarship_id?: string | null
+          student_id?: string
+          tenant_id?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_fee_adjustments_scholarship_id_fkey"
+            columns: ["scholarship_id"]
+            isOneToOne: false
+            referencedRelation: "scholarships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_fee_adjustments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -3835,6 +4085,16 @@ export type Database = {
         Args: { _tenant: string; _user?: string }
         Returns: boolean
       }
+      manual_reconcile_mpesa: {
+        Args: {
+          _invoice?: string
+          _student: string
+          _txn: string
+          _user?: string
+        }
+        Returns: string
+      }
+      normalize_account_ref: { Args: { _raw: string }; Returns: string }
       recompute_exam_positions: { Args: { _exam: string }; Returns: undefined }
       recompute_invoice_totals: {
         Args: { _invoice: string }
@@ -3911,6 +4171,7 @@ export type Database = {
         | "book"
         | "development"
         | "other"
+      fee_frequency_enum: "per_term" | "per_year" | "one_off" | "monthly"
       gender_enum: "male" | "female" | "other" | "prefer_not_to_say"
       grade_stage_enum:
         | "pre_primary"
@@ -3954,6 +4215,7 @@ export type Database = {
         | "card"
         | "pos"
         | "other"
+      reminder_channel_enum: "sms" | "whatsapp" | "email"
       report_run_status_enum: "queued" | "running" | "ready" | "failed"
       room_type_enum:
         | "classroom"
@@ -4174,6 +4436,7 @@ export const Constants = {
         "development",
         "other",
       ],
+      fee_frequency_enum: ["per_term", "per_year", "one_off", "monthly"],
       gender_enum: ["male", "female", "other", "prefer_not_to_say"],
       grade_stage_enum: [
         "pre_primary",
@@ -4222,6 +4485,7 @@ export const Constants = {
         "pos",
         "other",
       ],
+      reminder_channel_enum: ["sms", "whatsapp", "email"],
       report_run_status_enum: ["queued", "running", "ready", "failed"],
       room_type_enum: [
         "classroom",
