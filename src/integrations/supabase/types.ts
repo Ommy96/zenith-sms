@@ -1957,6 +1957,162 @@ export type Database = {
         }
         Relationships: []
       }
+      payroll_periods: {
+        Row: {
+          created_at: string
+          id: string
+          month: number
+          notes: string | null
+          pay_date: string | null
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month: number
+          notes?: string | null
+          pay_date?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month?: number
+          notes?: string | null
+          pay_date?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_periods_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payslips: {
+        Row: {
+          basic_salary: number
+          created_at: string
+          detail: Json
+          gross_pay: number
+          house_allowance: number
+          housing_levy: number
+          id: string
+          net_pay: number
+          nssf: number
+          other_allowances: number
+          other_deductions: number
+          paid_at: string | null
+          paye: number
+          payment_method: string | null
+          payment_reference: string | null
+          pdf_url: string | null
+          period_id: string
+          shif: number
+          staff_id: string
+          status: string
+          taxable_pay: number
+          tenant_id: string
+          total_deductions: number
+          transport_allowance: number
+          updated_at: string
+        }
+        Insert: {
+          basic_salary?: number
+          created_at?: string
+          detail?: Json
+          gross_pay?: number
+          house_allowance?: number
+          housing_levy?: number
+          id?: string
+          net_pay?: number
+          nssf?: number
+          other_allowances?: number
+          other_deductions?: number
+          paid_at?: string | null
+          paye?: number
+          payment_method?: string | null
+          payment_reference?: string | null
+          pdf_url?: string | null
+          period_id: string
+          shif?: number
+          staff_id: string
+          status?: string
+          taxable_pay?: number
+          tenant_id: string
+          total_deductions?: number
+          transport_allowance?: number
+          updated_at?: string
+        }
+        Update: {
+          basic_salary?: number
+          created_at?: string
+          detail?: Json
+          gross_pay?: number
+          house_allowance?: number
+          housing_levy?: number
+          id?: string
+          net_pay?: number
+          nssf?: number
+          other_allowances?: number
+          other_deductions?: number
+          paid_at?: string | null
+          paye?: number
+          payment_method?: string | null
+          payment_reference?: string | null
+          pdf_url?: string | null
+          period_id?: string
+          shif?: number
+          staff_id?: string
+          status?: string
+          taxable_pay?: number
+          tenant_id?: string
+          total_deductions?: number
+          transport_allowance?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payslips_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payslips_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payslips_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       periods: {
         Row: {
           created_at: string
@@ -2597,6 +2753,81 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "staff_school_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_compensation: {
+        Row: {
+          basic_salary: number
+          created_at: string
+          effective_from: string
+          house_allowance: number
+          id: string
+          insurance_relief: number
+          other_allowances: Json
+          pays_housing_levy: boolean
+          pays_nssf: boolean
+          pays_paye: boolean
+          pays_shif: boolean
+          personal_relief: number
+          recurring_deductions: Json
+          staff_id: string
+          tenant_id: string
+          transport_allowance: number
+          updated_at: string
+        }
+        Insert: {
+          basic_salary?: number
+          created_at?: string
+          effective_from?: string
+          house_allowance?: number
+          id?: string
+          insurance_relief?: number
+          other_allowances?: Json
+          pays_housing_levy?: boolean
+          pays_nssf?: boolean
+          pays_paye?: boolean
+          pays_shif?: boolean
+          personal_relief?: number
+          recurring_deductions?: Json
+          staff_id: string
+          tenant_id: string
+          transport_allowance?: number
+          updated_at?: string
+        }
+        Update: {
+          basic_salary?: number
+          created_at?: string
+          effective_from?: string
+          house_allowance?: number
+          id?: string
+          insurance_relief?: number
+          other_allowances?: Json
+          pays_housing_levy?: boolean
+          pays_nssf?: boolean
+          pays_paye?: boolean
+          pays_shif?: boolean
+          personal_relief?: number
+          recurring_deductions?: Json
+          staff_id?: string
+          tenant_id?: string
+          transport_allowance?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_compensation_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: true
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_compensation_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -4059,6 +4290,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calc_kenya_payroll: {
+        Args: {
+          _basic: number
+          _house: number
+          _insurance_relief: number
+          _other_deductions: number
+          _other_nontax: number
+          _other_taxable: number
+          _pays_housing: boolean
+          _pays_nssf: boolean
+          _pays_paye: boolean
+          _pays_shif: boolean
+          _personal_relief: number
+          _transport: number
+        }
+        Returns: Json
+      }
       compute_grade: {
         Args: { _pct: number; _scale: string }
         Returns: {
@@ -4095,6 +4343,10 @@ export type Database = {
         Returns: string
       }
       normalize_account_ref: { Args: { _raw: string }; Returns: string }
+      process_payroll_period: {
+        Args: { _period: string; _user?: string }
+        Returns: number
+      }
       recompute_exam_positions: { Args: { _exam: string }; Returns: undefined }
       recompute_invoice_totals: {
         Args: { _invoice: string }
