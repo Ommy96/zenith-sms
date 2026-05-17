@@ -27,7 +27,8 @@ export function SubjectsTab() {
   useEffect(() => { load(); }, [load]);
 
   const add = async () => {
-    if (!tenantId || !form.code || !form.name) return;
+    if (!tenantId) return toast({ title: "No school selected", description: "Finish school setup first.", variant: "destructive" });
+    if (!form.code || !form.name) return toast({ title: "Missing fields", description: "Enter a subject code and name.", variant: "destructive" });
     const { error } = await supabase.from("subjects").insert({ ...form, tenant_id: tenantId } as any);
     if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
     setForm({ code: "", name: "", category: "core", curriculum_tag: "", assessment_type: "both" });
