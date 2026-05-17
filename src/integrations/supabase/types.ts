@@ -22,7 +22,7 @@ export type Database = {
           entity_id: string | null
           entity_type: string | null
           id: string
-          school_id: string | null
+          tenant_id: string | null
           user_id: string | null
         }
         Insert: {
@@ -32,7 +32,7 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           id?: string
-          school_id?: string | null
+          tenant_id?: string | null
           user_id?: string | null
         }
         Update: {
@@ -42,13 +42,13 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           id?: string
-          school_id?: string | null
+          tenant_id?: string | null
           user_id?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "activity_logs_school_id_fkey"
-            columns: ["school_id"]
+            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
@@ -60,7 +60,7 @@ export type Database = {
           count: number
           created_at: string
           id: string
-          school_id: string
+          tenant_id: string
           updated_at: string
           user_id: string
           year_month: string
@@ -69,7 +69,7 @@ export type Database = {
           count?: number
           created_at?: string
           id?: string
-          school_id: string
+          tenant_id: string
           updated_at?: string
           user_id: string
           year_month: string
@@ -78,7 +78,7 @@ export type Database = {
           count?: number
           created_at?: string
           id?: string
-          school_id?: string
+          tenant_id?: string
           updated_at?: string
           user_id?: string
           year_month?: string
@@ -93,7 +93,7 @@ export type Database = {
           created_at: string | null
           id: string
           priority: string | null
-          school_id: string
+          tenant_id: string
           title: string
         }
         Insert: {
@@ -103,7 +103,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           priority?: string | null
-          school_id: string
+          tenant_id: string
           title: string
         }
         Update: {
@@ -113,13 +113,13 @@ export type Database = {
           created_at?: string | null
           id?: string
           priority?: string | null
-          school_id?: string
+          tenant_id?: string
           title?: string
         }
         Relationships: [
           {
             foreignKeyName: "announcements_school_id_fkey"
-            columns: ["school_id"]
+            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
@@ -141,8 +141,8 @@ export type Database = {
           last_name: string
           notes: string | null
           previous_school: string | null
-          school_id: string
           status: string
+          tenant_id: string
           updated_at: string | null
         }
         Insert: {
@@ -159,8 +159,8 @@ export type Database = {
           last_name: string
           notes?: string | null
           previous_school?: string | null
-          school_id: string
           status?: string
+          tenant_id: string
           updated_at?: string | null
         }
         Update: {
@@ -177,14 +177,14 @@ export type Database = {
           last_name?: string
           notes?: string | null
           previous_school?: string | null
-          school_id?: string
           status?: string
+          tenant_id?: string
           updated_at?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "applications_school_id_fkey"
-            columns: ["school_id"]
+            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
@@ -199,9 +199,9 @@ export type Database = {
           id: string
           notes: string | null
           recorded_by: string | null
-          school_id: string
           status: string
           student_id: string
+          tenant_id: string
         }
         Insert: {
           class_id?: string | null
@@ -210,9 +210,9 @@ export type Database = {
           id?: string
           notes?: string | null
           recorded_by?: string | null
-          school_id: string
           status?: string
           student_id: string
+          tenant_id: string
         }
         Update: {
           class_id?: string | null
@@ -221,9 +221,9 @@ export type Database = {
           id?: string
           notes?: string | null
           recorded_by?: string | null
-          school_id?: string
           status?: string
           student_id?: string
+          tenant_id?: string
         }
         Relationships: [
           {
@@ -235,7 +235,7 @@ export type Database = {
           },
           {
             foreignKeyName: "attendance_school_id_fkey"
-            columns: ["school_id"]
+            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
@@ -257,8 +257,8 @@ export type Database = {
           grade_level: string | null
           id: string
           name: string
-          school_id: string
           teacher_id: string | null
+          tenant_id: string
         }
         Insert: {
           academic_year?: string | null
@@ -267,8 +267,8 @@ export type Database = {
           grade_level?: string | null
           id?: string
           name: string
-          school_id: string
           teacher_id?: string | null
+          tenant_id: string
         }
         Update: {
           academic_year?: string | null
@@ -277,13 +277,13 @@ export type Database = {
           grade_level?: string | null
           id?: string
           name?: string
-          school_id?: string
           teacher_id?: string | null
+          tenant_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "classes_school_id_fkey"
-            columns: ["school_id"]
+            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
@@ -304,10 +304,10 @@ export type Database = {
           grade: string | null
           id: string
           remarks: string | null
-          school_id: string
           score: number | null
           student_id: string
           subject: string
+          tenant_id: string
         }
         Insert: {
           created_at?: string | null
@@ -315,10 +315,10 @@ export type Database = {
           grade?: string | null
           id?: string
           remarks?: string | null
-          school_id: string
           score?: number | null
           student_id: string
           subject: string
+          tenant_id: string
         }
         Update: {
           created_at?: string | null
@@ -326,10 +326,10 @@ export type Database = {
           grade?: string | null
           id?: string
           remarks?: string | null
-          school_id?: string
           score?: number | null
           student_id?: string
           subject?: string
+          tenant_id?: string
         }
         Relationships: [
           {
@@ -341,7 +341,7 @@ export type Database = {
           },
           {
             foreignKeyName: "exam_results_school_id_fkey"
-            columns: ["school_id"]
+            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
@@ -362,9 +362,9 @@ export type Database = {
           end_date: string | null
           id: string
           name: string
-          school_id: string
           start_date: string | null
           status: string | null
+          tenant_id: string
           term: string | null
           type: string | null
         }
@@ -374,9 +374,9 @@ export type Database = {
           end_date?: string | null
           id?: string
           name: string
-          school_id: string
           start_date?: string | null
           status?: string | null
+          tenant_id: string
           term?: string | null
           type?: string | null
         }
@@ -386,16 +386,16 @@ export type Database = {
           end_date?: string | null
           id?: string
           name?: string
-          school_id?: string
           start_date?: string | null
           status?: string | null
+          tenant_id?: string
           term?: string | null
           type?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "exams_school_id_fkey"
-            columns: ["school_id"]
+            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
@@ -409,8 +409,8 @@ export type Database = {
           id: string
           last_used_at: string
           mapping: Json
-          school_id: string
           source_type: string
+          tenant_id: string
           use_count: number
         }
         Insert: {
@@ -419,8 +419,8 @@ export type Database = {
           id?: string
           last_used_at?: string
           mapping?: Json
-          school_id: string
           source_type?: string
+          tenant_id: string
           use_count?: number
         }
         Update: {
@@ -429,8 +429,8 @@ export type Database = {
           id?: string
           last_used_at?: string
           mapping?: Json
-          school_id?: string
           source_type?: string
+          tenant_id?: string
           use_count?: number
         }
         Relationships: []
@@ -445,7 +445,7 @@ export type Database = {
           location: string | null
           name: string
           quantity: number | null
-          school_id: string
+          tenant_id: string
           value: number | null
         }
         Insert: {
@@ -457,7 +457,7 @@ export type Database = {
           location?: string | null
           name: string
           quantity?: number | null
-          school_id: string
+          tenant_id: string
           value?: number | null
         }
         Update: {
@@ -469,13 +469,13 @@ export type Database = {
           location?: string | null
           name?: string
           quantity?: number | null
-          school_id?: string
+          tenant_id?: string
           value?: number | null
         }
         Relationships: [
           {
             foreignKeyName: "inventory_assets_school_id_fkey"
-            columns: ["school_id"]
+            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
@@ -493,9 +493,9 @@ export type Database = {
           id: string
           invoice_number: string | null
           paid_amount: number | null
-          school_id: string
           status: string | null
           student_id: string
+          tenant_id: string
           term: string | null
         }
         Insert: {
@@ -508,9 +508,9 @@ export type Database = {
           id?: string
           invoice_number?: string | null
           paid_amount?: number | null
-          school_id: string
           status?: string | null
           student_id: string
+          tenant_id: string
           term?: string | null
         }
         Update: {
@@ -523,15 +523,15 @@ export type Database = {
           id?: string
           invoice_number?: string | null
           paid_amount?: number | null
-          school_id?: string
           status?: string | null
           student_id?: string
+          tenant_id?: string
           term?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "invoices_school_id_fkey"
-            columns: ["school_id"]
+            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
@@ -552,9 +552,9 @@ export type Database = {
           id: string
           isbn: string | null
           issued_to: string | null
-          school_id: string
           shelf_location: string | null
           status: string
+          tenant_id: string
           title: string
         }
         Insert: {
@@ -563,9 +563,9 @@ export type Database = {
           id?: string
           isbn?: string | null
           issued_to?: string | null
-          school_id: string
           shelf_location?: string | null
           status?: string
+          tenant_id: string
           title: string
         }
         Update: {
@@ -574,15 +574,15 @@ export type Database = {
           id?: string
           isbn?: string | null
           issued_to?: string | null
-          school_id?: string
           shelf_location?: string | null
           status?: string
+          tenant_id?: string
           title?: string
         }
         Relationships: [
           {
             foreignKeyName: "library_books_school_id_fkey"
-            columns: ["school_id"]
+            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
@@ -599,9 +599,9 @@ export type Database = {
           initiator_name: string | null
           is_active: boolean
           passkey: string | null
-          school_id: string
           shortcode: string | null
           shortcode_type: string
+          tenant_id: string
           updated_at: string
         }
         Insert: {
@@ -613,9 +613,9 @@ export type Database = {
           initiator_name?: string | null
           is_active?: boolean
           passkey?: string | null
-          school_id: string
           shortcode?: string | null
           shortcode_type?: string
+          tenant_id: string
           updated_at?: string
         }
         Update: {
@@ -627,9 +627,9 @@ export type Database = {
           initiator_name?: string | null
           is_active?: boolean
           passkey?: string | null
-          school_id?: string
           shortcode?: string | null
           shortcode_type?: string
+          tenant_id?: string
           updated_at?: string
         }
         Relationships: []
@@ -647,9 +647,9 @@ export type Database = {
           phone: string
           result_code: string | null
           result_desc: string | null
-          school_id: string
           status: string
           student_id: string | null
+          tenant_id: string
           updated_at: string
         }
         Insert: {
@@ -664,9 +664,9 @@ export type Database = {
           phone: string
           result_code?: string | null
           result_desc?: string | null
-          school_id: string
           status?: string
           student_id?: string | null
+          tenant_id: string
           updated_at?: string
         }
         Update: {
@@ -681,9 +681,9 @@ export type Database = {
           phone?: string
           result_code?: string | null
           result_desc?: string | null
-          school_id?: string
           status?: string
           student_id?: string | null
+          tenant_id?: string
           updated_at?: string
         }
         Relationships: []
@@ -704,8 +704,8 @@ export type Database = {
           org_account_balance: number | null
           phone: string | null
           raw_payload: Json | null
-          school_id: string
           status: string
+          tenant_id: string
           transaction_time: string
           transaction_type: string | null
         }
@@ -724,8 +724,8 @@ export type Database = {
           org_account_balance?: number | null
           phone?: string | null
           raw_payload?: Json | null
-          school_id: string
           status?: string
+          tenant_id: string
           transaction_time?: string
           transaction_type?: string | null
         }
@@ -744,8 +744,8 @@ export type Database = {
           org_account_balance?: number | null
           phone?: string | null
           raw_payload?: Json | null
-          school_id?: string
           status?: string
+          tenant_id?: string
           transaction_time?: string
           transaction_type?: string | null
         }
@@ -755,37 +755,37 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string | null
+          default_tenant_id: string | null
           email: string | null
           full_name: string
           id: string
           phone: string | null
-          school_id: string | null
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
+          default_tenant_id?: string | null
           email?: string | null
           full_name: string
           id: string
           phone?: string | null
-          school_id?: string | null
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string | null
+          default_tenant_id?: string | null
           email?: string | null
           full_name?: string
           id?: string
           phone?: string | null
-          school_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "profiles_school_id_fkey"
-            columns: ["school_id"]
+            columns: ["default_tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
@@ -803,8 +803,8 @@ export type Database = {
           last_name: string
           phone: string | null
           role: string | null
-          school_id: string
           status: string | null
+          tenant_id: string
           updated_at: string | null
           user_id: string | null
         }
@@ -818,8 +818,8 @@ export type Database = {
           last_name: string
           phone?: string | null
           role?: string | null
-          school_id: string
           status?: string | null
+          tenant_id: string
           updated_at?: string | null
           user_id?: string | null
         }
@@ -833,15 +833,15 @@ export type Database = {
           last_name?: string
           phone?: string | null
           role?: string | null
-          school_id?: string
           status?: string | null
+          tenant_id?: string
           updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "staff_school_id_fkey"
-            columns: ["school_id"]
+            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
@@ -868,8 +868,8 @@ export type Database = {
           id: string
           last_name: string
           phone: string | null
-          school_id: string
           status: string | null
+          tenant_id: string
           updated_at: string | null
           user_id: string | null
         }
@@ -892,8 +892,8 @@ export type Database = {
           id?: string
           last_name: string
           phone?: string | null
-          school_id: string
           status?: string | null
+          tenant_id: string
           updated_at?: string | null
           user_id?: string | null
         }
@@ -916,15 +916,15 @@ export type Database = {
           id?: string
           last_name?: string
           phone?: string | null
-          school_id?: string
           status?: string | null
+          tenant_id?: string
           updated_at?: string | null
           user_id?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "students_school_id_fkey"
-            columns: ["school_id"]
+            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
@@ -1052,9 +1052,9 @@ export type Database = {
           driver_name: string | null
           id: string
           name: string
-          school_id: string
           status: string
           student_count: number | null
+          tenant_id: string
           vehicle_number: string | null
         }
         Insert: {
@@ -1063,9 +1063,9 @@ export type Database = {
           driver_name?: string | null
           id?: string
           name: string
-          school_id: string
           status?: string
           student_count?: number | null
+          tenant_id: string
           vehicle_number?: string | null
         }
         Update: {
@@ -1074,15 +1074,15 @@ export type Database = {
           driver_name?: string | null
           id?: string
           name?: string
-          school_id?: string
           status?: string
           student_count?: number | null
+          tenant_id?: string
           vehicle_number?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "transport_routes_school_id_fkey"
-            columns: ["school_id"]
+            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
@@ -1099,11 +1099,11 @@ export type Database = {
           failed_count: number
           id: string
           recipient_count: number
-          school_id: string
           sent_count: number
           started_at: string | null
           status: string
           template_id: string | null
+          tenant_id: string
         }
         Insert: {
           audience_filter?: Json
@@ -1114,11 +1114,11 @@ export type Database = {
           failed_count?: number
           id?: string
           recipient_count?: number
-          school_id: string
           sent_count?: number
           started_at?: string | null
           status?: string
           template_id?: string | null
+          tenant_id: string
         }
         Update: {
           audience_filter?: Json
@@ -1129,11 +1129,11 @@ export type Database = {
           failed_count?: number
           id?: string
           recipient_count?: number
-          school_id?: string
           sent_count?: number
           started_at?: string | null
           status?: string
           template_id?: string | null
+          tenant_id?: string
         }
         Relationships: [
           {
@@ -1157,7 +1157,7 @@ export type Database = {
           last_reset_date: string
           messages_sent_today: number
           phone_number_id: string | null
-          school_id: string
+          tenant_id: string
           updated_at: string
           webhook_verify_token: string | null
         }
@@ -1172,7 +1172,7 @@ export type Database = {
           last_reset_date?: string
           messages_sent_today?: number
           phone_number_id?: string | null
-          school_id: string
+          tenant_id: string
           updated_at?: string
           webhook_verify_token?: string | null
         }
@@ -1187,7 +1187,7 @@ export type Database = {
           last_reset_date?: string
           messages_sent_today?: number
           phone_number_id?: string | null
-          school_id?: string
+          tenant_id?: string
           updated_at?: string
           webhook_verify_token?: string | null
         }
@@ -1203,10 +1203,10 @@ export type Database = {
           from_phone: string | null
           id: string
           raw_payload: Json | null
-          school_id: string
           status: string
           student_id: string | null
           template_id: string | null
+          tenant_id: string
           to_phone: string | null
           wa_message_id: string | null
         }
@@ -1219,10 +1219,10 @@ export type Database = {
           from_phone?: string | null
           id?: string
           raw_payload?: Json | null
-          school_id: string
           status?: string
           student_id?: string | null
           template_id?: string | null
+          tenant_id: string
           to_phone?: string | null
           wa_message_id?: string | null
         }
@@ -1235,10 +1235,10 @@ export type Database = {
           from_phone?: string | null
           id?: string
           raw_payload?: Json | null
-          school_id?: string
           status?: string
           student_id?: string | null
           template_id?: string | null
+          tenant_id?: string
           to_phone?: string | null
           wa_message_id?: string | null
         }
@@ -1255,8 +1255,8 @@ export type Database = {
           name: string
           placeholder_count: number
           placeholder_labels: Json
-          school_id: string
           status: string
+          tenant_id: string
           updated_at: string
           usage_count: number
         }
@@ -1270,8 +1270,8 @@ export type Database = {
           name: string
           placeholder_count?: number
           placeholder_labels?: Json
-          school_id: string
           status?: string
+          tenant_id: string
           updated_at?: string
           usage_count?: number
         }
@@ -1285,8 +1285,8 @@ export type Database = {
           name?: string
           placeholder_count?: number
           placeholder_labels?: Json
-          school_id?: string
           status?: string
+          tenant_id?: string
           updated_at?: string
           usage_count?: number
         }
