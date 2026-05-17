@@ -127,7 +127,7 @@ export default function SchoolSetup() {
       // Link user profile to this school
       const { error: profileErr } = await supabase
         .from("profiles")
-        .update({ tenant_id: school.id })
+        .update({ default_tenant_id: school.id })
         .eq("id", (await supabase.auth.getUser()).data.user?.id);
 
       if (profileErr) throw profileErr;
