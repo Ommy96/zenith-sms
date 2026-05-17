@@ -30,7 +30,7 @@ const statusConfig: Record<AttendanceStatus, { label: string; icon: any; color: 
 
 export default function Attendance() {
   const { profile, user } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
 
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [selectedClass, setSelectedClass] = useState("");
@@ -47,7 +47,7 @@ export default function Attendance() {
   // Fetch classes
   useEffect(() => {
     if (!schoolId) return;
-    supabase.from("classes").select("id, name").eq("school_id", schoolId).order("name")
+    supabase.from("classes").select("id, name").eq("tenant_id", schoolId).order("name")
       .then(({ data }) => {
         setClasses(data || []);
         if (data && data.length > 0 && !selectedClass) setSelectedClass(data[0].id);
@@ -67,7 +67,7 @@ export default function Attendance() {
     const { data: studentData } = await supabase
       .from("students")
       .select("id, first_name, last_name, admission_number")
-      .eq("school_id", schoolId)
+      .eq("tenant_id", schoolId)
       .eq("status", "active")
       .or(`grade.eq.${gradeName},grade.eq.${classData?.grade_level || "NONE"}`)
       .order("first_name");
@@ -78,7 +78,7 @@ export default function Attendance() {
     const { data: attData } = await supabase
       .from("attendance")
       .select("id, student_id, status")
-      .eq("school_id", schoolId)
+      .eq("tenant_id", schoolId)
       .eq("class_id", selectedClass)
       .eq("date", date);
 
@@ -123,7 +123,7 @@ export default function Attendance() {
         ...(existingIds[s.id] ? { id: existingIds[s.id] } : {}),
         student_id: s.id,
         class_id: selectedClass,
-        school_id: schoolId,
+        tenant_id: schoolId,
         date,
         status: records[s.id],
         recorded_by: user.id,

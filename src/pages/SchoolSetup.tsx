@@ -106,7 +106,7 @@ export default function SchoolSetup() {
     setLoading(true);
     try {
       // Create school record
-      const { data: school, error: schoolErr } = await supabase.from("schools").insert({
+      const { data: school, error: schoolErr } = await supabase.from("tenants").insert({
         name: schoolName,
         email: schoolEmail || null,
         phone: schoolPhone || null,
@@ -127,7 +127,7 @@ export default function SchoolSetup() {
       // Link user profile to this school
       const { error: profileErr } = await supabase
         .from("profiles")
-        .update({ school_id: school.id })
+        .update({ tenant_id: school.id })
         .eq("id", (await supabase.auth.getUser()).data.user?.id);
 
       if (profileErr) throw profileErr;
@@ -141,7 +141,7 @@ export default function SchoolSetup() {
 
       toast({ title: "School Setup Complete", description: `${schoolName} is ready with sample data to explore.` });
       navigate("/");
-      // Force a reload so AuthContext picks up new school_id and is_demo flag
+      // Force a reload so AuthContext picks up new tenant_id and is_demo flag
       setTimeout(() => window.location.reload(), 100);
     } catch (err: any) {
       toast({ title: "Error", description: err.message || "Failed to save school", variant: "destructive" });

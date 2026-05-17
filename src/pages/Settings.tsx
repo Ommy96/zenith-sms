@@ -25,11 +25,11 @@ export default function SettingsPage() {
   const [busy, setBusy] = useState<null | "reset" | "clear">(null);
 
   const handleReset = async () => {
-    if (!profile?.school_id) return;
+    if (!profile?.tenant_id) return;
     setBusy("reset");
     try {
-      await clearDemoData(profile.school_id);
-      await seedDemoData(profile.school_id);
+      await clearDemoData(profile.tenant_id);
+      await seedDemoData(profile.tenant_id);
       await refreshSchool();
       toast({ title: "Demo data restored", description: "Sample students, fees and activity have been re-seeded." });
     } catch (e: any) {
@@ -38,10 +38,10 @@ export default function SettingsPage() {
   };
 
   const handleClear = async () => {
-    if (!profile?.school_id) return;
+    if (!profile?.tenant_id) return;
     setBusy("clear");
     try {
-      await clearDemoData(profile.school_id);
+      await clearDemoData(profile.tenant_id);
       await refreshSchool();
       toast({ title: "Demo data cleared", description: "Your workspace is now empty and ready for real data." });
     } catch (e: any) {

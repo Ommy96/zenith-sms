@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export function AttendanceChart() {
   const { profile } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
   const [data, setData] = useState<{ day: string; present: number; absent: number }[]>([]);
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export function AttendanceChart() {
       const { data: records } = await supabase
         .from("attendance")
         .select("date, status")
-        .eq("school_id", schoolId)
+        .eq("tenant_id", schoolId)
         .gte("date", startDate);
 
       if (!records?.length) return;

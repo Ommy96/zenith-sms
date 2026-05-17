@@ -39,7 +39,7 @@ const emptyForm = {
 
 export default function Academics() {
   const { profile } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
 
   const [classes, setClasses] = useState<(ClassRow & { teacher?: { first_name: string; last_name: string } | null })[]>([]);
   const [teachers, setTeachers] = useState<StaffOption[]>([]);
@@ -62,7 +62,7 @@ export default function Academics() {
     const { data, error } = await supabase
       .from("classes")
       .select("*, teacher:staff(first_name, last_name)")
-      .eq("school_id", schoolId)
+      .eq("tenant_id", schoolId)
       .order("name");
 
     if (error) {
@@ -78,7 +78,7 @@ export default function Academics() {
     const { data } = await supabase
       .from("students")
       .select("grade")
-      .eq("school_id", schoolId)
+      .eq("tenant_id", schoolId)
       .eq("status", "active");
     if (data) {
       const counts: Record<string, number> = {};
@@ -92,7 +92,7 @@ export default function Academics() {
     const { data } = await supabase
       .from("staff")
       .select("id, first_name, last_name")
-      .eq("school_id", schoolId)
+      .eq("tenant_id", schoolId)
       .eq("status", "active")
       .order("first_name");
     setTeachers(data || []);
@@ -128,7 +128,7 @@ export default function Academics() {
       academic_year: form.academic_year.trim() || null,
       capacity: parseInt(form.capacity) || 40,
       teacher_id: form.teacher_id || null,
-      school_id: schoolId,
+      tenant_id: schoolId,
     };
 
     if (editing) {

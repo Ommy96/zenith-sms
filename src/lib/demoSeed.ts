@@ -14,7 +14,7 @@ const dateAddDays = (days: number) => new Date(Date.now() + days * 86400000).toI
  */
 export async function seedDemoData(schoolId: string) {
   // Mark as demo
-  await supabase.from("schools").update({ is_demo: true }).eq("id", schoolId);
+  await supabase.from("tenants").update({ is_demo: true }).eq("id", schoolId);
 
   // Classes
   const classDefs = [
@@ -23,12 +23,12 @@ export async function seedDemoData(schoolId: string) {
     { name: "Form 3 - East", grade_level: "Form 3" },
   ];
   const { data: classes } = await supabase.from("classes").insert(
-    classDefs.map((c) => ({ ...c, school_id: schoolId, capacity: 40, academic_year: String(new Date().getFullYear()) }))
+    classDefs.map((c) => ({ ...c, tenant_id: schoolId, capacity: 40, academic_year: String(new Date().getFullYear()) }))
   ).select();
 
   // Teachers (4)
   const teacherRows = TEACHER_FIRST.map((fn, i) => ({
-    school_id: schoolId,
+    tenant_id: schoolId,
     first_name: fn,
     last_name: TEACHER_LAST[i],
     email: `${fn.toLowerCase()}.${TEACHER_LAST[i].toLowerCase()}@demo.school`,
@@ -46,7 +46,7 @@ export async function seedDemoData(schoolId: string) {
       const fn = FIRST_NAMES[ci * 5 + i];
       const ln = rand(LAST_NAMES);
       studentRows.push({
-        school_id: schoolId,
+        tenant_id: schoolId,
         first_name: fn,
         last_name: ln,
         gender: i % 2 === 0 ? "male" : "female",
@@ -64,7 +64,7 @@ export async function seedDemoData(schoolId: string) {
 
   // Fee structure -> represented as 3 invoice templates per student per term — but the brief asks for 1 fee structure with 3 fee items.
   // We'll model the "fee structure" as a school payment_config addon and the "items" as 3 sample invoice descriptions.
-  await supabase.from("schools").update({
+  await supabase.from("tenants").update({
     payment_config: {
       currency: "KES",
       currency_symbol: "KSh",
@@ -90,7 +90,7 @@ export async function seedDemoData(schoolId: string) {
       sample.forEach((s) => {
         const r = Math.random();
         const status = r < 0.88 ? "present" : r < 0.95 ? "absent" : "late";
-        attRows.push({ school_id: schoolId, student_id: s.id, date, status });
+        attRows.push({ tenant_id: schoolId, student_id: s.id, date, status });
       });
     }
     // chunked insert
@@ -108,7 +108,7 @@ export async function seedDemoData(schoolId: string) {
       { amount: 42000, paid: 0, status: "pending", studentIdx: 3, days: -5 },
       { amount: 42000, paid: 0, status: "overdue", studentIdx: 4, days: -40 },
     ].map((r, i) => ({
-      school_id: schoolId,
+      tenant_id: schoolId,
       student_id: students[r.studentIdx]?.id,
       invoice_number: `INV-${2000 + i}`,
       amount: r.amount,
@@ -124,15 +124,15 @@ export async function seedDemoData(schoolId: string) {
 
   // 3 announcements
   await supabase.from("announcements").insert([
-    { school_id: schoolId, title: "Welcome back to Term 2", content: "Classes resume Monday. Please check the updated timetable.", priority: "high", audience: "all" },
-    { school_id: schoolId, title: "Sports Day this Friday", content: "Inter-house competitions begin at 9 AM on the main field.", priority: "medium", audience: "all" },
-    { school_id: schoolId, title: "Fee reminder", content: "Term 2 fees are due by the end of the month.", priority: "medium", audience: "parents" },
+    { tenant_id: schoolId, title: "Welcome back to Term 2", content: "Classes resume Monday. Please check the updated timetable.", priority: "high", audience: "all" },
+    { tenant_id: schoolId, title: "Sports Day this Friday", content: "Inter-house competitions begin at 9 AM on the main field.", priority: "medium", audience: "all" },
+    { tenant_id: schoolId, title: "Fee reminder", content: "Term 2 fees are due by the end of the month.", priority: "medium", audience: "parents" },
   ]);
 
   // 2 upcoming events as exams
   await supabase.from("exams").insert([
-    { school_id: schoolId, name: "Mid-Term Exams", type: "mid-term", status: "upcoming", start_date: dateAddDays(14), end_date: dateAddDays(20), term: "Term 2", academic_year: String(new Date().getFullYear()) },
-    { school_id: schoolId, name: "Parents' Day", type: "event", status: "upcoming", start_date: dateAddDays(28), end_date: dateAddDays(28), term: "Term 2", academic_year: String(new Date().getFullYear()) },
+    { tenant_id: schoolId, name: "Mid-Term Exams", type: "mid-term", status: "upcoming", start_date: dateAddDays(14), end_date: dateAddDays(20), term: "Term 2", academic_year: String(new Date().getFullYear()) },
+    { tenant_id: schoolId, name: "Parents' Day", type: "event", status: "upcoming", start_date: dateAddDays(28), end_date: dateAddDays(28), term: "Term 2", academic_year: String(new Date().getFullYear()) },
   ]);
 }
 
@@ -141,14 +141,14 @@ export async function seedDemoData(schoolId: string) {
  */
 export async function clearDemoData(schoolId: string) {
   // Order matters loosely; no FKs but clear children first
-  await supabase.from("attendance").delete().eq("school_id", schoolId);
-  await supabase.from("exam_results").delete().eq("school_id", schoolId);
-  await supabase.from("invoices").delete().eq("school_id", schoolId);
-  await supabase.from("exams").delete().eq("school_id", schoolId);
-  await supabase.from("announcements").delete().eq("school_id", schoolId);
-  await supabase.from("applications").delete().eq("school_id", schoolId);
-  await supabase.from("students").delete().eq("school_id", schoolId);
-  await supabase.from("staff").delete().eq("school_id", schoolId);
-  await supabase.from("classes").delete().eq("school_id", schoolId);
-  await supabase.from("schools").update({ is_demo: false }).eq("id", schoolId);
+  await supabase.from("attendance").delete().eq("tenant_id", schoolId);
+  await supabase.from("exam_results").delete().eq("tenant_id", schoolId);
+  await supabase.from("invoices").delete().eq("tenant_id", schoolId);
+  await supabase.from("exams").delete().eq("tenant_id", schoolId);
+  await supabase.from("announcements").delete().eq("tenant_id", schoolId);
+  await supabase.from("applications").delete().eq("tenant_id", schoolId);
+  await supabase.from("students").delete().eq("tenant_id", schoolId);
+  await supabase.from("staff").delete().eq("tenant_id", schoolId);
+  await supabase.from("classes").delete().eq("tenant_id", schoolId);
+  await supabase.from("tenants").update({ is_demo: false }).eq("id", schoolId);
 }

@@ -62,7 +62,7 @@ const emptyForm = {
 export default function Students() {
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
 
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,7 +90,7 @@ export default function Students() {
     let query = supabase
       .from("students")
       .select("*", { count: "exact" })
-      .eq("school_id", schoolId)
+      .eq("tenant_id", schoolId)
       .order("created_at", { ascending: false });
 
     if (search) {
@@ -117,7 +117,7 @@ export default function Students() {
     supabase
       .from("students")
       .select("grade")
-      .eq("school_id", schoolId)
+      .eq("tenant_id", schoolId)
       .not("grade", "is", null)
       .then(({ data }) => {
         const unique = [...new Set((data || []).map((d) => d.grade).filter(Boolean))] as string[];
@@ -179,7 +179,7 @@ export default function Students() {
       guardian_email: form.guardian_email.trim() || null,
       guardian_relationship: form.guardian_relationship.trim() || null,
       status: form.status,
-      school_id: schoolId,
+      tenant_id: schoolId,
     };
 
     if (editing) {

@@ -38,8 +38,8 @@ serve(async (req) => {
     }
 
     const { data: profile } = await admin
-      .from("profiles").select("school_id").eq("id", user.id).maybeSingle();
-    const schoolId = profile?.school_id;
+      .from("profiles").select("tenant_id").eq("id", user.id).maybeSingle();
+    const schoolId = profile?.tenant_id;
     if (!schoolId) {
       return new Response(JSON.stringify({ error: "No school associated" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -142,7 +142,7 @@ Write the report card comment.`;
         .eq("id", usageRow.id);
     } else {
       await admin.from("ai_comment_usage").insert({
-        user_id: user.id, school_id: schoolId, year_month: ym, count: 1,
+        user_id: user.id, tenant_id: schoolId, year_month: ym, count: 1,
       });
     }
 

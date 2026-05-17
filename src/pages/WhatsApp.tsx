@@ -20,7 +20,7 @@ const sb = supabase as any;
 
 type Cfg = {
   id?: string;
-  school_id: string;
+  tenant_id: string;
   phone_number_id: string | null;
   access_token: string | null;
   business_account_id: string | null;
@@ -69,9 +69,9 @@ type Broadcast = {
 type StudentLite = { id: string; first_name: string; last_name: string; grade: string | null; guardian_phone: string | null };
 type ClassLite = { id: string; name: string; grade_level: string | null };
 
-function emptyCfg(school_id: string): Cfg {
+function emptyCfg(tenant_id: string): Cfg {
   return {
-    school_id, phone_number_id: "", access_token: "", business_account_id: "",
+    tenant_id, phone_number_id: "", access_token: "", business_account_id: "",
     webhook_verify_token: crypto.randomUUID().replace(/-/g, "").slice(0, 24),
     display_phone_number: "", is_active: true, daily_message_limit: 1000,
     messages_sent_today: 0, last_reset_date: new Date().toISOString().slice(0, 10),
@@ -80,7 +80,7 @@ function emptyCfg(school_id: string): Cfg {
 
 export default function WhatsApp() {
   const { profile } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
 
   return (
     <div className="space-y-6">
@@ -128,7 +128,7 @@ function ConnectionTab({ schoolId }: { schoolId: string }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await sb.from("whatsapp_config").select("*").eq("school_id", schoolId).maybeSingle();
+    const { data } = await sb.from("whatsapp_config").select("*").eq("tenant_id", schoolId).maybeSingle();
     setCfg(data || emptyCfg(schoolId));
     setLoading(false);
   }, [schoolId]);
@@ -226,9 +226,9 @@ function TemplatesTab({ schoolId }: { schoolId: string }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await sb.from("whatsapp_templates").select("*").eq("school_id", schoolId).order("name");
+    const { data } = await sb.from("whatsapp_templates").select("*").eq("tenant_id", schoolId).order("name");
     setRows((data as Template[]) || []);
-    const { data: msgs } = await sb.from("whatsapp_messages").select("template_id, status").eq("school_id", schoolId).not("template_id", "is", null);
+    const { data: msgs } = await sb.from("whatsapp_messages").select("template_id, status").eq("tenant_id", schoolId).not("template_id", "is", null);
     const acc: Record<string, any> = {};
     for (const m of (msgs as any[]) || []) {
       const k = m.template_id;
@@ -249,7 +249,7 @@ function TemplatesTab({ schoolId }: { schoolId: string }) {
     const placeholders = (form.body_template.match(/\{\{(\d+)\}\}/g) || []).length;
     const labels = (form.placeholder_labels && form.placeholder_labels.length === placeholders) ? form.placeholder_labels : Array(placeholders).fill("").map((_, i) => `param_${i + 1}`);
     const { error } = await sb.from("whatsapp_templates").insert({
-      school_id: schoolId, name: form.name, category: form.category || "utility",
+      tenant_id: schoolId, name: form.name, category: form.category || "utility",
       language: form.language || "en", body_template: form.body_template,
       placeholder_count: placeholders, placeholder_labels: labels, status: "approved",
     });
@@ -343,10 +343,10 @@ function BroadcastTab({ schoolId }: { schoolId: string }) {
   useEffect(() => {
     (async () => {
       const [{ data: t }, { data: c }, { data: s }, { data: h }] = await Promise.all([
-        sb.from("whatsapp_templates").select("*").eq("school_id", schoolId).order("name"),
-        sb.from("classes").select("id, name, grade_level").eq("school_id", schoolId).order("name"),
-        sb.from("students").select("id, first_name, last_name, grade, guardian_phone").eq("school_id", schoolId).eq("status", "active"),
-        sb.from("whatsapp_broadcasts").select("*").eq("school_id", schoolId).order("created_at", { ascending: false }).limit(20),
+        sb.from("whatsapp_templates").select("*").eq("tenant_id", schoolId).order("name"),
+        sb.from("classes").select("id, name, grade_level").eq("tenant_id", schoolId).order("name"),
+        sb.from("students").select("id, first_name, last_name, grade, guardian_phone").eq("tenant_id", schoolId).eq("status", "active"),
+        sb.from("whatsapp_broadcasts").select("*").eq("tenant_id", schoolId).order("created_at", { ascending: false }).limit(20),
       ]);
       setTemplates((t as any) || []);
       setClasses((c as any) || []);
@@ -380,7 +380,7 @@ function BroadcastTab({ schoolId }: { schoolId: string }) {
     setSending(false);
     if (error || (data as any)?.error) return toast({ title: "Broadcast failed", description: (data as any)?.error || error?.message, variant: "destructive" });
     toast({ title: "Broadcast sent", description: `Sent: ${(data as any).sent}, Failed: ${(data as any).failed}` });
-    const { data: h } = await sb.from("whatsapp_broadcasts").select("*").eq("school_id", schoolId).order("created_at", { ascending: false }).limit(20);
+    const { data: h } = await sb.from("whatsapp_broadcasts").select("*").eq("tenant_id", schoolId).order("created_at", { ascending: false }).limit(20);
     setHistory((h as any) || []);
   };
 
@@ -486,7 +486,7 @@ function InboxTab({ schoolId }: { schoolId: string }) {
   const [sending, setSending] = useState(false);
 
   const load = useCallback(async () => {
-    const { data } = await sb.from("whatsapp_messages").select("*").eq("school_id", schoolId).order("created_at", { ascending: false }).limit(500);
+    const { data } = await sb.from("whatsapp_messages").select("*").eq("tenant_id", schoolId).order("created_at", { ascending: false }).limit(500);
     setMessages((data as any) || []);
     const ids = Array.from(new Set(((data as any[]) || []).map(m => m.student_id).filter(Boolean)));
     if (ids.length) {
@@ -499,7 +499,7 @@ function InboxTab({ schoolId }: { schoolId: string }) {
 
   useEffect(() => {
     load();
-    const ch = supabase.channel("wa-msgs").on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_messages", filter: `school_id=eq.${schoolId}` }, () => load()).subscribe();
+    const ch = supabase.channel("wa-msgs").on("postgres_changes", { event: "*", schema: "public", table: "whatsapp_messages", filter: `tenant_id=eq.${schoolId}` }, () => load()).subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [load, schoolId]);
 

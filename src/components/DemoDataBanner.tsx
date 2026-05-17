@@ -12,16 +12,16 @@ export function DemoDataBanner() {
   const [dismissed, setDismissed] = useState(true);
 
   useEffect(() => {
-    if (!isDemo || !profile?.school_id) { setDismissed(true); return; }
-    const until = Number(localStorage.getItem(`${DISMISS_KEY}:${profile.school_id}`) || 0);
+    if (!isDemo || !profile?.tenant_id) { setDismissed(true); return; }
+    const until = Number(localStorage.getItem(`${DISMISS_KEY}:${profile.tenant_id}`) || 0);
     setDismissed(Date.now() < until);
-  }, [isDemo, profile?.school_id]);
+  }, [isDemo, profile?.tenant_id]);
 
   if (!isDemo || dismissed) return null;
 
   const dismiss = () => {
-    if (!profile?.school_id) return;
-    localStorage.setItem(`${DISMISS_KEY}:${profile.school_id}`, String(Date.now() + 24 * 60 * 60 * 1000));
+    if (!profile?.tenant_id) return;
+    localStorage.setItem(`${DISMISS_KEY}:${profile.tenant_id}`, String(Date.now() + 24 * 60 * 60 * 1000));
     setDismissed(true);
   };
 

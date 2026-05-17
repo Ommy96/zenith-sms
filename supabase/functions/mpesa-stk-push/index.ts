@@ -41,10 +41,10 @@ Deno.serve(async (req) => {
     if (!phone || !amount) {
       return new Response(JSON.stringify({ error: "phone and amount required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", claimsData.claims.sub).maybeSingle();
-    const schoolId = profile?.school_id;
+    const { data: profile } = await supabase.from("profiles").select("tenant_id").eq("id", claimsData.claims.sub).maybeSingle();
+    const schoolId = profile?.tenant_id;
     if (!schoolId) return new Response(JSON.stringify({ error: "No school" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    const { data: cfg } = await supabase.from("mpesa_config").select("*").eq("school_id", schoolId).maybeSingle();
+    const { data: cfg } = await supabase.from("mpesa_config").select("*").eq("tenant_id", schoolId).maybeSingle();
     if (!cfg?.shortcode || !cfg?.passkey || !cfg?.consumer_key || !cfg?.consumer_secret) {
       return new Response(JSON.stringify({ error: "M-Pesa not configured" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
     // Service-role insert to bypass RLS for the log row
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     await admin.from("mpesa_stk_requests").insert({
-      school_id: schoolId,
+      tenant_id: schoolId,
       invoice_id: invoice_id ?? null,
       student_id: student_id ?? null,
       phone: normalized,

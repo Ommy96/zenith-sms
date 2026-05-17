@@ -24,11 +24,11 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "template_id and audience_type required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", claims.claims.sub).maybeSingle();
-    const school_id = profile?.school_id;
-    if (!school_id) return new Response(JSON.stringify({ error: "No school" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data: profile } = await supabase.from("profiles").select("tenant_id").eq("id", claims.claims.sub).maybeSingle();
+    const tenant_id = profile?.tenant_id;
+    if (!tenant_id) return new Response(JSON.stringify({ error: "No school" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { data: tmpl } = await admin.from("whatsapp_templates").select("*").eq("id", template_id).eq("school_id", school_id).maybeSingle();
+    const { data: tmpl } = await admin.from("whatsapp_templates").select("*").eq("id", template_id).eq("tenant_id", tenant_id).maybeSingle();
     if (!tmpl) return new Response(JSON.stringify({ error: "Template not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     // Resolve recipients
@@ -36,10 +36,10 @@ Deno.serve(async (req) => {
     if (audience_type === "class" && audience_filter.class_id) {
       const { data: cls } = await admin.from("classes").select("name, grade_level").eq("id", audience_filter.class_id).maybeSingle();
       const grade = cls?.grade_level || cls?.name;
-      const { data: students } = await admin.from("students").select("id, first_name, last_name, guardian_phone").eq("school_id", school_id).eq("grade", grade).eq("status", "active");
+      const { data: students } = await admin.from("students").select("id, first_name, last_name, guardian_phone").eq("tenant_id", tenant_id).eq("grade", grade).eq("status", "active");
       recipients = (students || []).filter(s => s.guardian_phone).map(s => ({ student_id: s.id, phone: s.guardian_phone!, student_name: `${s.first_name} ${s.last_name}` }));
     } else if (audience_type === "defaulters") {
-      const { data: invs } = await admin.from("invoices").select("student_id, students!inner(id, first_name, last_name, guardian_phone, school_id)").eq("students.school_id", school_id).in("status", ["pending", "partial", "unpaid"]);
+      const { data: invs } = await admin.from("invoices").select("student_id, students!inner(id, first_name, last_name, guardian_phone, tenant_id)").eq("students.tenant_id", tenant_id).in("status", ["pending", "partial", "unpaid"]);
       const seen = new Set<string>();
       for (const i of (invs as any[]) || []) {
         const s = i.students;
@@ -49,17 +49,17 @@ Deno.serve(async (req) => {
         }
       }
     } else if (audience_type === "all_parents") {
-      const { data: students } = await admin.from("students").select("id, first_name, last_name, guardian_phone").eq("school_id", school_id).eq("status", "active");
+      const { data: students } = await admin.from("students").select("id, first_name, last_name, guardian_phone").eq("tenant_id", tenant_id).eq("status", "active");
       recipients = (students || []).filter(s => s.guardian_phone).map(s => ({ student_id: s.id, phone: s.guardian_phone!, student_name: `${s.first_name} ${s.last_name}` }));
     }
 
     const { data: broadcast } = await admin.from("whatsapp_broadcasts").insert({
-      school_id, template_id, audience_type, audience_filter,
+      tenant_id, template_id, audience_type, audience_filter,
       recipient_count: recipients.length, status: "running",
       created_by: claims.claims.sub, started_at: new Date().toISOString(),
     }).select().single();
 
-    const { data: cfg } = await admin.from("whatsapp_config").select("*").eq("school_id", school_id).maybeSingle();
+    const { data: cfg } = await admin.from("whatsapp_config").select("*").eq("tenant_id", tenant_id).maybeSingle();
     if (!cfg?.phone_number_id || !cfg?.access_token) {
       await admin.from("whatsapp_broadcasts").update({ status: "failed", completed_at: new Date().toISOString() }).eq("id", broadcast!.id);
       return new Response(JSON.stringify({ error: "WhatsApp not configured" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
       const respBody = await res.json();
       const ok = res.ok;
       await admin.from("whatsapp_messages").insert({
-        school_id, direction: "out", wa_message_id: respBody?.messages?.[0]?.id || null,
+        tenant_id, direction: "out", wa_message_id: respBody?.messages?.[0]?.id || null,
         to_phone: r.phone, student_id: r.student_id, template_id: tmpl.id, broadcast_id: broadcast!.id,
         body, status: ok ? "sent" : "failed", error: ok ? null : (respBody?.error?.message || "Failed"), raw_payload: respBody,
       });

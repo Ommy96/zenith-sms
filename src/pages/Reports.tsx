@@ -29,7 +29,7 @@ const catColors: Record<string, string> = {
 
 export default function Reports() {
   const { profile } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
   const [loading, setLoading] = useState<string | null>(null);
   const [report, setReport] = useState<ReportData | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -44,7 +44,7 @@ export default function Reports() {
       if (type === "students") {
         const { data: students } = await supabase
           .from("students").select("grade, gender, status, created_at")
-          .eq("school_id", schoolId);
+          .eq("tenant_id", schoolId);
         const s = students || [];
         const grades: Record<string, number> = {};
         s.forEach(st => { const g = st.grade || "Unassigned"; grades[g] = (grades[g] || 0) + 1; });
@@ -71,7 +71,7 @@ export default function Reports() {
       if (type === "finance") {
         const { data: invoices } = await supabase
           .from("invoices").select("amount, paid_amount, status, currency")
-          .eq("school_id", schoolId);
+          .eq("tenant_id", schoolId);
         const inv = invoices || [];
         const total = inv.reduce((s, i) => s + Number(i.amount), 0);
         const collected = inv.reduce((s, i) => s + Number(i.paid_amount || 0), 0);
@@ -105,7 +105,7 @@ export default function Reports() {
       if (type === "attendance") {
         const { data: records } = await supabase
           .from("attendance").select("date, status")
-          .eq("school_id", schoolId);
+          .eq("tenant_id", schoolId);
         const att = records || [];
         const total = att.length;
         const present = att.filter(a => a.status === "present").length;
@@ -141,7 +141,7 @@ export default function Reports() {
       if (type === "exams") {
         const { data: results } = await supabase
           .from("exam_results").select("subject, score, grade, exam_id")
-          .eq("school_id", schoolId);
+          .eq("tenant_id", schoolId);
         const res = results || [];
         const bySubject: Record<string, { scores: number[]; count: number }> = {};
         res.forEach(r => {
@@ -179,7 +179,7 @@ export default function Reports() {
       if (type === "staff") {
         const { data: staff } = await supabase
           .from("staff").select("department, role, status")
-          .eq("school_id", schoolId);
+          .eq("tenant_id", schoolId);
         const s = staff || [];
         const byDept: Record<string, number> = {};
         s.forEach(st => { const d = st.department || "Unassigned"; byDept[d] = (byDept[d] || 0) + 1; });

@@ -58,7 +58,7 @@ function normalizeDate(v: unknown): string | null {
 export default function StudentsImport() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const schoolId = profile?.school_id ?? null;
+  const schoolId = profile?.tenant_id ?? null;
   const [step, setStep] = useState<Step>("upload");
   const [fileName, setFileName] = useState("");
   const [headers, setHeaders] = useState<string[]>([]);
@@ -97,7 +97,7 @@ export default function StudentsImport() {
       const { data: cached } = await supabase
         .from("import_mappings")
         .select("mapping, id, use_count")
-        .eq("school_id", schoolId)
+        .eq("tenant_id", schoolId)
         .eq("source_type", "students")
         .eq("header_signature", sig)
         .maybeSingle();
@@ -136,8 +136,8 @@ export default function StudentsImport() {
     if (!schoolId) return;
     const sig = signatureFor(headers);
     await supabase.from("import_mappings").upsert(
-      { school_id: schoolId, source_type: "students", header_signature: sig, mapping, last_used_at: new Date().toISOString() },
-      { onConflict: "school_id,source_type,header_signature" },
+      { tenant_id: schoolId, source_type: "students", header_signature: sig, mapping, last_used_at: new Date().toISOString() },
+      { onConflict: "tenant_id,source_type,header_signature" },
     );
   };
 
@@ -177,7 +177,7 @@ export default function StudentsImport() {
     rows.forEach((raw, i) => {
       const { record, errs } = transformRow(raw);
       if (errs.length) errList.push({ row: i + 2, errors: errs, data: raw });
-      else valid.push({ ...record, school_id: schoolId, status: record.status ?? "active" });
+      else valid.push({ ...record, tenant_id: schoolId, status: record.status ?? "active" });
     });
 
     let inserted = 0;
@@ -196,7 +196,7 @@ export default function StudentsImport() {
 
     if (user) {
       await supabase.from("activity_logs").insert({
-        user_id: user.id, school_id: schoolId, action: "bulk_import_students",
+        user_id: user.id, tenant_id: schoolId, action: "bulk_import_students",
         entity_type: "students",
         details: { file: fileName, inserted, errors: errList.length },
       });

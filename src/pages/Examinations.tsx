@@ -50,7 +50,7 @@ const emptyExamForm = {
 
 export default function Examinations() {
   const { profile } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
 
   const [exams, setExams] = useState<Exam[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +93,7 @@ export default function Examinations() {
     if (!schoolId) return;
     setLoading(true);
     const { data, error } = await supabase
-      .from("exams").select("*").eq("school_id", schoolId).order("created_at", { ascending: false });
+      .from("exams").select("*").eq("tenant_id", schoolId).order("created_at", { ascending: false });
     if (error) toast({ title: "Error loading exams", description: error.message, variant: "destructive" });
     else setExams(data || []);
     setLoading(false);
@@ -102,8 +102,8 @@ export default function Examinations() {
   const fetchStats = useCallback(async () => {
     if (!schoolId) return;
     const [examsRes, resultsRes] = await Promise.all([
-      supabase.from("exams").select("status").eq("school_id", schoolId),
-      supabase.from("exam_results").select("score").eq("school_id", schoolId),
+      supabase.from("exams").select("status").eq("tenant_id", schoolId),
+      supabase.from("exam_results").select("score").eq("tenant_id", schoolId),
     ]);
     const ex = examsRes.data || [];
     const res = resultsRes.data || [];
@@ -135,7 +135,7 @@ export default function Examinations() {
 
   useEffect(() => {
     if (!schoolId) return;
-    supabase.from("students").select("id, first_name, last_name").eq("school_id", schoolId).eq("status", "active").order("first_name")
+    supabase.from("students").select("id, first_name, last_name").eq("tenant_id", schoolId).eq("status", "active").order("first_name")
       .then(({ data }) => setStudents(data || []));
   }, [schoolId]);
 
@@ -157,7 +157,7 @@ export default function Examinations() {
     const payload = {
       name: form.name.trim(), type: form.type, term: form.term.trim() || null,
       academic_year: form.academic_year.trim() || null, start_date: form.start_date || null,
-      end_date: form.end_date || null, status: form.status, school_id: schoolId,
+      end_date: form.end_date || null, status: form.status, tenant_id: schoolId,
     };
     if (editing) {
       const { error } = await supabase.from("exams").update(payload).eq("id", editing.id);
@@ -254,7 +254,7 @@ export default function Examinations() {
       exam_id: resultsExam.id, student_id: resultForm.student_id,
       subject: resultForm.subject.trim(), score: resultForm.score ? parseFloat(resultForm.score) : null,
       grade: resultForm.grade.trim() || null, remarks: resultForm.remarks.trim() || null,
-      school_id: schoolId,
+      tenant_id: schoolId,
     });
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     else { toast({ title: "Result added" }); setResultForm({ student_id: "", subject: "", score: "", grade: "", remarks: "" }); openResults(resultsExam); fetchStats(); }

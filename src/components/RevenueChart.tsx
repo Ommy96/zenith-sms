@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export function RevenueChart() {
   const { profile } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
   const [data, setData] = useState<{ month: string; revenue: number; collected: number }[]>([]);
 
   useEffect(() => {
@@ -15,7 +15,7 @@ export function RevenueChart() {
       const { data: invoices } = await supabase
         .from("invoices")
         .select("amount, paid_amount, created_at")
-        .eq("school_id", schoolId);
+        .eq("tenant_id", schoolId);
       if (!invoices?.length) return;
 
       const byMonth: Record<string, { revenue: number; collected: number }> = {};

@@ -22,7 +22,7 @@ const priorityColors: Record<string, string> = {
 
 export default function Communication() {
   const { user, profile } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -37,7 +37,7 @@ export default function Communication() {
       const { data, error } = await supabase
         .from("announcements")
         .select("*")
-        .eq("school_id", schoolId)
+        .eq("tenant_id", schoolId)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -52,7 +52,7 @@ export default function Communication() {
       const { data } = await (supabase as any)
         .from("whatsapp_messages")
         .select("id, from_phone, body, created_at, student_id, direction")
-        .eq("school_id", schoolId)
+        .eq("tenant_id", schoolId)
         .eq("direction", "in")
         .order("created_at", { ascending: false })
         .limit(5);
@@ -69,7 +69,7 @@ export default function Communication() {
         content,
         audience,
         priority,
-        school_id: schoolId,
+        tenant_id: schoolId,
         author_id: user.id,
       });
       if (error) throw error;

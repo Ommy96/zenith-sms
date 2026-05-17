@@ -57,7 +57,7 @@ const emptyForm = {
 
 export default function Finance() {
   const { profile } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
 
   const [invoices, setInvoices] = useState<(Invoice & { student?: { first_name: string; last_name: string; grade: string | null } })[]>([]);
   const [students, setStudents] = useState<StudentOption[]>([]);
@@ -82,7 +82,7 @@ export default function Finance() {
 
   const fetchStats = useCallback(async () => {
     if (!schoolId) return;
-    const { data } = await supabase.from("invoices").select("amount, paid_amount, status").eq("school_id", schoolId);
+    const { data } = await supabase.from("invoices").select("amount, paid_amount, status").eq("tenant_id", schoolId);
     if (data) {
       const totalAmount = data.reduce((s, i) => s + Number(i.amount), 0);
       const collected = data.reduce((s, i) => s + Number(i.paid_amount || 0), 0);
@@ -101,7 +101,7 @@ export default function Finance() {
     let query = supabase
       .from("invoices")
       .select("*, student:students(first_name, last_name, grade)", { count: "exact" })
-      .eq("school_id", schoolId)
+      .eq("tenant_id", schoolId)
       .order("created_at", { ascending: false });
 
     if (search) {
@@ -122,7 +122,7 @@ export default function Finance() {
 
   const fetchStudents = useCallback(async () => {
     if (!schoolId) return;
-    const { data } = await supabase.from("students").select("id, first_name, last_name, grade").eq("school_id", schoolId).eq("status", "active").order("first_name");
+    const { data } = await supabase.from("students").select("id, first_name, last_name, grade").eq("tenant_id", schoolId).eq("status", "active").order("first_name");
     setStudents(data || []);
   }, [schoolId]);
 
@@ -165,7 +165,7 @@ export default function Finance() {
       status: form.status,
       paid_amount: parseFloat(form.paid_amount) || 0,
       currency: form.currency || "USD",
-      school_id: schoolId,
+      tenant_id: schoolId,
     };
 
     if (editing) {
