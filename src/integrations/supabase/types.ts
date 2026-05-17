@@ -1539,7 +1539,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_perm: {
+        Args: { _perm: string; _tenant: string; _user?: string }
+        Returns: boolean
+      }
+      has_role_in_tenant: {
+        Args: { _role: string; _tenant: string; _user?: string }
+        Returns: boolean
+      }
+      is_super_admin: { Args: { _user?: string }; Returns: boolean }
+      is_tenant_member: {
+        Args: { _tenant: string; _user?: string }
+        Returns: boolean
+      }
     }
     Enums: {
       curriculum_type: "cbc" | "8-4-4" | "igcse" | "ib" | "cambridge" | "mixed"
