@@ -893,6 +893,250 @@ export type Database = {
           },
         ]
       }
+      fee_categories: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          key: Database["public"]["Enums"]["fee_category_enum"]
+          name: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key: Database["public"]["Enums"]["fee_category_enum"]
+          name: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key?: Database["public"]["Enums"]["fee_category_enum"]
+          name?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
+      fee_discounts: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          granted_by: string | null
+          id: string
+          invoice_id: string | null
+          reason: string | null
+          student_id: string | null
+          tenant_id: string
+          type: Database["public"]["Enums"]["discount_type_enum"]
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          granted_by?: string | null
+          id?: string
+          invoice_id?: string | null
+          reason?: string | null
+          student_id?: string | null
+          tenant_id: string
+          type?: Database["public"]["Enums"]["discount_type_enum"]
+          value?: number
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          granted_by?: string | null
+          id?: string
+          invoice_id?: string | null
+          reason?: string | null
+          student_id?: string | null
+          tenant_id?: string
+          type?: Database["public"]["Enums"]["discount_type_enum"]
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_discounts_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "student_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_discounts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_items: {
+        Row: {
+          amount: number
+          category: Database["public"]["Enums"]["fee_category_enum"]
+          created_at: string
+          id: string
+          is_mandatory: boolean
+          name: string
+          sort_order: number
+          structure_id: string
+          tenant_id: string
+        }
+        Insert: {
+          amount?: number
+          category?: Database["public"]["Enums"]["fee_category_enum"]
+          created_at?: string
+          id?: string
+          is_mandatory?: boolean
+          name: string
+          sort_order?: number
+          structure_id: string
+          tenant_id: string
+        }
+        Update: {
+          amount?: number
+          category?: Database["public"]["Enums"]["fee_category_enum"]
+          created_at?: string
+          id?: string
+          is_mandatory?: boolean
+          name?: string
+          sort_order?: number
+          structure_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_items_structure_id_fkey"
+            columns: ["structure_id"]
+            isOneToOne: false
+            referencedRelation: "fee_structures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_structure_assignments: {
+        Row: {
+          class_id: string | null
+          created_at: string
+          grade_level_id: string | null
+          id: string
+          structure_id: string
+          student_id: string | null
+          tenant_id: string
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string
+          grade_level_id?: string | null
+          id?: string
+          structure_id: string
+          student_id?: string | null
+          tenant_id: string
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string
+          grade_level_id?: string | null
+          id?: string
+          structure_id?: string
+          student_id?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_structure_assignments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_structure_assignments_grade_level_id_fkey"
+            columns: ["grade_level_id"]
+            isOneToOne: false
+            referencedRelation: "grade_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_structure_assignments_structure_id_fkey"
+            columns: ["structure_id"]
+            isOneToOne: false
+            referencedRelation: "fee_structures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_structure_assignments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_structures: {
+        Row: {
+          academic_year_id: string | null
+          applies_to: Database["public"]["Enums"]["structure_applies_to_enum"]
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          tenant_id: string
+          term_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          academic_year_id?: string | null
+          applies_to?: Database["public"]["Enums"]["structure_applies_to_enum"]
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          tenant_id: string
+          term_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          academic_year_id?: string | null
+          applies_to?: Database["public"]["Enums"]["structure_applies_to_enum"]
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          tenant_id?: string
+          term_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_structures_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_structures_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "terms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grade_bands: {
         Row: {
           created_at: string
@@ -1567,6 +1811,48 @@ export type Database = {
           transaction_type?: string | null
         }
         Relationships: []
+      }
+      payment_allocations: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          invoice_id: string
+          payment_id: string
+          tenant_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          invoice_id: string
+          payment_id: string
+          tenant_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          payment_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_allocations_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "student_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "student_payments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       periods: {
         Row: {
@@ -2361,6 +2647,259 @@ export type Database = {
           tenant_id?: string
         }
         Relationships: []
+      }
+      student_invoice_lines: {
+        Row: {
+          amount: number
+          category: Database["public"]["Enums"]["fee_category_enum"]
+          created_at: string
+          description: string
+          fee_item_id: string | null
+          id: string
+          invoice_id: string
+          quantity: number
+          tenant_id: string
+          unit_amount: number
+        }
+        Insert: {
+          amount?: number
+          category?: Database["public"]["Enums"]["fee_category_enum"]
+          created_at?: string
+          description: string
+          fee_item_id?: string | null
+          id?: string
+          invoice_id: string
+          quantity?: number
+          tenant_id: string
+          unit_amount?: number
+        }
+        Update: {
+          amount?: number
+          category?: Database["public"]["Enums"]["fee_category_enum"]
+          created_at?: string
+          description?: string
+          fee_item_id?: string | null
+          id?: string
+          invoice_id?: string
+          quantity?: number
+          tenant_id?: string
+          unit_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_invoice_lines_fee_item_id_fkey"
+            columns: ["fee_item_id"]
+            isOneToOne: false
+            referencedRelation: "fee_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_invoice_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "student_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_invoices: {
+        Row: {
+          academic_year_id: string | null
+          balance: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          discount_total: number
+          due_date: string | null
+          id: string
+          invoice_number: string | null
+          issued_at: string | null
+          notes: string | null
+          paid_total: number
+          status: Database["public"]["Enums"]["invoice_status_enum"]
+          structure_id: string | null
+          student_id: string
+          subtotal: number
+          tenant_id: string
+          term_id: string | null
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          academic_year_id?: string | null
+          balance?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          discount_total?: number
+          due_date?: string | null
+          id?: string
+          invoice_number?: string | null
+          issued_at?: string | null
+          notes?: string | null
+          paid_total?: number
+          status?: Database["public"]["Enums"]["invoice_status_enum"]
+          structure_id?: string | null
+          student_id: string
+          subtotal?: number
+          tenant_id: string
+          term_id?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          academic_year_id?: string | null
+          balance?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          discount_total?: number
+          due_date?: string | null
+          id?: string
+          invoice_number?: string | null
+          issued_at?: string | null
+          notes?: string | null
+          paid_total?: number
+          status?: Database["public"]["Enums"]["invoice_status_enum"]
+          structure_id?: string | null
+          student_id?: string
+          subtotal?: number
+          tenant_id?: string
+          term_id?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_invoices_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_invoices_structure_id_fkey"
+            columns: ["structure_id"]
+            isOneToOne: false
+            referencedRelation: "fee_structures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_invoices_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_invoices_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "terms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          is_refunded: boolean
+          method: Database["public"]["Enums"]["payment_method_enum"]
+          mpesa_txn_id: string | null
+          notes: string | null
+          paid_at: string
+          received_by: string | null
+          reference: string | null
+          refunded_amount: number
+          student_id: string
+          tenant_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          is_refunded?: boolean
+          method?: Database["public"]["Enums"]["payment_method_enum"]
+          mpesa_txn_id?: string | null
+          notes?: string | null
+          paid_at?: string
+          received_by?: string | null
+          reference?: string | null
+          refunded_amount?: number
+          student_id: string
+          tenant_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          is_refunded?: boolean
+          method?: Database["public"]["Enums"]["payment_method_enum"]
+          mpesa_txn_id?: string | null
+          notes?: string | null
+          paid_at?: string
+          received_by?: string | null
+          reference?: string | null
+          refunded_amount?: number
+          student_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_payments_mpesa_txn_id_fkey"
+            columns: ["mpesa_txn_id"]
+            isOneToOne: false
+            referencedRelation: "mpesa_transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_payments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_receipts: {
+        Row: {
+          id: string
+          issued_at: string
+          payment_id: string
+          pdf_url: string | null
+          receipt_number: string
+          tenant_id: string
+        }
+        Insert: {
+          id?: string
+          issued_at?: string
+          payment_id: string
+          pdf_url?: string | null
+          receipt_number: string
+          tenant_id: string
+        }
+        Update: {
+          id?: string
+          issued_at?: string
+          payment_id?: string
+          pdf_url?: string | null
+          receipt_number?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_receipts_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "student_payments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       students: {
         Row: {
@@ -3281,6 +3820,8 @@ export type Database = {
       current_academic_year: { Args: { _tenant: string }; Returns: string }
       current_term: { Args: { _tenant: string }; Returns: string }
       generate_admission_number: { Args: { _tenant: string }; Returns: string }
+      generate_invoice_number: { Args: { _tenant: string }; Returns: string }
+      generate_receipt_number: { Args: { _tenant: string }; Returns: string }
       has_perm: {
         Args: { _perm: string; _tenant: string; _user?: string }
         Returns: boolean
@@ -3295,10 +3836,15 @@ export type Database = {
         Returns: boolean
       }
       recompute_exam_positions: { Args: { _exam: string }; Returns: undefined }
+      recompute_invoice_totals: {
+        Args: { _invoice: string }
+        Returns: undefined
+      }
       seed_cbc_competencies_and_values: {
         Args: { _tenant: string }
         Returns: undefined
       }
+      seed_fee_categories: { Args: { _tenant: string }; Returns: undefined }
       seed_grade_levels: {
         Args: { _curriculum: string; _tenant: string }
         Returns: undefined
@@ -3323,6 +3869,7 @@ export type Database = {
         | "AB-"
         | "unknown"
       curriculum_type: "cbc" | "8-4-4" | "igcse" | "ib" | "cambridge" | "mixed"
+      discount_type_enum: "percent" | "fixed"
       document_owner_type_enum: "student" | "staff" | "guardian"
       employment_type_enum:
         | "permanent"
@@ -3353,6 +3900,17 @@ export type Database = {
         | "knec_mock"
         | "internal"
         | "other"
+      fee_category_enum:
+        | "tuition"
+        | "transport"
+        | "boarding"
+        | "lunch"
+        | "exam"
+        | "activity"
+        | "uniform"
+        | "book"
+        | "development"
+        | "other"
       gender_enum: "male" | "female" | "other" | "prefer_not_to_say"
       grade_stage_enum:
         | "pre_primary"
@@ -3374,12 +3932,28 @@ export type Database = {
         | "aunt"
         | "sibling"
         | "other"
+      invoice_status_enum:
+        | "draft"
+        | "issued"
+        | "partial"
+        | "paid"
+        | "overdue"
+        | "void"
       learner_category_enum:
         | "day_scholar"
         | "boarder"
         | "weekly_boarder"
         | "special_needs"
       lesson_status_enum: "draft" | "pending_review" | "approved" | "rejected"
+      payment_method_enum:
+        | "cash"
+        | "mpesa"
+        | "airtel_money"
+        | "bank_transfer"
+        | "cheque"
+        | "card"
+        | "pos"
+        | "other"
       report_run_status_enum: "queued" | "running" | "ready" | "failed"
       room_type_enum:
         | "classroom"
@@ -3397,6 +3971,7 @@ export type Database = {
         | "tertiary"
         | "tvet"
         | "international"
+      structure_applies_to_enum: "all" | "grade" | "class" | "individual"
       subject_assessment_enum: "continuous" | "exam" | "both"
       subject_category_enum:
         | "core"
@@ -3552,6 +4127,7 @@ export const Constants = {
         "unknown",
       ],
       curriculum_type: ["cbc", "8-4-4", "igcse", "ib", "cambridge", "mixed"],
+      discount_type_enum: ["percent", "fixed"],
       document_owner_type_enum: ["student", "staff", "guardian"],
       employment_type_enum: [
         "permanent",
@@ -3586,6 +4162,18 @@ export const Constants = {
         "internal",
         "other",
       ],
+      fee_category_enum: [
+        "tuition",
+        "transport",
+        "boarding",
+        "lunch",
+        "exam",
+        "activity",
+        "uniform",
+        "book",
+        "development",
+        "other",
+      ],
       gender_enum: ["male", "female", "other", "prefer_not_to_say"],
       grade_stage_enum: [
         "pre_primary",
@@ -3609,6 +4197,14 @@ export const Constants = {
         "sibling",
         "other",
       ],
+      invoice_status_enum: [
+        "draft",
+        "issued",
+        "partial",
+        "paid",
+        "overdue",
+        "void",
+      ],
       learner_category_enum: [
         "day_scholar",
         "boarder",
@@ -3616,6 +4212,16 @@ export const Constants = {
         "special_needs",
       ],
       lesson_status_enum: ["draft", "pending_review", "approved", "rejected"],
+      payment_method_enum: [
+        "cash",
+        "mpesa",
+        "airtel_money",
+        "bank_transfer",
+        "cheque",
+        "card",
+        "pos",
+        "other",
+      ],
       report_run_status_enum: ["queued", "running", "ready", "failed"],
       room_type_enum: [
         "classroom",
@@ -3635,6 +4241,7 @@ export const Constants = {
         "tvet",
         "international",
       ],
+      structure_applies_to_enum: ["all", "grade", "class", "individual"],
       subject_assessment_enum: ["continuous", "exam", "both"],
       subject_category_enum: [
         "core",

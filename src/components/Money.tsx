@@ -9,9 +9,9 @@ export function formatMoney(amount: number | null | undefined, currency: string,
   }
 }
 
-export function Money({ amount, className }: { amount: number | null | undefined; className?: string }) {
+export function Money({ amount, className, currency: currencyOverride }: { amount: number | null | undefined; className?: string; currency?: string }) {
   const { tenant } = useTenant();
-  const currency = tenant?.currency_code ?? "KES";
+  const currency = currencyOverride ?? tenant?.currency_code ?? "KES";
   const locale = tenant?.locale ?? "en-KE";
   return <span className={className}>{formatMoney(amount, currency, locale)}</span>;
 }

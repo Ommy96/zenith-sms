@@ -1,427 +1,599 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import {
-  DollarSign, TrendingUp, AlertCircle, CheckCircle, ArrowUpRight,
-  Search, Download, Plus, MoreHorizontal, Edit, Trash2, Eye,
-  ChevronLeft, ChevronRight, Loader2, Receipt,
-} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { Money } from "@/components/Money";
+import {
+  Loader2, Plus, Wallet, Receipt, FileText, TrendingUp, AlertCircle,
+  Layers, Trash2, Sparkles, Banknote,
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import type { Tables } from "@/integrations/supabase/types";
 
-type Invoice = Tables<"invoices">;
-type StudentOption = { id: string; first_name: string; last_name: string; grade: string | null };
+const CATEGORIES = ["tuition","transport","boarding","lunch","exam","activity","uniform","book","development","other"] as const;
+const METHODS = ["cash","mpesa","airtel_money","bank_transfer","cheque","card","pos","other"] as const;
 
-const PAGE_SIZE = 20;
-
-const statusColors: Record<string, string> = {
-  paid: "bg-success/10 text-success border-success/20",
-  pending: "bg-warning/10 text-warning border-warning/20",
-  overdue: "bg-destructive/10 text-destructive border-destructive/20",
-  cancelled: "bg-muted text-muted-foreground border-border",
-};
-
-const emptyForm = {
-  student_id: "",
-  amount: "",
-  description: "",
-  due_date: "",
-  term: "",
-  academic_year: "",
-  status: "pending",
-  paid_amount: "0",
-  currency: "USD",
-};
+type Row = Record<string, any>;
 
 export default function Finance() {
-  const { profile } = useAuth();
-  const schoolId = profile?.tenant_id;
+  const { user, profile } = useAuth();
+  const { can } = useTenant();
+  const tenantId = profile?.tenant_id;
 
-  const [invoices, setInvoices] = useState<(Invoice & { student?: { first_name: string; last_name: string; grade: string | null } })[]>([]);
-  const [students, setStudents] = useState<StudentOption[]>([]);
   const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(0);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [structures, setStructures] = useState<Row[]>([]);
+  const [invoices, setInvoices] = useState<Row[]>([]);
+  const [payments, setPayments] = useState<Row[]>([]);
+  const [students, setStudents] = useState<Row[]>([]);
+  const [terms, setTerms] = useState<Row[]>([]);
+  const [years, setYears] = useState<Row[]>([]);
+  const [grades, setGrades] = useState<Row[]>([]);
+  const [stats, setStats] = useState({ billed: 0, collected: 0, outstanding: 0, overdueCount: 0 });
 
-  // Stats
-  const [stats, setStats] = useState({ totalAmount: 0, collected: 0, outstanding: 0, overdue: 0, overdueCount: 0, pendingCount: 0 });
-
-  // Dialog
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<Invoice | null>(null);
-  const [form, setForm] = useState(emptyForm);
-  const [saving, setSaving] = useState(false);
-
-  // Delete
-  const [deleteTarget, setDeleteTarget] = useState<(typeof invoices)[0] | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  const fetchStats = useCallback(async () => {
-    if (!schoolId) return;
-    const { data } = await supabase.from("invoices").select("amount, paid_amount, status").eq("tenant_id", schoolId);
-    if (data) {
-      const totalAmount = data.reduce((s, i) => s + Number(i.amount), 0);
-      const collected = data.reduce((s, i) => s + Number(i.paid_amount || 0), 0);
-      const outstanding = totalAmount - collected;
-      const overdue = data.filter((i) => i.status === "overdue").reduce((s, i) => s + Number(i.amount) - Number(i.paid_amount || 0), 0);
-      const overdueCount = data.filter((i) => i.status === "overdue").length;
-      const pendingCount = data.filter((i) => i.status === "pending").length;
-      setStats({ totalAmount, collected, outstanding, overdue, overdueCount, pendingCount });
-    }
-  }, [schoolId]);
-
-  const fetchInvoices = useCallback(async () => {
-    if (!schoolId) return;
+  const reload = useCallback(async () => {
+    if (!tenantId) return;
     setLoading(true);
+    const [s, inv, pay, st, t, y, g] = await Promise.all([
+      supabase.from("fee_structures").select("*, fee_items(id, name, amount, category)").eq("tenant_id", tenantId).order("created_at", { ascending: false }),
+      supabase.from("student_invoices").select("*, students:student_id(first_name,last_name,admission_number), terms:term_id(name)").eq("tenant_id", tenantId).order("created_at", { ascending: false }).limit(200),
+      supabase.from("student_payments").select("*, students:student_id(first_name,last_name,admission_number)").eq("tenant_id", tenantId).order("paid_at", { ascending: false }).limit(200),
+      supabase.from("students").select("id, first_name, last_name, admission_number, current_class_id").eq("tenant_id", tenantId).order("first_name").limit(2000),
+      supabase.from("terms").select("id, name, is_current").eq("tenant_id", tenantId),
+      supabase.from("academic_years").select("id, name, is_current").eq("tenant_id", tenantId),
+      supabase.from("grade_levels").select("id, name").eq("tenant_id", tenantId),
+    ]);
+    setStructures(s.data || []);
+    setInvoices(inv.data || []);
+    setPayments(pay.data || []);
+    setStudents(st.data || []);
+    setTerms(t.data || []);
+    setYears(y.data || []);
+    setGrades(g.data || []);
 
-    let query = supabase
-      .from("invoices")
-      .select("*, student:students(first_name, last_name, grade)", { count: "exact" })
-      .eq("tenant_id", schoolId)
-      .order("created_at", { ascending: false });
-
-    if (search) {
-      query = query.or(`invoice_number.ilike.%${search}%,description.ilike.%${search}%`);
-    }
-    if (statusFilter !== "all") query = query.eq("status", statusFilter);
-    query = query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-
-    const { data, count, error } = await query;
-    if (error) {
-      toast({ title: "Error loading invoices", description: error.message, variant: "destructive" });
-    } else {
-      setInvoices((data as any) || []);
-      setTotal(count || 0);
-    }
+    // Stats
+    const billed = (inv.data || []).filter((r) => r.status !== "void" && r.status !== "draft").reduce((a, b) => a + Number(b.total || 0), 0);
+    const collected = (inv.data || []).reduce((a, b) => a + Number(b.paid_total || 0), 0);
+    const outstanding = (inv.data || []).filter((r) => r.status !== "void").reduce((a, b) => a + Number(b.balance || 0), 0);
+    const overdueCount = (inv.data || []).filter((r) => r.status === "overdue").length;
+    setStats({ billed, collected, outstanding, overdueCount });
     setLoading(false);
-  }, [schoolId, search, statusFilter, page]);
+  }, [tenantId]);
 
-  const fetchStudents = useCallback(async () => {
-    if (!schoolId) return;
-    const { data } = await supabase.from("students").select("id, first_name, last_name, grade").eq("tenant_id", schoolId).eq("status", "active").order("first_name");
-    setStudents(data || []);
-  }, [schoolId]);
+  useEffect(() => { reload(); }, [reload]);
 
-  useEffect(() => { fetchInvoices(); fetchStats(); }, [fetchInvoices, fetchStats]);
-  useEffect(() => { fetchStudents(); }, [fetchStudents]);
+  // Seed fee categories once
+  useEffect(() => {
+    if (!tenantId) return;
+    supabase.rpc("seed_fee_categories" as any, { _tenant: tenantId }).then(() => {});
+  }, [tenantId]);
 
-  const openAdd = () => { setEditing(null); setForm(emptyForm); setDialogOpen(true); };
+  if (loading) {
+    return <div className="flex items-center justify-center py-24"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
 
-  const openEdit = (inv: Invoice) => {
-    setEditing(inv);
-    setForm({
-      student_id: inv.student_id,
-      amount: String(inv.amount),
-      description: inv.description || "",
-      due_date: inv.due_date || "",
-      term: inv.term || "",
-      academic_year: inv.academic_year || "",
-      status: inv.status || "pending",
-      paid_amount: String(inv.paid_amount || 0),
-      currency: inv.currency || "USD",
-    });
-    setDialogOpen(true);
-  };
-
-  const handleSave = async () => {
-    if (!schoolId) return;
-    if (!form.student_id || !form.amount) {
-      toast({ title: "Student and amount are required", variant: "destructive" });
-      return;
-    }
-    setSaving(true);
-
-    const payload = {
-      student_id: form.student_id,
-      amount: parseFloat(form.amount),
-      description: form.description.trim() || null,
-      due_date: form.due_date || null,
-      term: form.term.trim() || null,
-      academic_year: form.academic_year.trim() || null,
-      status: form.status,
-      paid_amount: parseFloat(form.paid_amount) || 0,
-      currency: form.currency || "USD",
-      tenant_id: schoolId,
-    };
-
-    if (editing) {
-      const { error } = await supabase.from("invoices").update(payload).eq("id", editing.id);
-      if (error) toast({ title: "Error updating invoice", description: error.message, variant: "destructive" });
-      else toast({ title: "Invoice updated" });
-    } else {
-      const invNum = `INV-${new Date().getFullYear()}-${String(total + 1).padStart(4, "0")}`;
-      const { error } = await supabase.from("invoices").insert({ ...payload, invoice_number: invNum });
-      if (error) toast({ title: "Error creating invoice", description: error.message, variant: "destructive" });
-      else toast({ title: "Invoice created" });
-    }
-
-    setSaving(false);
-    setDialogOpen(false);
-    fetchInvoices();
-    fetchStats();
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    const { error } = await supabase.from("invoices").delete().eq("id", deleteTarget.id);
-    if (error) toast({ title: "Error deleting invoice", description: error.message, variant: "destructive" });
-    else toast({ title: "Invoice deleted" });
-    setDeleting(false);
-    setDeleteTarget(null);
-    fetchInvoices();
-    fetchStats();
-  };
-
-  const fmt = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
-  const totalPages = Math.ceil(total / PAGE_SIZE);
-
-  const statCards = [
-    { title: "Total Revenue", value: fmt(stats.totalAmount), sub: `${total} invoices`, icon: DollarSign, color: "bg-success/10 text-success" },
-    { title: "Collected", value: fmt(stats.collected), sub: "payments received", icon: CheckCircle, color: "bg-primary/10 text-primary" },
-    { title: "Outstanding", value: fmt(stats.outstanding), sub: `${stats.pendingCount} pending`, icon: AlertCircle, color: "bg-warning/10 text-warning" },
-    { title: "Overdue", value: fmt(stats.overdue), sub: `${stats.overdueCount} invoices`, icon: TrendingUp, color: "bg-destructive/10 text-destructive" },
-  ];
+  if (!can("finance.view")) {
+    return <div className="p-8 text-sm text-muted-foreground">You do not have access to Finance.</div>;
+  }
 
   return (
-    <div className="space-y-6 max-w-7xl">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Fee Management</h1>
-          <p className="text-sm text-muted-foreground mt-1">Track collections, invoices, and financial performance</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs"><Download className="h-3.5 w-3.5" /> Export</Button>
-          <Button size="sm" className="gap-1.5 text-xs" onClick={openAdd}><Plus className="h-3.5 w-3.5" /> Create Invoice</Button>
-        </div>
-      </motion.div>
-
-      {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat) => (
-          <motion.div key={stat.title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground font-medium">{stat.title}</p>
-                <p className="text-2xl font-bold tracking-tight text-card-foreground">{stat.value}</p>
-                <p className="text-xs font-medium text-muted-foreground">{stat.sub}</p>
-              </div>
-              <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${stat.color}`}>
-                <stat.icon className="h-5 w-5" />
-              </div>
-            </div>
-          </motion.div>
-        ))}
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+      <div className="flex items-center gap-3">
+        <Wallet className="h-6 w-6 text-primary" />
+        <h1 className="text-2xl font-bold">Finance & Billing</h1>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search by invoice # or description..." className="pl-9 h-9 text-sm" value={search} onChange={(e) => { setSearch(e.target.value); setPage(0); }} />
-        </div>
-        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(0); }}>
-          <SelectTrigger className="w-[140px] h-9 text-sm"><SelectValue placeholder="All Status" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="paid">Paid</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="overdue">Overdue</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Stats */}
+      <div className="grid gap-3 md:grid-cols-4">
+        <StatCard icon={<FileText className="h-4 w-4" />} label="Billed" value={<Money amount={stats.billed} />} />
+        <StatCard icon={<TrendingUp className="h-4 w-4" />} label="Collected" value={<Money amount={stats.collected} />} accent="text-green-600" />
+        <StatCard icon={<Banknote className="h-4 w-4" />} label="Outstanding" value={<Money amount={stats.outstanding} />} accent="text-amber-600" />
+        <StatCard icon={<AlertCircle className="h-4 w-4" />} label="Overdue invoices" value={stats.overdueCount} accent="text-destructive" />
       </div>
 
-      {/* Invoices Table */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-border bg-card overflow-hidden">
+      <Tabs defaultValue="invoices">
+        <TabsList>
+          <TabsTrigger value="invoices"><FileText className="h-3 w-3 mr-1" />Invoices</TabsTrigger>
+          <TabsTrigger value="payments"><Receipt className="h-3 w-3 mr-1" />Payments</TabsTrigger>
+          <TabsTrigger value="structures"><Layers className="h-3 w-3 mr-1" />Fee Structures</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="invoices" className="mt-4">
+          <InvoicesTab
+            tenantId={tenantId!} userId={user?.id}
+            invoices={invoices} students={students} structures={structures}
+            years={years} terms={terms} canEdit={can("finance.invoice")}
+            onChange={reload} />
+        </TabsContent>
+
+        <TabsContent value="payments" className="mt-4">
+          <PaymentsTab
+            tenantId={tenantId!} userId={user?.id}
+            payments={payments} students={students} invoices={invoices}
+            canRecord={can("finance.payment.record")} onChange={reload} />
+        </TabsContent>
+
+        <TabsContent value="structures" className="mt-4">
+          <StructuresTab
+            tenantId={tenantId!} userId={user?.id}
+            structures={structures} years={years} terms={terms} grades={grades}
+            canConfigure={can("finance.configure")} onChange={reload} />
+        </TabsContent>
+      </Tabs>
+    </motion.div>
+  );
+}
+
+function StatCard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: React.ReactNode; accent?: string }) {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between text-muted-foreground text-xs">
+          <span>{label}</span>{icon}
+        </div>
+        <div className={`text-2xl font-bold mt-1 ${accent || ""}`}>{value}</div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ===================== INVOICES ===================== */
+
+function InvoicesTab({ tenantId, userId, invoices, students, structures, years, terms, canEdit, onChange }:
+  { tenantId: string; userId?: string; invoices: Row[]; students: Row[]; structures: Row[]; years: Row[]; terms: Row[]; canEdit: boolean; onChange: () => void }) {
+
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [form, setForm] = useState({
+    student_id: "", structure_id: "", academic_year_id: "", term_id: "",
+    due_date: "", notes: "",
+    lines: [] as { category: string; description: string; quantity: number; unit_amount: number }[],
+  });
+
+  const filtered = useMemo(() => {
+    return invoices.filter((i) => {
+      if (statusFilter !== "all" && i.status !== statusFilter) return false;
+      if (search) {
+        const q = search.toLowerCase();
+        return (
+          i.invoice_number?.toLowerCase().includes(q) ||
+          i.students?.first_name?.toLowerCase().includes(q) ||
+          i.students?.last_name?.toLowerCase().includes(q) ||
+          i.students?.admission_number?.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [invoices, search, statusFilter]);
+
+  const applyStructure = (structureId: string) => {
+    const s = structures.find((x) => x.id === structureId);
+    if (!s) return;
+    const lines = (s.fee_items || []).map((it: Row) => ({
+      category: it.category, description: it.name, quantity: 1, unit_amount: Number(it.amount),
+    }));
+    setForm((f) => ({ ...f, structure_id: structureId, lines }));
+  };
+
+  const addLine = () => setForm((f) => ({ ...f, lines: [...f.lines, { category: "tuition", description: "", quantity: 1, unit_amount: 0 }] }));
+  const removeLine = (idx: number) => setForm((f) => ({ ...f, lines: f.lines.filter((_, i) => i !== idx) }));
+
+  const totalPreview = form.lines.reduce((a, l) => a + (Number(l.unit_amount) * Number(l.quantity)), 0);
+
+  const create = async (issue: boolean) => {
+    if (!form.student_id || form.lines.length === 0) {
+      return toast({ title: "Pick a student and add at least one line", variant: "destructive" });
+    }
+    const { data: inv, error } = await supabase.from("student_invoices").insert({
+      tenant_id: tenantId, student_id: form.student_id, created_by: userId,
+      academic_year_id: form.academic_year_id || null, term_id: form.term_id || null,
+      structure_id: form.structure_id || null, due_date: form.due_date || null,
+      notes: form.notes || null,
+      issued_at: issue ? new Date().toISOString().slice(0, 10) : null,
+      status: issue ? "issued" : "draft",
+    }).select("id").single();
+    if (error || !inv) return toast({ title: "Failed", description: error?.message, variant: "destructive" });
+
+    const linesPayload = form.lines.map((l) => ({
+      tenant_id: tenantId, invoice_id: inv.id,
+      category: l.category as any, description: l.description || "Fee",
+      quantity: l.quantity, unit_amount: l.unit_amount,
+    }));
+    const { error: linesErr } = await supabase.from("student_invoice_lines").insert(linesPayload);
+    if (linesErr) return toast({ title: "Lines failed", description: linesErr.message, variant: "destructive" });
+
+    toast({ title: issue ? "Invoice issued" : "Draft saved" });
+    setOpen(false);
+    setForm({ student_id: "", structure_id: "", academic_year_id: "", term_id: "", due_date: "", notes: "", lines: [] });
+    onChange();
+  };
+
+  const bulkIssueFromStructure = async (structureId: string) => {
+    const s = structures.find((x) => x.id === structureId);
+    if (!s) return;
+    if (!confirm(`Issue this fee structure to ALL ${students.length} students? An invoice will be created per student.`)) return;
+    let success = 0;
+    for (const stu of students) {
+      const { data: inv, error } = await supabase.from("student_invoices").insert({
+        tenant_id: tenantId, student_id: stu.id, created_by: userId,
+        academic_year_id: s.academic_year_id, term_id: s.term_id,
+        structure_id: s.id, status: "issued",
+        issued_at: new Date().toISOString().slice(0, 10),
+      }).select("id").single();
+      if (error || !inv) continue;
+      const linesPayload = (s.fee_items || []).map((it: Row) => ({
+        tenant_id: tenantId, invoice_id: inv.id,
+        category: it.category as any, description: it.name,
+        quantity: 1, unit_amount: Number(it.amount), fee_item_id: it.id,
+      }));
+      if (linesPayload.length) await supabase.from("student_invoice_lines").insert(linesPayload);
+      success++;
+    }
+    toast({ title: `Issued ${success} invoices` });
+    onChange();
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between gap-3">
+        <CardTitle className="text-base">Invoices</CardTitle>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-48" />
+          <select className="border rounded px-2 py-1.5 text-sm bg-background" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="all">All</option>
+            <option value="draft">Draft</option>
+            <option value="issued">Issued</option>
+            <option value="partial">Partial</option>
+            <option value="paid">Paid</option>
+            <option value="overdue">Overdue</option>
+            <option value="void">Void</option>
+          </select>
+          {canEdit && (
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />New invoice</Button></DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader><DialogTitle>New invoice</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div className="grid gap-2 md:grid-cols-2">
+                    <select className="border rounded px-2 py-1.5 text-sm bg-background" value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value })}>
+                      <option value="">Student…</option>
+                      {students.map((s) => <option key={s.id} value={s.id}>{s.admission_number} • {s.first_name} {s.last_name}</option>)}
+                    </select>
+                    <select className="border rounded px-2 py-1.5 text-sm bg-background" value={form.structure_id} onChange={(e) => applyStructure(e.target.value)}>
+                      <option value="">Apply fee structure (optional)…</option>
+                      {structures.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                    <select className="border rounded px-2 py-1.5 text-sm bg-background" value={form.academic_year_id} onChange={(e) => setForm({ ...form, academic_year_id: e.target.value })}>
+                      <option value="">Academic year…</option>
+                      {years.map((y) => <option key={y.id} value={y.id}>{y.name}</option>)}
+                    </select>
+                    <select className="border rounded px-2 py-1.5 text-sm bg-background" value={form.term_id} onChange={(e) => setForm({ ...form, term_id: e.target.value })}>
+                      <option value="">Term…</option>
+                      {terms.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                    <Input type="date" placeholder="Due date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
+                  </div>
+
+                  <div className="rounded border">
+                    <div className="flex items-center justify-between px-3 py-2 border-b">
+                      <div className="text-sm font-medium">Line items</div>
+                      <Button size="sm" variant="ghost" onClick={addLine}><Plus className="h-3 w-3 mr-1" />Line</Button>
+                    </div>
+                    {form.lines.length === 0 && <div className="text-xs text-muted-foreground p-3">No lines yet.</div>}
+                    {form.lines.map((l, idx) => (
+                      <div key={idx} className="grid grid-cols-12 gap-1 p-2 border-b last:border-b-0">
+                        <select className="col-span-3 border rounded px-2 py-1 text-sm bg-background"
+                          value={l.category} onChange={(e) => setForm((f) => ({ ...f, lines: f.lines.map((x, i) => i === idx ? { ...x, category: e.target.value } : x) }))}>
+                          {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                        <Input className="col-span-5" placeholder="Description" value={l.description}
+                          onChange={(e) => setForm((f) => ({ ...f, lines: f.lines.map((x, i) => i === idx ? { ...x, description: e.target.value } : x) }))} />
+                        <Input className="col-span-1" type="number" value={l.quantity} step="1"
+                          onChange={(e) => setForm((f) => ({ ...f, lines: f.lines.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value) } : x) }))} />
+                        <Input className="col-span-2" type="number" placeholder="Amount" value={l.unit_amount} step="0.01"
+                          onChange={(e) => setForm((f) => ({ ...f, lines: f.lines.map((x, i) => i === idx ? { ...x, unit_amount: Number(e.target.value) } : x) }))} />
+                        <Button className="col-span-1" size="icon" variant="ghost" onClick={() => removeLine(idx)}><Trash2 className="h-3 w-3" /></Button>
+                      </div>
+                    ))}
+                    <div className="flex justify-end p-2 text-sm font-medium border-t">
+                      Total: <Money amount={totalPreview} className="ml-2" />
+                    </div>
+                  </div>
+
+                  <Textarea placeholder="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => create(false)}>Save draft</Button>
+                  <Button onClick={() => create(true)}>Issue invoice</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+          {canEdit && structures.length > 0 && (
+            <select className="border rounded px-2 py-1.5 text-sm bg-background" defaultValue=""
+              onChange={(e) => { if (e.target.value) { bulkIssueFromStructure(e.target.value); e.target.value = ""; } }}>
+              <option value="">Bulk issue…</option>
+              {structures.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="text-xs font-semibold">Invoice</TableHead>
-              <TableHead className="text-xs font-semibold">Student</TableHead>
-              <TableHead className="text-xs font-semibold">Amount</TableHead>
-              <TableHead className="text-xs font-semibold">Paid</TableHead>
-              <TableHead className="text-xs font-semibold">Due Date</TableHead>
-              <TableHead className="text-xs font-semibold">Status</TableHead>
-              <TableHead className="text-xs font-semibold w-10"></TableHead>
+            <TableRow>
+              <TableHead>Invoice #</TableHead><TableHead>Student</TableHead>
+              <TableHead>Term</TableHead><TableHead className="text-right">Total</TableHead>
+              <TableHead className="text-right">Paid</TableHead><TableHead className="text-right">Balance</TableHead>
+              <TableHead>Due</TableHead><TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                </TableCell>
-              </TableRow>
-            ) : invoices.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-12">
-                  <div className="flex flex-col items-center gap-2">
-                    <Receipt className="h-8 w-8 text-muted-foreground/50" />
-                    <p className="text-sm text-muted-foreground">No invoices found</p>
-                    <p className="text-xs text-muted-foreground/70">Create your first invoice to get started</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              invoices.map((inv) => (
-                <TableRow key={inv.id} className="hover:bg-muted/30 transition-colors">
-                  <TableCell className="text-sm font-medium text-primary">{inv.invoice_number || "—"}</TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="text-sm">{inv.student ? `${inv.student.first_name} ${inv.student.last_name}` : "—"}</p>
-                      <p className="text-xs text-muted-foreground">{inv.student?.grade || ""}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm font-medium">{fmt(Number(inv.amount))}</TableCell>
-                  <TableCell className="text-sm">{fmt(Number(inv.paid_amount || 0))}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{inv.due_date || "—"}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={`text-[11px] capitalize ${statusColors[inv.status || "pending"] || ""}`}>
-                      {inv.status || "pending"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="text-sm gap-2" onClick={() => openEdit(inv)}><Edit className="h-3.5 w-3.5" /> Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-sm gap-2"><Eye className="h-3.5 w-3.5" /> View</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-sm gap-2 text-destructive" onClick={() => setDeleteTarget(inv)}><Trash2 className="h-3.5 w-3.5" /> Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
+            {filtered.length === 0 && (
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">No invoices.</TableCell></TableRow>
             )}
+            {filtered.map((i) => (
+              <TableRow key={i.id}>
+                <TableCell className="font-mono text-xs">{i.invoice_number}</TableCell>
+                <TableCell>{i.students?.first_name} {i.students?.last_name}<div className="text-xs text-muted-foreground">{i.students?.admission_number}</div></TableCell>
+                <TableCell className="text-xs">{i.terms?.name || "—"}</TableCell>
+                <TableCell className="text-right"><Money amount={Number(i.total)} /></TableCell>
+                <TableCell className="text-right"><Money amount={Number(i.paid_total)} /></TableCell>
+                <TableCell className="text-right font-medium"><Money amount={Number(i.balance)} /></TableCell>
+                <TableCell className="text-xs">{i.due_date || "—"}</TableCell>
+                <TableCell>
+                  <Badge variant={
+                    i.status === "paid" ? "default" :
+                    i.status === "overdue" ? "destructive" :
+                    i.status === "void" ? "outline" : "secondary"
+                  }>{i.status}</Badge>
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
-        <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/30">
-          <p className="text-xs text-muted-foreground">Showing {invoices.length} of {total} invoices</p>
-          <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon" className="h-7 w-7" disabled={page === 0} onClick={() => setPage((p) => p - 1)}><ChevronLeft className="h-3.5 w-3.5" /></Button>
-            <span className="text-xs text-muted-foreground px-2">Page {page + 1} of {totalPages || 1}</span>
-            <Button variant="outline" size="icon" className="h-7 w-7" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}><ChevronRight className="h-3.5 w-3.5" /></Button>
-          </div>
-        </div>
-      </motion.div>
+      </CardContent>
+    </Card>
+  );
+}
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editing ? "Edit Invoice" : "Create Invoice"}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label>Student *</Label>
-              <Select value={form.student_id} onValueChange={(v) => setForm({ ...form, student_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger>
-                <SelectContent>
-                  {students.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.first_name} {s.last_name} {s.grade ? `(${s.grade})` : ""}</SelectItem>
+/* ===================== PAYMENTS ===================== */
+
+function PaymentsTab({ tenantId, userId, payments, students, invoices, canRecord, onChange }:
+  { tenantId: string; userId?: string; payments: Row[]; students: Row[]; invoices: Row[]; canRecord: boolean; onChange: () => void }) {
+
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({
+    student_id: "", amount: "", method: "cash", reference: "", notes: "",
+    invoice_id: "",
+  });
+
+  const studentInvoices = useMemo(() => {
+    if (!form.student_id) return [];
+    return invoices.filter((i) => i.student_id === form.student_id && Number(i.balance) > 0);
+  }, [invoices, form.student_id]);
+
+  const record = async () => {
+    if (!form.student_id || !form.amount) return toast({ title: "Student and amount required", variant: "destructive" });
+    const amt = Number(form.amount);
+    if (amt <= 0) return toast({ title: "Amount must be > 0", variant: "destructive" });
+
+    const { data: pay, error } = await supabase.from("student_payments").insert({
+      tenant_id: tenantId, student_id: form.student_id, received_by: userId,
+      amount: amt, method: form.method as any,
+      reference: form.reference || null, notes: form.notes || null,
+    }).select("id").single();
+    if (error || !pay) return toast({ title: "Failed", description: error?.message, variant: "destructive" });
+
+    // Allocate
+    let remaining = amt;
+    const targets = form.invoice_id
+      ? studentInvoices.filter((i) => i.id === form.invoice_id)
+      : studentInvoices.slice().sort((a, b) => (a.due_date || "").localeCompare(b.due_date || ""));
+    const allocs: any[] = [];
+    for (const inv of targets) {
+      if (remaining <= 0) break;
+      const take = Math.min(remaining, Number(inv.balance));
+      allocs.push({ tenant_id: tenantId, payment_id: pay.id, invoice_id: inv.id, amount: take });
+      remaining -= take;
+    }
+    if (allocs.length) await supabase.from("payment_allocations").insert(allocs);
+
+    // Receipt
+    await supabase.from("student_receipts").insert({ tenant_id: tenantId, payment_id: pay.id, receipt_number: "" });
+
+    toast({ title: "Payment recorded", description: remaining > 0 ? `Unallocated: ${remaining.toFixed(2)}` : "All allocated" });
+    setOpen(false);
+    setForm({ student_id: "", amount: "", method: "cash", reference: "", notes: "", invoice_id: "" });
+    onChange();
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-base">Payments</CardTitle>
+        {canRecord && (
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />Record payment</Button></DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader><DialogTitle>Record payment</DialogTitle></DialogHeader>
+              <div className="space-y-2">
+                <select className="w-full border rounded px-2 py-1.5 text-sm bg-background" value={form.student_id} onChange={(e) => setForm({ ...form, student_id: e.target.value, invoice_id: "" })}>
+                  <option value="">Student…</option>
+                  {students.map((s) => <option key={s.id} value={s.id}>{s.admission_number} • {s.first_name} {s.last_name}</option>)}
+                </select>
+                {studentInvoices.length > 0 && (
+                  <select className="w-full border rounded px-2 py-1.5 text-sm bg-background" value={form.invoice_id} onChange={(e) => setForm({ ...form, invoice_id: e.target.value })}>
+                    <option value="">Auto-allocate to oldest outstanding</option>
+                    {studentInvoices.map((i) => <option key={i.id} value={i.id}>{i.invoice_number} — bal {i.balance}</option>)}
+                  </select>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  <Input type="number" placeholder="Amount" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+                  <select className="border rounded px-2 py-1.5 text-sm bg-background" value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })}>
+                    {METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+                <Input placeholder="Reference (M-Pesa code, cheque #, etc.)" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
+                <Textarea placeholder="Notes" rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+              </div>
+              <DialogFooter><Button onClick={record}>Record & issue receipt</Button></DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+      </CardHeader>
+      <CardContent className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow><TableHead>Date</TableHead><TableHead>Student</TableHead><TableHead>Method</TableHead><TableHead>Reference</TableHead><TableHead className="text-right">Amount</TableHead></TableRow>
+          </TableHeader>
+          <TableBody>
+            {payments.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No payments yet.</TableCell></TableRow>}
+            {payments.map((p) => (
+              <TableRow key={p.id}>
+                <TableCell className="text-xs">{new Date(p.paid_at).toLocaleDateString()}</TableCell>
+                <TableCell>{p.students?.first_name} {p.students?.last_name}<div className="text-xs text-muted-foreground">{p.students?.admission_number}</div></TableCell>
+                <TableCell><Badge variant="outline">{p.method}</Badge></TableCell>
+                <TableCell className="font-mono text-xs">{p.reference || "—"}</TableCell>
+                <TableCell className="text-right font-medium"><Money amount={Number(p.amount)} /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ===================== STRUCTURES ===================== */
+
+function StructuresTab({ tenantId, userId, structures, years, terms, grades, canConfigure, onChange }:
+  { tenantId: string; userId?: string; structures: Row[]; years: Row[]; terms: Row[]; grades: Row[]; canConfigure: boolean; onChange: () => void }) {
+
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({
+    name: "", academic_year_id: "", term_id: "", currency: "KES",
+    items: [] as { category: string; name: string; amount: number; is_mandatory: boolean }[],
+  });
+
+  const addItem = () => setForm((f) => ({ ...f, items: [...f.items, { category: "tuition", name: "", amount: 0, is_mandatory: true }] }));
+  const removeItem = (idx: number) => setForm((f) => ({ ...f, items: f.items.filter((_, i) => i !== idx) }));
+
+  const save = async () => {
+    if (!form.name) return toast({ title: "Name required", variant: "destructive" });
+    const { data: s, error } = await supabase.from("fee_structures").insert({
+      tenant_id: tenantId, name: form.name, created_by: userId,
+      academic_year_id: form.academic_year_id || null,
+      term_id: form.term_id || null, currency: form.currency,
+    }).select("id").single();
+    if (error || !s) return toast({ title: "Failed", description: error?.message, variant: "destructive" });
+    if (form.items.length) {
+      await supabase.from("fee_items").insert(form.items.map((it, idx) => ({
+        tenant_id: tenantId, structure_id: s.id,
+        category: it.category as any, name: it.name || "Item",
+        amount: it.amount, is_mandatory: it.is_mandatory, sort_order: idx,
+      })));
+    }
+    toast({ title: "Saved" });
+    setOpen(false);
+    setForm({ name: "", academic_year_id: "", term_id: "", currency: "KES", items: [] });
+    onChange();
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm("Delete this fee structure?")) return;
+    await supabase.from("fee_structures").delete().eq("id", id);
+    onChange();
+  };
+
+  return (
+    <div className="space-y-3">
+      {canConfigure && (
+        <div className="flex justify-end">
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" />New structure</Button></DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader><DialogTitle>New fee structure</DialogTitle></DialogHeader>
+              <div className="space-y-2">
+                <Input placeholder="Name (e.g. 'Form 1 — Term 1 2026')" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                <div className="grid grid-cols-3 gap-2">
+                  <select className="border rounded px-2 py-1.5 text-sm bg-background" value={form.academic_year_id} onChange={(e) => setForm({ ...form, academic_year_id: e.target.value })}>
+                    <option value="">Year…</option>
+                    {years.map((y) => <option key={y.id} value={y.id}>{y.name}</option>)}
+                  </select>
+                  <select className="border rounded px-2 py-1.5 text-sm bg-background" value={form.term_id} onChange={(e) => setForm({ ...form, term_id: e.target.value })}>
+                    <option value="">Term…</option>
+                    {terms.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                  <Input placeholder="KES" value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} />
+                </div>
+                <div className="rounded border">
+                  <div className="flex items-center justify-between px-3 py-2 border-b">
+                    <div className="text-sm font-medium">Items</div>
+                    <Button size="sm" variant="ghost" onClick={addItem}><Plus className="h-3 w-3 mr-1" />Item</Button>
+                  </div>
+                  {form.items.length === 0 && <div className="text-xs text-muted-foreground p-3">No items yet.</div>}
+                  {form.items.map((it, idx) => (
+                    <div key={idx} className="grid grid-cols-12 gap-1 p-2 border-b last:border-b-0">
+                      <select className="col-span-3 border rounded px-2 py-1 text-sm bg-background" value={it.category}
+                        onChange={(e) => setForm((f) => ({ ...f, items: f.items.map((x, i) => i === idx ? { ...x, category: e.target.value } : x) }))}>
+                        {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                      <Input className="col-span-6" placeholder="Item name" value={it.name}
+                        onChange={(e) => setForm((f) => ({ ...f, items: f.items.map((x, i) => i === idx ? { ...x, name: e.target.value } : x) }))} />
+                      <Input className="col-span-2" type="number" value={it.amount}
+                        onChange={(e) => setForm((f) => ({ ...f, items: f.items.map((x, i) => i === idx ? { ...x, amount: Number(e.target.value) } : x) }))} />
+                      <Button className="col-span-1" size="icon" variant="ghost" onClick={() => removeItem(idx)}><Trash2 className="h-3 w-3" /></Button>
+                    </div>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Amount *</Label>
-                <Input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0.00" min="0" step="0.01" />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Paid Amount</Label>
-                <Input type="number" value={form.paid_amount} onChange={(e) => setForm({ ...form, paid_amount: e.target.value })} placeholder="0.00" min="0" step="0.01" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Due Date</Label>
-                <Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="overdue">Overdue</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Term</Label>
-                <Input value={form.term} onChange={(e) => setForm({ ...form, term: e.target.value })} placeholder="e.g. Term 1" />
-              </div>
-              <div className="space-y-2">
-                <Label>Academic Year</Label>
-                <Input value={form.academic_year} onChange={(e) => setForm({ ...form, academic_year: e.target.value })} placeholder="e.g. 2026" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Invoice description" rows={2} />
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {editing ? "Update" : "Create Invoice"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              <DialogFooter><Button onClick={save}>Save structure</Button></DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete invoice {deleteTarget?.invoice_number}? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {deleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <div className="grid gap-3 md:grid-cols-2">
+        {structures.length === 0 && <div className="text-sm text-muted-foreground py-8 text-center md:col-span-2">No fee structures yet. Create one to start billing.</div>}
+        {structures.map((s) => {
+          const total = (s.fee_items || []).reduce((a: number, b: Row) => a + Number(b.amount), 0);
+          return (
+            <Card key={s.id}>
+              <CardHeader className="flex flex-row items-start justify-between gap-3">
+                <div>
+                  <CardTitle className="text-base">{s.name}</CardTitle>
+                  <div className="text-xs text-muted-foreground mt-1">{s.currency} • {s.fee_items?.length || 0} items</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="font-bold"><Money amount={total} currency={s.currency} /></div>
+                  {canConfigure && <Button size="icon" variant="ghost" onClick={() => remove(s.id)}><Trash2 className="h-3 w-3" /></Button>}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-1">
+                {(s.fee_items || []).map((it: Row) => (
+                  <div key={it.id} className="flex justify-between text-sm">
+                    <span><Badge variant="outline" className="mr-1 text-xs">{it.category}</Badge>{it.name}</span>
+                    <Money amount={Number(it.amount)} currency={s.currency} />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 }
