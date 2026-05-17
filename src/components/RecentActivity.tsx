@@ -15,7 +15,7 @@ interface ActivityItem {
 
 export function RecentActivity() {
   const { profile } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
   const [activities, setActivities] = useState<ActivityItem[]>([]);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export function RecentActivity() {
       // Recent students
       const { data: students } = await supabase
         .from("students").select("first_name, last_name, grade, created_at")
-        .eq("school_id", schoolId).order("created_at", { ascending: false }).limit(2);
+        .eq("tenant_id", schoolId).order("created_at", { ascending: false }).limit(2);
       students?.forEach(s => items.push({
         icon: UserPlus, label: "Student enrolled",
         detail: `${s.first_name} ${s.last_name} — ${s.grade || "N/A"}`,
@@ -37,7 +37,7 @@ export function RecentActivity() {
       // Recent invoices
       const { data: invoices } = await supabase
         .from("invoices").select("invoice_number, amount, status, created_at")
-        .eq("school_id", schoolId).order("created_at", { ascending: false }).limit(2);
+        .eq("tenant_id", schoolId).order("created_at", { ascending: false }).limit(2);
       invoices?.forEach(i => items.push({
         icon: CreditCard, label: i.status === "paid" ? "Payment received" : "Invoice created",
         detail: `$${Number(i.amount).toLocaleString()} — ${i.invoice_number || ""}`,
@@ -48,7 +48,7 @@ export function RecentActivity() {
       // Recent exams
       const { data: exams } = await supabase
         .from("exams").select("name, status, created_at")
-        .eq("school_id", schoolId).order("created_at", { ascending: false }).limit(1);
+        .eq("tenant_id", schoolId).order("created_at", { ascending: false }).limit(1);
       exams?.forEach(e => items.push({
         icon: ClipboardCheck, label: `Exam ${e.status === "completed" ? "completed" : "scheduled"}`,
         detail: e.name,

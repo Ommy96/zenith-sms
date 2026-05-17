@@ -24,10 +24,10 @@ Deno.serve(async (req) => {
     if (claimsErr || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", claimsData.claims.sub).maybeSingle();
-    const schoolId = profile?.school_id;
+    const { data: profile } = await supabase.from("profiles").select("tenant_id").eq("id", claimsData.claims.sub).maybeSingle();
+    const schoolId = profile?.tenant_id;
     if (!schoolId) return new Response(JSON.stringify({ error: "No school" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    const { data: cfg } = await supabase.from("mpesa_config").select("*").eq("school_id", schoolId).maybeSingle();
+    const { data: cfg } = await supabase.from("mpesa_config").select("*").eq("tenant_id", schoolId).maybeSingle();
     if (!cfg?.consumer_key || !cfg?.consumer_secret) {
       return new Response(JSON.stringify({ ok: false, error: "Missing consumer key/secret" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }

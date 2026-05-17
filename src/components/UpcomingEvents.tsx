@@ -19,7 +19,7 @@ const typeColors: Record<string, string> = {
 
 export function UpcomingEvents() {
   const { profile } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
   const [events, setEvents] = useState<EventItem[]>([]);
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export function UpcomingEvents() {
       // Upcoming exams
       const { data: exams } = await supabase
         .from("exams").select("name, start_date")
-        .eq("school_id", schoolId).eq("status", "upcoming")
+        .eq("tenant_id", schoolId).eq("status", "upcoming")
         .gte("start_date", today).order("start_date").limit(3);
       exams?.forEach(e => items.push({
         title: e.name,
@@ -42,7 +42,7 @@ export function UpcomingEvents() {
       // Upcoming invoice due dates
       const { data: invoices } = await supabase
         .from("invoices").select("invoice_number, due_date")
-        .eq("school_id", schoolId).eq("status", "pending")
+        .eq("tenant_id", schoolId).eq("status", "pending")
         .gte("due_date", today).order("due_date").limit(2);
       invoices?.forEach(i => items.push({
         title: `Fee Deadline — ${i.invoice_number || "Invoice"}`,
@@ -53,7 +53,7 @@ export function UpcomingEvents() {
       // Recent announcements
       const { data: announcements } = await supabase
         .from("announcements").select("title, created_at")
-        .eq("school_id", schoolId).order("created_at", { ascending: false }).limit(2);
+        .eq("tenant_id", schoolId).order("created_at", { ascending: false }).limit(2);
       announcements?.forEach(a => items.push({
         title: a.title,
         date: format(new Date(a.created_at!), "MMM d, yyyy"),

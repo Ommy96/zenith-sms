@@ -23,8 +23,8 @@ Deno.serve(async (req) => {
 
     let schoolId = schoolHint;
     if (!schoolId && shortcode) {
-      const { data } = await admin.from("mpesa_config").select("school_id").eq("shortcode", shortcode).maybeSingle();
-      schoolId = data?.school_id ?? null;
+      const { data } = await admin.from("mpesa_config").select("tenant_id").eq("shortcode", shortcode).maybeSingle();
+      schoolId = data?.tenant_id ?? null;
     }
     if (!schoolId) {
       return new Response(JSON.stringify({ ResultCode: 0, ResultDesc: "Accepted (no school)" }), {
@@ -37,11 +37,11 @@ Deno.serve(async (req) => {
     let matchedInvoiceId: string | null = null;
     let status = "unmatched";
     if (accountRef) {
-      const { data: student } = await admin.from("students").select("id").eq("school_id", schoolId).eq("admission_number", accountRef).maybeSingle();
+      const { data: student } = await admin.from("students").select("id").eq("tenant_id", schoolId).eq("admission_number", accountRef).maybeSingle();
       if (student) {
         matchedStudentId = student.id;
         const { data: inv } = await admin.from("invoices").select("id, amount, paid_amount, status")
-          .eq("school_id", schoolId).eq("student_id", student.id)
+          .eq("tenant_id", schoolId).eq("student_id", student.id)
           .neq("status", "paid").order("due_date", { ascending: true }).limit(1).maybeSingle();
         if (inv) {
           matchedInvoiceId = inv.id;
@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     }
 
     await admin.from("mpesa_transactions").upsert({
-      school_id: schoolId,
+      tenant_id: schoolId,
       mpesa_receipt: receipt,
       transaction_type: payload.TransactionType ?? "Pay Bill",
       transaction_time: new Date().toISOString(),
@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       matched_invoice_id: matchedInvoiceId,
       status,
       raw_payload: payload,
-    }, { onConflict: "school_id,mpesa_receipt" });
+    }, { onConflict: "tenant_id,mpesa_receipt" });
 
     // SMS receipt: TODO — hook into SMS provider when configured
     console.log(`[mpesa-c2b] receipt=${receipt} amount=${amount} ref=${accountRef} status=${status}`);

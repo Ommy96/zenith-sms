@@ -31,9 +31,9 @@ Deno.serve(async (req) => {
         const value = change.value || {};
         const phone_number_id = value?.metadata?.phone_number_id;
         if (!phone_number_id) continue;
-        const { data: cfg } = await admin.from("whatsapp_config").select("school_id").eq("phone_number_id", phone_number_id).maybeSingle();
-        if (!cfg?.school_id) continue;
-        const school_id = cfg.school_id;
+        const { data: cfg } = await admin.from("whatsapp_config").select("tenant_id").eq("phone_number_id", phone_number_id).maybeSingle();
+        if (!cfg?.tenant_id) continue;
+        const tenant_id = cfg.tenant_id;
 
         // Inbound messages
         for (const msg of value.messages || []) {
@@ -43,11 +43,11 @@ Deno.serve(async (req) => {
           let student_id: string | null = null;
           if (from) {
             const tail = from.slice(-9);
-            const { data: s } = await admin.from("students").select("id").eq("school_id", school_id).ilike("guardian_phone", `%${tail}%`).limit(1).maybeSingle();
+            const { data: s } = await admin.from("students").select("id").eq("tenant_id", tenant_id).ilike("guardian_phone", `%${tail}%`).limit(1).maybeSingle();
             student_id = s?.id || null;
           }
           await admin.from("whatsapp_messages").insert({
-            school_id, direction: "in", wa_message_id: msg.id, from_phone: from,
+            tenant_id, direction: "in", wa_message_id: msg.id, from_phone: from,
             student_id, body: text, status: "received", raw_payload: msg,
           });
         }

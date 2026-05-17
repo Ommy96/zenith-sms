@@ -22,11 +22,11 @@ Deno.serve(async (req) => {
     const { to, template_name, params = [], student_id, broadcast_id, free_text } = await req.json();
     if (!to) return new Response(JSON.stringify({ error: "to required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", claims.claims.sub).maybeSingle();
-    const school_id = profile?.school_id;
-    if (!school_id) return new Response(JSON.stringify({ error: "No school" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data: profile } = await supabase.from("profiles").select("tenant_id").eq("id", claims.claims.sub).maybeSingle();
+    const tenant_id = profile?.tenant_id;
+    if (!tenant_id) return new Response(JSON.stringify({ error: "No school" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { data: cfg } = await admin.from("whatsapp_config").select("*").eq("school_id", school_id).maybeSingle();
+    const { data: cfg } = await admin.from("whatsapp_config").select("*").eq("tenant_id", tenant_id).maybeSingle();
     if (!cfg?.phone_number_id || !cfg?.access_token) {
       return new Response(JSON.stringify({ error: "WhatsApp not configured" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
     let body = free_text || "";
     let payload: any;
     if (template_name) {
-      const { data: t } = await admin.from("whatsapp_templates").select("*").eq("school_id", school_id).eq("name", template_name).maybeSingle();
+      const { data: t } = await admin.from("whatsapp_templates").select("*").eq("tenant_id", tenant_id).eq("name", template_name).maybeSingle();
       if (!t) return new Response(JSON.stringify({ error: "Template not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       template = t;
       body = fillTemplate(t.body_template, params);
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     const wa_id = respBody?.messages?.[0]?.id || null;
 
     await admin.from("whatsapp_messages").insert({
-      school_id, direction: "out", wa_message_id: wa_id, to_phone: to, student_id: student_id || null,
+      tenant_id, direction: "out", wa_message_id: wa_id, to_phone: to, student_id: student_id || null,
       template_id: template?.id || null, broadcast_id: broadcast_id || null, body,
       status: ok ? "sent" : "failed", error: ok ? null : (respBody?.error?.message || "Failed"),
       raw_payload: respBody,

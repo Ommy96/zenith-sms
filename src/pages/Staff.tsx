@@ -53,7 +53,7 @@ const emptyForm = {
 
 export default function Staff() {
   const { profile } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
 
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +79,7 @@ export default function Staff() {
     let query = supabase
       .from("staff")
       .select("*", { count: "exact" })
-      .eq("school_id", schoolId)
+      .eq("tenant_id", schoolId)
       .order("created_at", { ascending: false });
 
     if (search) {
@@ -105,7 +105,7 @@ export default function Staff() {
     supabase
       .from("staff")
       .select("department")
-      .eq("school_id", schoolId)
+      .eq("tenant_id", schoolId)
       .not("department", "is", null)
       .then(({ data }) => {
         const unique = [...new Set((data || []).map((d) => d.department).filter(Boolean))] as string[];
@@ -149,7 +149,7 @@ export default function Staff() {
       role: form.role || "teacher",
       hire_date: form.hire_date || null,
       status: form.status,
-      school_id: schoolId,
+      tenant_id: schoolId,
     };
 
     if (editing) {

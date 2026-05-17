@@ -14,10 +14,10 @@ Deno.serve(async (req) => {
     const { data: claims } = await supabase.auth.getClaims(authHeader.replace("Bearer ", ""));
     if (!claims?.claims) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { data: profile } = await supabase.from("profiles").select("school_id").eq("id", claims.claims.sub).maybeSingle();
-    if (!profile?.school_id) return new Response(JSON.stringify({ error: "No school" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { data: profile } = await supabase.from("profiles").select("tenant_id").eq("id", claims.claims.sub).maybeSingle();
+    if (!profile?.tenant_id) return new Response(JSON.stringify({ error: "No school" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { data: cfg } = await supabase.from("whatsapp_config").select("phone_number_id, access_token").eq("school_id", profile.school_id).maybeSingle();
+    const { data: cfg } = await supabase.from("whatsapp_config").select("phone_number_id, access_token").eq("tenant_id", profile.tenant_id).maybeSingle();
     if (!cfg?.phone_number_id || !cfg?.access_token) {
       return new Response(JSON.stringify({ ok: false, error: "Missing credentials" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }

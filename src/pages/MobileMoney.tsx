@@ -20,7 +20,7 @@ import { toast } from "@/hooks/use-toast";
 
 type MpesaConfig = {
   id?: string;
-  school_id: string;
+  tenant_id: string;
   environment: string;
   shortcode: string | null;
   shortcode_type: string;
@@ -61,7 +61,7 @@ const sb = supabase as any;
 
 export default function MobileMoney() {
   const { profile } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
 
   return (
     <div className="space-y-6">
@@ -96,7 +96,7 @@ export default function MobileMoney() {
 /* -------------------- Configuration -------------------- */
 function ConfigTab({ schoolId }: { schoolId: string }) {
   const [cfg, setCfg] = useState<MpesaConfig>({
-    school_id: schoolId, environment: "sandbox", shortcode: "", shortcode_type: "paybill",
+    tenant_id: schoolId, environment: "sandbox", shortcode: "", shortcode_type: "paybill",
     consumer_key: "", consumer_secret: "", passkey: "", initiator_name: "", is_active: true,
   });
   const [loading, setLoading] = useState(true);
@@ -113,7 +113,7 @@ function ConfigTab({ schoolId }: { schoolId: string }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await sb.from("mpesa_config").select("*").eq("school_id", schoolId).maybeSingle();
+    const { data } = await sb.from("mpesa_config").select("*").eq("tenant_id", schoolId).maybeSingle();
     if (data) setCfg({ ...cfg, ...data });
     setLoading(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -123,8 +123,8 @@ function ConfigTab({ schoolId }: { schoolId: string }) {
 
   const save = async () => {
     setSaving(true);
-    const payload = { ...cfg, school_id: schoolId };
-    const { error } = await sb.from("mpesa_config").upsert(payload, { onConflict: "school_id" });
+    const payload = { ...cfg, tenant_id: schoolId };
+    const { error } = await sb.from("mpesa_config").upsert(payload, { onConflict: "tenant_id" });
     setSaving(false);
     if (error) toast({ title: "Save failed", description: error.message, variant: "destructive" });
     else toast({ title: "Saved", description: "M-Pesa configuration updated." });
@@ -246,7 +246,7 @@ function TransactionsTab({ schoolId }: { schoolId: string }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    let q = sb.from("mpesa_transactions").select("*").eq("school_id", schoolId).order("transaction_time", { ascending: false }).limit(200);
+    let q = sb.from("mpesa_transactions").select("*").eq("tenant_id", schoolId).order("transaction_time", { ascending: false }).limit(200);
     if (statusFilter !== "all") q = q.eq("status", statusFilter);
     if (from) q = q.gte("transaction_time", new Date(from).toISOString());
     if (to) q = q.lte("transaction_time", new Date(to + "T23:59:59").toISOString());
@@ -260,9 +260,9 @@ function TransactionsTab({ schoolId }: { schoolId: string }) {
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    sb.from("students").select("id, first_name, last_name, admission_number").eq("school_id", schoolId).order("first_name").then(({ data }: any) => setStudents(data ?? []));
+    sb.from("students").select("id, first_name, last_name, admission_number").eq("tenant_id", schoolId).order("first_name").then(({ data }: any) => setStudents(data ?? []));
     const ch = supabase.channel("mpesa_tx_" + schoolId)
-      .on("postgres_changes", { event: "*", schema: "public", table: "mpesa_transactions", filter: `school_id=eq.${schoolId}` }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "mpesa_transactions", filter: `tenant_id=eq.${schoolId}` }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -393,15 +393,15 @@ function StkTab({ schoolId }: { schoolId: string }) {
   const [history, setHistory] = useState<StkRow[]>([]);
 
   const loadHistory = useCallback(async () => {
-    const { data } = await sb.from("mpesa_stk_requests").select("*").eq("school_id", schoolId).order("created_at", { ascending: false }).limit(50);
+    const { data } = await sb.from("mpesa_stk_requests").select("*").eq("tenant_id", schoolId).order("created_at", { ascending: false }).limit(50);
     setHistory((data as StkRow[]) ?? []);
   }, [schoolId]);
 
   useEffect(() => {
-    sb.from("students").select("id, first_name, last_name, admission_number").eq("school_id", schoolId).order("first_name").then(({ data }: any) => setStudents(data ?? []));
+    sb.from("students").select("id, first_name, last_name, admission_number").eq("tenant_id", schoolId).order("first_name").then(({ data }: any) => setStudents(data ?? []));
     loadHistory();
     const ch = supabase.channel("stk_" + schoolId)
-      .on("postgres_changes", { event: "*", schema: "public", table: "mpesa_stk_requests", filter: `school_id=eq.${schoolId}` }, () => loadHistory())
+      .on("postgres_changes", { event: "*", schema: "public", table: "mpesa_stk_requests", filter: `tenant_id=eq.${schoolId}` }, () => loadHistory())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [schoolId, loadHistory]);
@@ -409,7 +409,7 @@ function StkTab({ schoolId }: { schoolId: string }) {
   useEffect(() => {
     if (!studentId) { setInvoices([]); setInvoiceId(""); return; }
     sb.from("invoices").select("id, amount, paid_amount, status, invoice_number, student_id")
-      .eq("school_id", schoolId).eq("student_id", studentId).neq("status", "paid")
+      .eq("tenant_id", schoolId).eq("student_id", studentId).neq("status", "paid")
       .order("due_date", { ascending: true }).then(({ data }: any) => setInvoices(data ?? []));
     sb.from("students").select("guardian_phone, phone").eq("id", studentId).maybeSingle().then(({ data }: any) => {
       if (data && !phone) setPhone(data.guardian_phone || data.phone || "");

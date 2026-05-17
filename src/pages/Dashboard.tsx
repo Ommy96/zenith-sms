@@ -107,7 +107,7 @@ function MpesaPanel({ txns, currency }: { txns: MpesaTxn[]; currency: string }) 
 
 export default function Dashboard() {
   const { profile } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
   const firstName = profile?.full_name?.split(" ")[0] || "there";
 
   const [currency, setCurrency] = useState("KES");
@@ -134,15 +134,15 @@ export default function Dashboard() {
 
     (async () => {
       const [schoolRes, absRes, defRes, admRes, invMonthRes, invAllRes, studentsRes, mpesaRes, invTrendRes] = await Promise.all([
-        supabase.from("schools").select("payment_config").eq("id", schoolId).maybeSingle(),
-        supabase.from("attendance").select("id, student_id", { count: "exact" }).eq("school_id", schoolId).eq("date", todayStr).eq("status", "absent"),
-        supabase.from("invoices").select("student_id").eq("school_id", schoolId).in("status", ["overdue", "pending"]).lte("due_date", todayStr).gte("due_date", weekAgo),
-        supabase.from("applications").select("id", { count: "exact", head: true }).eq("school_id", schoolId).eq("status", "under_review"),
-        supabase.from("invoices").select("paid_amount").eq("school_id", schoolId).gte("created_at", monthStart),
-        supabase.from("invoices").select("amount, paid_amount").eq("school_id", schoolId),
-        supabase.from("students").select("id, created_at", { count: "exact" }).eq("school_id", schoolId).eq("status", "active"),
-        supabase.from("invoices").select("id, invoice_number, paid_amount, created_at, student_id, description").eq("school_id", schoolId).gt("paid_amount", 0).gte("created_at", todayStr).order("created_at", { ascending: false }).limit(5),
-        supabase.from("invoices").select("paid_amount, created_at").eq("school_id", schoolId).gte("created_at", sixMonthsAgo),
+        supabase.from("tenants").select("payment_config").eq("id", schoolId).maybeSingle(),
+        supabase.from("attendance").select("id, student_id", { count: "exact" }).eq("tenant_id", schoolId).eq("date", todayStr).eq("status", "absent"),
+        supabase.from("invoices").select("student_id").eq("tenant_id", schoolId).in("status", ["overdue", "pending"]).lte("due_date", todayStr).gte("due_date", weekAgo),
+        supabase.from("applications").select("id", { count: "exact", head: true }).eq("tenant_id", schoolId).eq("status", "under_review"),
+        supabase.from("invoices").select("paid_amount").eq("tenant_id", schoolId).gte("created_at", monthStart),
+        supabase.from("invoices").select("amount, paid_amount").eq("tenant_id", schoolId),
+        supabase.from("students").select("id, created_at", { count: "exact" }).eq("tenant_id", schoolId).eq("status", "active"),
+        supabase.from("invoices").select("id, invoice_number, paid_amount, created_at, student_id, description").eq("tenant_id", schoolId).gt("paid_amount", 0).gte("created_at", todayStr).order("created_at", { ascending: false }).limit(5),
+        supabase.from("invoices").select("paid_amount, created_at").eq("tenant_id", schoolId).gte("created_at", sixMonthsAgo),
       ]);
 
       const cur = (schoolRes.data?.payment_config as any)?.currency || "KES";

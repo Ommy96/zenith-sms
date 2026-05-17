@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  profile: { full_name: string; email: string; school_id: string | null } | null;
+  profile: { full_name: string; email: string; tenant_id: string | null } | null;
   role: string | null;
   isDemo: boolean;
   loading: boolean;
@@ -30,24 +30,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = async (userId: string) => {
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("full_name, email, school_id")
+      .select("full_name, email, default_tenant_id")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
-    if (profileData) setProfile(profileData);
+    const tenantId = (profileData as any)?.default_tenant_id ?? null;
+    if (profileData) {
+      setProfile({
+        full_name: (profileData as any).full_name,
+        email: (profileData as any).email,
+        tenant_id: tenantId,
+      });
+    }
 
     const { data: roleData } = await supabase
       .from("user_roles")
-      .select("role")
+      .select("role_id, roles!inner(name)")
       .eq("user_id", userId)
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (roleData) setRole(roleData.role);
+    if (roleData) setRole(((roleData as any).roles?.name) ?? null);
 
-    if (profileData?.school_id) {
+    if (tenantId) {
       const { data: schoolData } = await supabase
-        .from("schools").select("is_demo").eq("id", profileData.school_id).maybeSingle();
+        .from("tenants").select("is_demo").eq("id", tenantId).maybeSingle();
       setIsDemo(!!schoolData?.is_demo);
     } else {
       setIsDemo(false);
@@ -55,8 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshSchool = async () => {
-    if (!profile?.school_id) return;
-    const { data } = await supabase.from("schools").select("is_demo").eq("id", profile.school_id).maybeSingle();
+    if (!profile?.tenant_id) return;
+    const { data } = await supabase.from("tenants").select("is_demo").eq("id", profile.tenant_id).maybeSingle();
     setIsDemo(!!data?.is_demo);
   };
 

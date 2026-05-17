@@ -30,7 +30,7 @@ const statusLabels: Record<string, string> = {
 
 export default function Admissions() {
   const { profile } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
@@ -46,7 +46,7 @@ export default function Admissions() {
       const { data, error } = await supabase
         .from("applications")
         .select("*")
-        .eq("school_id", schoolId!)
+        .eq("tenant_id", schoolId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -56,7 +56,7 @@ export default function Admissions() {
   const createMutation = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("applications").insert({
-        school_id: schoolId!,
+        tenant_id: schoolId!,
         first_name: form.first_name,
         last_name: form.last_name,
         applied_grade: form.applied_grade || null,

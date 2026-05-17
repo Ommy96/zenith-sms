@@ -41,7 +41,7 @@ function TransportSection({ schoolId }: { schoolId: string }) {
 
   const fetch = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from("transport_routes").select("*").eq("school_id", schoolId).order("name");
+    const { data } = await supabase.from("transport_routes").select("*").eq("tenant_id", schoolId).order("name");
     setItems(data || []);
     setLoading(false);
   }, [schoolId]);
@@ -54,7 +54,7 @@ function TransportSection({ schoolId }: { schoolId: string }) {
   const save = async () => {
     if (!form.name.trim()) return;
     setSaving(true);
-    const payload = { school_id: schoolId, name: form.name.trim(), vehicle_number: form.vehicle_number || null, driver_name: form.driver_name || null, student_count: parseInt(form.student_count) || 0, avg_trip_minutes: parseInt(form.avg_trip_minutes) || null, status: form.status };
+    const payload = { tenant_id: schoolId, name: form.name.trim(), vehicle_number: form.vehicle_number || null, driver_name: form.driver_name || null, student_count: parseInt(form.student_count) || 0, avg_trip_minutes: parseInt(form.avg_trip_minutes) || null, status: form.status };
     if (editing) await supabase.from("transport_routes").update(payload).eq("id", editing.id);
     else await supabase.from("transport_routes").insert(payload);
     setSaving(false); setDialogOpen(false); fetch(); toast.success(editing ? "Route updated" : "Route added");
@@ -123,7 +123,7 @@ function LibrarySection({ schoolId }: { schoolId: string }) {
 
   const fetch = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from("library_books").select("*").eq("school_id", schoolId).order("title");
+    const { data } = await supabase.from("library_books").select("*").eq("tenant_id", schoolId).order("title");
     setItems(data || []);
     setLoading(false);
   }, [schoolId]);
@@ -136,7 +136,7 @@ function LibrarySection({ schoolId }: { schoolId: string }) {
   const save = async () => {
     if (!form.title.trim()) return;
     setSaving(true);
-    const payload = { school_id: schoolId, title: form.title.trim(), isbn: form.isbn || null, shelf_location: form.shelf_location || null, status: form.status, issued_to: form.issued_to || null, due_date: form.due_date || null };
+    const payload = { tenant_id: schoolId, title: form.title.trim(), isbn: form.isbn || null, shelf_location: form.shelf_location || null, status: form.status, issued_to: form.issued_to || null, due_date: form.due_date || null };
     if (editing) await supabase.from("library_books").update(payload).eq("id", editing.id);
     else await supabase.from("library_books").insert(payload);
     setSaving(false); setDialogOpen(false); fetch(); toast.success(editing ? "Book updated" : "Book added");
@@ -205,7 +205,7 @@ function InventorySection({ schoolId }: { schoolId: string }) {
 
   const fetch = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from("inventory_assets").select("*").eq("school_id", schoolId).order("name");
+    const { data } = await supabase.from("inventory_assets").select("*").eq("tenant_id", schoolId).order("name");
     setItems(data || []);
     setLoading(false);
   }, [schoolId]);
@@ -218,7 +218,7 @@ function InventorySection({ schoolId }: { schoolId: string }) {
   const save = async () => {
     if (!form.name.trim()) return;
     setSaving(true);
-    const payload = { school_id: schoolId, name: form.name.trim(), category: form.category || null, quantity: parseInt(form.quantity) || 1, location: form.location || null, condition: form.condition, value: parseFloat(form.value) || 0 };
+    const payload = { tenant_id: schoolId, name: form.name.trim(), category: form.category || null, quantity: parseInt(form.quantity) || 1, location: form.location || null, condition: form.condition, value: parseFloat(form.value) || 0 };
     if (editing) await supabase.from("inventory_assets").update(payload).eq("id", editing.id);
     else await supabase.from("inventory_assets").insert(payload);
     setSaving(false); setDialogOpen(false); fetch(); toast.success(editing ? "Asset updated" : "Asset added");
@@ -376,7 +376,7 @@ function DeleteDialog({ target, onClose, onConfirm, label }: { target: any; onCl
 export default function Operations() {
   const location = useLocation();
   const { profile } = useAuth();
-  const schoolId = profile?.school_id;
+  const schoolId = profile?.tenant_id;
 
   if (!schoolId) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
