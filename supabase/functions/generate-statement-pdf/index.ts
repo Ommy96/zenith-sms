@@ -51,7 +51,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const [{ data: tenant }, { data: invoices }, { data: payments }] = await Promise.all([
-      admin.from('tenants').select('name, currency, address, phone, email').eq('id', student.tenant_id).maybeSingle(),
+      admin.from('tenants').select('name, currency_code, address, phone, email').eq('id', student.tenant_id).maybeSingle(),
       admin.from('student_invoices')
         .select('invoice_number, issued_at, due_date, total, paid_total, balance, status')
         .eq('student_id', student_id).neq('status', 'void')
@@ -62,7 +62,7 @@ Deno.serve(async (req: Request) => {
         .order('paid_at', { ascending: true }),
     ]);
 
-    const currency = (tenant as any)?.currency || 'KES';
+    const currency = (tenant as any)?.currency_code || 'KES';
     const fmt = (n: number) => `${currency} ${Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
     // Build PDF
