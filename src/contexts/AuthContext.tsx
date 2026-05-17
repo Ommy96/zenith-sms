@@ -30,24 +30,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = async (userId: string) => {
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("full_name, email, tenant_id")
+      .select("full_name, email, default_tenant_id")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
-    if (profileData) setProfile(profileData);
+    const tenantId = (profileData as any)?.default_tenant_id ?? null;
+    if (profileData) {
+      setProfile({
+        full_name: (profileData as any).full_name,
+        email: (profileData as any).email,
+        tenant_id: tenantId,
+      });
+    }
 
     const { data: roleData } = await supabase
       .from("user_roles")
-      .select("role")
+      .select("role_id, roles!inner(name)")
       .eq("user_id", userId)
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (roleData) setRole(roleData.role);
+    if (roleData) setRole(((roleData as any).roles?.name) ?? null);
 
-    if (profileData?.tenant_id) {
+    if (tenantId) {
       const { data: schoolData } = await supabase
-        .from("tenants").select("is_demo").eq("id", profileData.tenant_id).maybeSingle();
+        .from("tenants").select("is_demo").eq("id", tenantId).maybeSingle();
       setIsDemo(!!schoolData?.is_demo);
     } else {
       setIsDemo(false);
