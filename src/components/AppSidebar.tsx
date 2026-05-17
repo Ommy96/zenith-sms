@@ -59,9 +59,9 @@ const sections: NavSection[] = [
   ]},
 ];
 
-function filterSections(can: (perm: string) => boolean): NavSection[] {
+function filterSections(can: (perm: string) => boolean, showAll: boolean): NavSection[] {
   return sections
-    .map(s => ({ ...s, items: s.items.filter(i => !i.perm || can(i.perm)) }))
+    .map(s => ({ ...s, items: s.items.filter(i => !i.perm || showAll || can(i.perm)) }))
     .filter(s => s.items.length > 0);
 }
 
@@ -139,7 +139,14 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { profile, role } = useAuth();
-  const { can } = useTenant();
+  const { can, permissions, loading: tenantLoading } = useTenant();
+  // Show every nav item when the user is a tenant admin OR when we haven't
+  // loaded any permissions yet — permission gating still happens at the
+  // page/RLS level. This prevents the sidebar from collapsing to just
+  // "Dashboard" when role/perm rows are missing.
+  const showAll =
+    role === "super_admin" || role === "school_admin" ||
+    (!tenantLoading && permissions.length === 0);
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -162,7 +169,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-2 gap-1 overflow-y-auto">
-        {filterSections(can).map((section) => (
+        {filterSections(can, showAll).map((section) => (
           <SidebarGroup key={section.label} className="py-0">
             <SidebarGroupContent>
               <SidebarSection section={section} collapsed={collapsed} />
