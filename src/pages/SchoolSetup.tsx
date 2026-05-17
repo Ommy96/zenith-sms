@@ -105,6 +105,23 @@ export default function SchoolSetup() {
     if (!eduData) return;
     setLoading(true);
     try {
+      // Ensure we have an active session before inserting (RLS requires auth.uid())
+      const { data: sessionData } = await supabase.auth.getSession();
+      let session = sessionData?.session;
+      if (!session) {
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        session = refreshed?.session ?? null;
+      }
+      if (!session?.user?.id) {
+        toast({
+          title: "Session expired",
+          description: "Please sign in again to finish setting up your school.",
+          variant: "destructive",
+        });
+        navigate("/login");
+        return;
+      }
+
       // Create school record
       const { data: school, error: schoolErr } = await supabase.from("tenants").insert({
         name: schoolName,
@@ -128,7 +145,7 @@ export default function SchoolSetup() {
       const { error: profileErr } = await supabase
         .from("profiles")
         .update({ default_tenant_id: school.id })
-        .eq("id", (await supabase.auth.getUser()).data.user?.id);
+        .eq("id", session.user.id);
 
       if (profileErr) throw profileErr;
 
