@@ -347,6 +347,51 @@ export type Database = {
           },
         ]
       }
+      documents: {
+        Row: {
+          created_at: string
+          doc_type: string
+          file_name: string
+          file_url: string
+          id: string
+          mime_type: string | null
+          notes: string | null
+          owner_id: string
+          owner_type: Database["public"]["Enums"]["document_owner_type_enum"]
+          size_bytes: number | null
+          tenant_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          doc_type: string
+          file_name: string
+          file_url: string
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          owner_id: string
+          owner_type: Database["public"]["Enums"]["document_owner_type_enum"]
+          size_bytes?: number | null
+          tenant_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          owner_id?: string
+          owner_type?: Database["public"]["Enums"]["document_owner_type_enum"]
+          size_bytes?: number | null
+          tenant_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       exam_results: {
         Row: {
           created_at: string | null
@@ -451,6 +496,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      guardians: {
+        Row: {
+          created_at: string
+          email: string | null
+          employer: string | null
+          full_name: string
+          id: string
+          national_id_number: string | null
+          occupation: string | null
+          phone_primary: string | null
+          phone_secondary: string | null
+          photo_url: string | null
+          portal_user_id: string | null
+          residential_address: string | null
+          tenant_id: string
+          updated_at: string
+          whatsapp_number: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          employer?: string | null
+          full_name: string
+          id?: string
+          national_id_number?: string | null
+          occupation?: string | null
+          phone_primary?: string | null
+          phone_secondary?: string | null
+          photo_url?: string | null
+          portal_user_id?: string | null
+          residential_address?: string | null
+          tenant_id: string
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          employer?: string | null
+          full_name?: string
+          id?: string
+          national_id_number?: string | null
+          occupation?: string | null
+          phone_primary?: string | null
+          phone_secondary?: string | null
+          photo_url?: string | null
+          portal_user_id?: string | null
+          residential_address?: string | null
+          tenant_id?: string
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: []
       }
       import_mappings: {
         Row: {
@@ -930,49 +1029,145 @@ export type Database = {
       }
       staff: {
         Row: {
+          address: string | null
+          bank_account_number: string | null
+          bank_branch: string | null
+          bank_name: string | null
+          classes_taught: Json | null
           created_at: string | null
+          date_employed: string | null
+          date_of_birth: string | null
+          date_of_confirmation: string | null
           department: string | null
           email: string | null
+          employment_type:
+            | Database["public"]["Enums"]["employment_type_enum"]
+            | null
           first_name: string
+          gender: Database["public"]["Enums"]["gender_enum"] | null
+          gross_salary: number | null
+          highest_qualification: string | null
           hire_date: string | null
           id: string
+          institution: string | null
+          job_title: string | null
+          kra_pin: string | null
           last_name: string
+          middle_name: string | null
+          national_id_number: string | null
+          next_of_kin_name: string | null
+          next_of_kin_phone: string | null
+          next_of_kin_relation: string | null
+          nhif_or_shif_number: string | null
+          nssf_number: string | null
           phone: string | null
+          photo_url: string | null
+          professional_certifications: Json | null
+          reports_to: string | null
           role: string | null
+          salary_scale: string | null
+          staff_number: string | null
           status: string | null
+          subjects_taught: Json | null
           tenant_id: string
+          tsc_number: string | null
           updated_at: string | null
           user_id: string | null
+          year_qualified: number | null
         }
         Insert: {
+          address?: string | null
+          bank_account_number?: string | null
+          bank_branch?: string | null
+          bank_name?: string | null
+          classes_taught?: Json | null
           created_at?: string | null
+          date_employed?: string | null
+          date_of_birth?: string | null
+          date_of_confirmation?: string | null
           department?: string | null
           email?: string | null
+          employment_type?:
+            | Database["public"]["Enums"]["employment_type_enum"]
+            | null
           first_name: string
+          gender?: Database["public"]["Enums"]["gender_enum"] | null
+          gross_salary?: number | null
+          highest_qualification?: string | null
           hire_date?: string | null
           id?: string
+          institution?: string | null
+          job_title?: string | null
+          kra_pin?: string | null
           last_name: string
+          middle_name?: string | null
+          national_id_number?: string | null
+          next_of_kin_name?: string | null
+          next_of_kin_phone?: string | null
+          next_of_kin_relation?: string | null
+          nhif_or_shif_number?: string | null
+          nssf_number?: string | null
           phone?: string | null
+          photo_url?: string | null
+          professional_certifications?: Json | null
+          reports_to?: string | null
           role?: string | null
+          salary_scale?: string | null
+          staff_number?: string | null
           status?: string | null
+          subjects_taught?: Json | null
           tenant_id: string
+          tsc_number?: string | null
           updated_at?: string | null
           user_id?: string | null
+          year_qualified?: number | null
         }
         Update: {
+          address?: string | null
+          bank_account_number?: string | null
+          bank_branch?: string | null
+          bank_name?: string | null
+          classes_taught?: Json | null
           created_at?: string | null
+          date_employed?: string | null
+          date_of_birth?: string | null
+          date_of_confirmation?: string | null
           department?: string | null
           email?: string | null
+          employment_type?:
+            | Database["public"]["Enums"]["employment_type_enum"]
+            | null
           first_name?: string
+          gender?: Database["public"]["Enums"]["gender_enum"] | null
+          gross_salary?: number | null
+          highest_qualification?: string | null
           hire_date?: string | null
           id?: string
+          institution?: string | null
+          job_title?: string | null
+          kra_pin?: string | null
           last_name?: string
+          middle_name?: string | null
+          national_id_number?: string | null
+          next_of_kin_name?: string | null
+          next_of_kin_phone?: string | null
+          next_of_kin_relation?: string | null
+          nhif_or_shif_number?: string | null
+          nssf_number?: string | null
           phone?: string | null
+          photo_url?: string | null
+          professional_certifications?: Json | null
+          reports_to?: string | null
           role?: string | null
+          salary_scale?: string | null
+          staff_number?: string | null
           status?: string | null
+          subjects_taught?: Json | null
           tenant_id?: string
+          tsc_number?: string | null
           updated_at?: string | null
           user_id?: string | null
+          year_qualified?: number | null
         }
         Relationships: [
           {
@@ -984,15 +1179,110 @@ export type Database = {
           },
         ]
       }
+      student_activity: {
+        Row: {
+          actor_user_id: string | null
+          description: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          occurred_at: string
+          student_id: string
+          tenant_id: string
+          title: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          description?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          occurred_at?: string
+          student_id: string
+          tenant_id: string
+          title: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          description?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          occurred_at?: string
+          student_id?: string
+          tenant_id?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      student_guardians: {
+        Row: {
+          created_at: string
+          guardian_id: string
+          has_financial_responsibility: boolean
+          has_pickup_authorization: boolean
+          id: string
+          is_primary_contact: boolean
+          receives_communications: boolean
+          relationship: Database["public"]["Enums"]["guardian_relationship_enum"]
+          student_id: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          guardian_id: string
+          has_financial_responsibility?: boolean
+          has_pickup_authorization?: boolean
+          id?: string
+          is_primary_contact?: boolean
+          receives_communications?: boolean
+          relationship?: Database["public"]["Enums"]["guardian_relationship_enum"]
+          student_id: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          guardian_id?: string
+          has_financial_responsibility?: boolean
+          has_pickup_authorization?: boolean
+          id?: string
+          is_primary_contact?: boolean
+          receives_communications?: boolean
+          relationship?: Database["public"]["Enums"]["guardian_relationship_enum"]
+          student_id?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       students: {
         Row: {
+          accommodations: string | null
           address: string | null
           admission_date: string | null
+          admission_grade: string | null
           admission_number: string | null
+          allergies: string | null
+          birth_certificate_number: string | null
+          birth_certificate_serial: string | null
+          blood_group: Database["public"]["Enums"]["blood_group_enum"] | null
+          chronic_conditions: string | null
+          city: string | null
+          country: string | null
+          county_or_region: string | null
           created_at: string | null
+          current_class_id: string | null
           date_of_birth: string | null
+          doctor_name: string | null
+          doctor_phone: string | null
           documents: Json | null
           email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relation: string | null
+          enrollment_status:
+            | Database["public"]["Enums"]["enrollment_status_enum"]
+            | null
+          expected_graduation_year: number | null
           first_name: string
           gender: string | null
           grade: string | null
@@ -1000,23 +1290,76 @@ export type Database = {
           guardian_name: string | null
           guardian_phone: string | null
           guardian_relationship: string | null
+          has_special_needs: boolean | null
           health_info: Json | null
+          house: string | null
+          huduma_number: string | null
           id: string
+          iep_on_file: boolean | null
+          immunization_status: Json | null
+          insurance_policy_number: string | null
+          insurance_provider: string | null
+          kcpe_index_number: string | null
+          kcse_index_number: string | null
+          knec_assessment_number: string | null
+          last_medical_checkup: string | null
           last_name: string
+          learner_category:
+            | Database["public"]["Enums"]["learner_category_enum"]
+            | null
+          lin: string | null
+          medications: string | null
+          middle_name: string | null
+          moe_student_id: string | null
+          national_id_number: string | null
+          nationality: string | null
+          necta_index_number: string | null
+          nemis_upi: string | null
+          nhif_or_shif_number: string | null
           phone: string | null
+          photo_url: string | null
+          postal_code: string | null
+          preferred_name: string | null
+          prems_number: string | null
+          previous_school: string | null
+          reb_student_id: string | null
+          residential_address: string | null
+          special_needs_details: string | null
           status: string | null
+          stream: string | null
           tenant_id: string
+          une_index_number: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
+          accommodations?: string | null
           address?: string | null
           admission_date?: string | null
+          admission_grade?: string | null
           admission_number?: string | null
+          allergies?: string | null
+          birth_certificate_number?: string | null
+          birth_certificate_serial?: string | null
+          blood_group?: Database["public"]["Enums"]["blood_group_enum"] | null
+          chronic_conditions?: string | null
+          city?: string | null
+          country?: string | null
+          county_or_region?: string | null
           created_at?: string | null
+          current_class_id?: string | null
           date_of_birth?: string | null
+          doctor_name?: string | null
+          doctor_phone?: string | null
           documents?: Json | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
+          enrollment_status?:
+            | Database["public"]["Enums"]["enrollment_status_enum"]
+            | null
+          expected_graduation_year?: number | null
           first_name: string
           gender?: string | null
           grade?: string | null
@@ -1024,23 +1367,76 @@ export type Database = {
           guardian_name?: string | null
           guardian_phone?: string | null
           guardian_relationship?: string | null
+          has_special_needs?: boolean | null
           health_info?: Json | null
+          house?: string | null
+          huduma_number?: string | null
           id?: string
+          iep_on_file?: boolean | null
+          immunization_status?: Json | null
+          insurance_policy_number?: string | null
+          insurance_provider?: string | null
+          kcpe_index_number?: string | null
+          kcse_index_number?: string | null
+          knec_assessment_number?: string | null
+          last_medical_checkup?: string | null
           last_name: string
+          learner_category?:
+            | Database["public"]["Enums"]["learner_category_enum"]
+            | null
+          lin?: string | null
+          medications?: string | null
+          middle_name?: string | null
+          moe_student_id?: string | null
+          national_id_number?: string | null
+          nationality?: string | null
+          necta_index_number?: string | null
+          nemis_upi?: string | null
+          nhif_or_shif_number?: string | null
           phone?: string | null
+          photo_url?: string | null
+          postal_code?: string | null
+          preferred_name?: string | null
+          prems_number?: string | null
+          previous_school?: string | null
+          reb_student_id?: string | null
+          residential_address?: string | null
+          special_needs_details?: string | null
           status?: string | null
+          stream?: string | null
           tenant_id: string
+          une_index_number?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
+          accommodations?: string | null
           address?: string | null
           admission_date?: string | null
+          admission_grade?: string | null
           admission_number?: string | null
+          allergies?: string | null
+          birth_certificate_number?: string | null
+          birth_certificate_serial?: string | null
+          blood_group?: Database["public"]["Enums"]["blood_group_enum"] | null
+          chronic_conditions?: string | null
+          city?: string | null
+          country?: string | null
+          county_or_region?: string | null
           created_at?: string | null
+          current_class_id?: string | null
           date_of_birth?: string | null
+          doctor_name?: string | null
+          doctor_phone?: string | null
           documents?: Json | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
+          enrollment_status?:
+            | Database["public"]["Enums"]["enrollment_status_enum"]
+            | null
+          expected_graduation_year?: number | null
           first_name?: string
           gender?: string | null
           grade?: string | null
@@ -1048,12 +1444,45 @@ export type Database = {
           guardian_name?: string | null
           guardian_phone?: string | null
           guardian_relationship?: string | null
+          has_special_needs?: boolean | null
           health_info?: Json | null
+          house?: string | null
+          huduma_number?: string | null
           id?: string
+          iep_on_file?: boolean | null
+          immunization_status?: Json | null
+          insurance_policy_number?: string | null
+          insurance_provider?: string | null
+          kcpe_index_number?: string | null
+          kcse_index_number?: string | null
+          knec_assessment_number?: string | null
+          last_medical_checkup?: string | null
           last_name?: string
+          learner_category?:
+            | Database["public"]["Enums"]["learner_category_enum"]
+            | null
+          lin?: string | null
+          medications?: string | null
+          middle_name?: string | null
+          moe_student_id?: string | null
+          national_id_number?: string | null
+          nationality?: string | null
+          necta_index_number?: string | null
+          nemis_upi?: string | null
+          nhif_or_shif_number?: string | null
           phone?: string | null
+          photo_url?: string | null
+          postal_code?: string | null
+          preferred_name?: string | null
+          prems_number?: string | null
+          previous_school?: string | null
+          reb_student_id?: string | null
+          residential_address?: string | null
+          special_needs_details?: string | null
           status?: string | null
+          stream?: string | null
           tenant_id?: string
+          une_index_number?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -1539,6 +1968,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_admission_number: { Args: { _tenant: string }; Returns: string }
       has_perm: {
         Args: { _perm: string; _tenant: string; _user?: string }
         Returns: boolean
@@ -1554,7 +1984,48 @@ export type Database = {
       }
     }
     Enums: {
+      blood_group_enum:
+        | "A+"
+        | "A-"
+        | "B+"
+        | "B-"
+        | "O+"
+        | "O-"
+        | "AB+"
+        | "AB-"
+        | "unknown"
       curriculum_type: "cbc" | "8-4-4" | "igcse" | "ib" | "cambridge" | "mixed"
+      document_owner_type_enum: "student" | "staff" | "guardian"
+      employment_type_enum:
+        | "permanent"
+        | "contract"
+        | "part_time"
+        | "intern"
+        | "casual"
+        | "bom"
+      enrollment_status_enum:
+        | "active"
+        | "alumni"
+        | "transferred"
+        | "dropped_out"
+        | "suspended"
+        | "deceased"
+        | "on_leave"
+      gender_enum: "male" | "female" | "other" | "prefer_not_to_say"
+      guardian_relationship_enum:
+        | "father"
+        | "mother"
+        | "guardian"
+        | "grandparent"
+        | "uncle"
+        | "aunt"
+        | "sibling"
+        | "other"
+      learner_category_enum:
+        | "day_scholar"
+        | "boarder"
+        | "weekly_boarder"
+        | "special_needs"
       school_type:
         | "primary"
         | "junior_secondary"
@@ -1692,7 +2163,53 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      blood_group_enum: [
+        "A+",
+        "A-",
+        "B+",
+        "B-",
+        "O+",
+        "O-",
+        "AB+",
+        "AB-",
+        "unknown",
+      ],
       curriculum_type: ["cbc", "8-4-4", "igcse", "ib", "cambridge", "mixed"],
+      document_owner_type_enum: ["student", "staff", "guardian"],
+      employment_type_enum: [
+        "permanent",
+        "contract",
+        "part_time",
+        "intern",
+        "casual",
+        "bom",
+      ],
+      enrollment_status_enum: [
+        "active",
+        "alumni",
+        "transferred",
+        "dropped_out",
+        "suspended",
+        "deceased",
+        "on_leave",
+      ],
+      gender_enum: ["male", "female", "other", "prefer_not_to_say"],
+      guardian_relationship_enum: [
+        "father",
+        "mother",
+        "guardian",
+        "grandparent",
+        "uncle",
+        "aunt",
+        "sibling",
+        "other",
+      ],
+      learner_category_enum: [
+        "day_scholar",
+        "boarder",
+        "weekly_boarder",
+        "special_needs",
+      ],
       school_type: [
         "primary",
         "junior_secondary",
