@@ -71,12 +71,12 @@ export default function StaffProfile() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h1 className="text-2xl font-bold">{fn} {staff.middle_name as string} {ln}</h1>
+                <h1 className="text-2xl font-bold">{fn} {(staff.middle_name as string) ?? ""} {ln}</h1>
                 <Badge variant="outline" className="capitalize">{String(staff.status ?? "active")}</Badge>
                 {staff.employment_type ? <Badge variant="secondary" className="capitalize">{String(staff.employment_type).replace("_", " ")}</Badge> : null}
               </div>
               <p className="text-sm text-muted-foreground">
-                {staff.job_title ? `${staff.job_title} · ` : ""}{staff.department || "—"} · {staff.staff_number || "no staff #"}
+                {staff.job_title ? `${String(staff.job_title)} · ` : ""}{String(staff.department ?? "—")} · {String(staff.staff_number ?? "no staff #")}
               </p>
               <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
                 {staff.email ? <span className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" />{String(staff.email)}</span> : null}
