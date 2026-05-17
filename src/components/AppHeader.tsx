@@ -1,9 +1,10 @@
-import { Bell, Search, Plus, ChevronDown, LogOut, User, Settings } from "lucide-react";
+import { Bell, Search, Plus, ChevronDown, LogOut, User, Settings, Command as CommandIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
+import { CommandPalette, useCommandPalette } from "./CommandPalette";
 import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -12,6 +13,8 @@ import {
 
 export function AppHeader() {
   const { profile, signOut } = useAuth();
+  const { tenant } = useTenant();
+  const { open, setOpen } = useCommandPalette();
   const navigate = useNavigate();
 
   const initials = profile?.full_name
@@ -24,14 +27,35 @@ export function AppHeader() {
   };
 
   return (
+    <>
+    <CommandPalette open={open} onOpenChange={setOpen} />
     <header className="h-14 border-b border-border bg-card/50 backdrop-blur-sm flex items-center gap-4 px-4 sticky top-0 z-30">
       <SidebarTrigger className="h-8 w-8" />
 
-      <div className="flex-1 max-w-md">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search students, classes, invoices..." className="pl-9 h-9 bg-secondary border-0 text-sm" />
+      {tenant && (
+        <div className="hidden md:flex items-center gap-2 pr-3 border-r border-border h-8">
+          {tenant.logo_url ? (
+            <img src={tenant.logo_url} alt="" className="h-6 w-6 rounded" />
+          ) : (
+            <div className="h-6 w-6 rounded bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
+              {tenant.name.slice(0, 1).toUpperCase()}
+            </div>
+          )}
+          <span className="text-sm font-medium text-foreground truncate max-w-[180px]">{tenant.name}</span>
         </div>
+      )}
+
+      <div className="flex-1 max-w-md">
+        <button
+          onClick={() => setOpen(true)}
+          className="w-full h-9 rounded-md bg-secondary text-muted-foreground text-sm flex items-center gap-2 px-3 hover:bg-secondary/80 transition-colors"
+        >
+          <Search className="h-4 w-4" />
+          <span className="flex-1 text-left">Search or jump to...</span>
+          <kbd className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-background border border-border">
+            <CommandIcon className="h-3 w-3" />K
+          </kbd>
+        </button>
       </div>
 
       <div className="flex items-center gap-1 ml-auto">
@@ -89,5 +113,6 @@ export function AppHeader() {
         </DropdownMenu>
       </div>
     </header>
+    </>
   );
 }

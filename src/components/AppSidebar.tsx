@@ -9,6 +9,7 @@ import { useLocation } from "react-router-dom";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -18,58 +19,49 @@ import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-type AppRole = "super_admin" | "school_admin" | "teacher" | "parent" | "student";
-
-interface NavItem { title: string; url: string; icon: any; roles?: AppRole[]; }
-interface NavSection { label: string; items: NavItem[]; roles?: AppRole[]; }
-
-const allRoles: AppRole[] = ["super_admin", "school_admin", "teacher", "parent", "student"];
-const adminOnly: AppRole[] = ["super_admin", "school_admin"];
-const staffUp: AppRole[] = ["super_admin", "school_admin", "teacher"];
+interface NavItem { title: string; url: string; icon: any; perm?: string; }
+interface NavSection { label: string; items: NavItem[]; }
 
 const sections: NavSection[] = [
   { label: "Overview", items: [{ title: "Dashboard", url: "/", icon: LayoutDashboard }] },
-  { label: "Academics", roles: staffUp, items: [
-    { title: "Classes & Subjects", url: "/academics", icon: BookOpen },
-    { title: "Attendance", url: "/attendance", icon: UserCog },
-    { title: "Examinations", url: "/examinations", icon: ClipboardList },
-    { title: "Timetable", url: "/timetable", icon: CalendarDays },
+  { label: "Academics", items: [
+    { title: "Classes & Subjects", url: "/academics", icon: BookOpen, perm: "academics.view" },
+    { title: "Attendance", url: "/attendance", icon: UserCog, perm: "attendance.view" },
+    { title: "Examinations", url: "/examinations", icon: ClipboardList, perm: "exams.view" },
+    { title: "Timetable", url: "/timetable", icon: CalendarDays, perm: "academics.view" },
   ]},
-  { label: "People", roles: adminOnly, items: [
-    { title: "Students", url: "/students", icon: Users },
-    { title: "Admissions", url: "/admissions", icon: UserPlus },
-    { title: "Staff & HR", url: "/staff", icon: Briefcase },
+  { label: "People", items: [
+    { title: "Students", url: "/students", icon: Users, perm: "students.view" },
+    { title: "Admissions", url: "/admissions", icon: UserPlus, perm: "admissions.view" },
+    { title: "Staff & HR", url: "/staff", icon: Briefcase, perm: "staff.view" },
   ]},
-  { label: "Finance", roles: adminOnly, items: [
-    { title: "Fee Management", url: "/fees", icon: DollarSign },
-    { title: "Invoices", url: "/invoices", icon: Receipt },
-    { title: "Mobile Money", url: "/finance/mobile-money", icon: Smartphone },
-    { title: "Reports", url: "/finance-reports", icon: FileText },
+  { label: "Finance", items: [
+    { title: "Fee Management", url: "/fees", icon: DollarSign, perm: "fees.view" },
+    { title: "Invoices", url: "/invoices", icon: Receipt, perm: "fees.view" },
+    { title: "Mobile Money", url: "/finance/mobile-money", icon: Smartphone, perm: "fees.configure" },
+    { title: "Reports", url: "/finance-reports", icon: FileText, perm: "fees.view" },
   ]},
   { label: "Communication", items: [
-    { title: "Announcements", url: "/announcements", icon: Megaphone },
-    { title: "Messaging", url: "/messaging", icon: Mail },
-    { title: "WhatsApp", url: "/communication/whatsapp", icon: MessageCircle },
+    { title: "Announcements", url: "/announcements", icon: Megaphone, perm: "communication.send" },
+    { title: "Messaging", url: "/messaging", icon: Mail, perm: "communication.send" },
+    { title: "WhatsApp", url: "/communication/whatsapp", icon: MessageCircle, perm: "communication.send" },
   ]},
-  { label: "Operations", roles: adminOnly, items: [
-    { title: "Transport", url: "/transport", icon: Bus },
-    { title: "Library", url: "/library", icon: Library },
-    { title: "Inventory", url: "/inventory", icon: Package },
+  { label: "Operations", items: [
+    { title: "Transport", url: "/transport", icon: Bus, perm: "transport.view" },
+    { title: "Library", url: "/library", icon: Library, perm: "library.view" },
+    { title: "Inventory", url: "/inventory", icon: Package, perm: "inventory.view" },
+  ]},
+  { label: "Insights", items: [
+    { title: "Reports", url: "/reports", icon: BarChart3, perm: "reports.view" },
   ]},
   { label: "System", items: [
-    { title: "Reports", url: "/reports", icon: BarChart3, roles: adminOnly },
-    { title: "Settings", url: "/settings", icon: Settings, roles: adminOnly },
+    { title: "Settings", url: "/settings", icon: Settings, perm: "settings.manage" },
   ]},
 ];
 
-function filterSections(role: AppRole | null): NavSection[] {
-  const userRole = role || "school_admin"; // default for backward compat
+function filterSections(can: (perm: string) => boolean): NavSection[] {
   return sections
-    .filter(s => !s.roles || s.roles.includes(userRole as AppRole))
-    .map(s => ({
-      ...s,
-      items: s.items.filter(i => !i.roles || i.roles.includes(userRole as AppRole)),
-    }))
+    .map(s => ({ ...s, items: s.items.filter(i => !i.perm || can(i.perm)) }))
     .filter(s => s.items.length > 0);
 }
 
@@ -147,6 +139,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { profile, role } = useAuth();
+  const { can } = useTenant();
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -168,8 +161,8 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 gap-1">
-        {filterSections(role as AppRole | null).map((section) => (
+      <SidebarContent className="px-2 gap-1 overflow-y-auto">
+        {filterSections(can).map((section) => (
           <SidebarGroup key={section.label} className="py-0">
             <SidebarGroupContent>
               <SidebarSection section={section} collapsed={collapsed} />
