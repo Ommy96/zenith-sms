@@ -19,6 +19,7 @@ import { Money } from "@/components/Money";
 import {
   Loader2, Plus, Wallet, Receipt, FileText, TrendingUp, AlertCircle,
   Layers, Trash2, Sparkles, Banknote, Bell,
+  Users,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { BursarDashboard } from "@/components/finance/BursarDashboard";
