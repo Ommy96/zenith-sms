@@ -1,61 +1,60 @@
-# Finance Engine — Phased Plan
+# Communication Layer + Parent/Student Portals
 
-The existing migration already gives us `fee_categories`, `fee_structures`, `fee_items`, `student_invoices` (with auto-numbering and live balance triggers), `student_payments` with `payment_allocations`, `student_receipts`, `mpesa_config`, `mpesa_transactions`, `mpesa_stk_requests` and four M-Pesa edge functions. I'll **extend** rather than rebuild.
+This is ~6–8 hours of work if shipped in one batch. I'll split it into 4 phases so each lands working and reviewable. Confirm the phasing (or reorder), and I'll start.
 
-Below is what each phase ships. Each phase is independently shippable.
+## Phase A — Unified messaging core (DB + Admin UI)
+The foundation everything else plugs into.
 
-## Phase A — Schema extensions & reconciliation glue
-- Add to `fee_items`: `frequency` (per_term/per_year/one_off), `applies_to_terms jsonb`, `late_fee_amount`, `late_fee_after_days`, `learner_category` (day/boarder/all).
-- Add to `fee_structures`: `grade_level_id`, `class_id`, `learner_category`.
-- Add `scholarships` (tenant, name, type, amount, criteria) and `student_fee_adjustments` (link student→scholarship, custom amount, valid_until, approved_by). Wire into the existing invoice trigger so adjustments recompute totals.
-- Add `mpesa_transactions.tenant_id`, `matched_invoice_id`, `matched_payment_id`, `status` (matched/unmatched/disputed/duplicate), `account_reference_raw` and a UNIQUE index on `mpesa_receipt_number` per tenant for idempotency.
-- Add `payment_reminders_config` (per tenant: thresholds, channels) and `reminder_log`.
-- New permissions: `payroll.*`, `expenses.*`, `mpesa.configure`.
+- **Schema**: `messages`, `message_templates`, `broadcast_campaigns`, `notification_preferences`, `notifications` (in-app bell), `opt_outs`. Tenant-scoped RLS, indexes on `(tenant_id, sent_at)` and `(recipient_id, channel)`.
+- **Seed templates**: the 7 WhatsApp templates you listed + SMS/email variants, with `{{variable}}` merge syntax.
+- **Admin UI** at `/communication`:
+  - Templates tab (CRUD, preview with sample data)
+  - Compose tab (audience filter → channel picker → template → cost preview → send/schedule)
+  - Campaigns tab (history, delivery stats)
+  - Inbox tab (placeholder — wired in Phase B)
+- **Audience filter engine**: shared util that resolves `{class_id, role, defaulters_only, custom_ids}` → recipient list.
+- **Cost estimator**: per-channel pricing table per tenant, returns total before send.
 
-## Phase B — M-Pesa "Mobile Money" overhaul
-Rewrite `src/pages/MobileMoney.tsx` into 3 tabs:
-1. **Configuration** — paybill/till, env, credentials (write-only via vault-style RPC), callback URL with copy button, "Test connection" wired to existing `mpesa-test-connection` fn.
-2. **Transactions** — live feed of `mpesa_transactions` with filters, status badges, manual "Resolve" dialog (search student → match → triggers reconciliation RPC that creates `student_payment` + allocation + receipt).
-3. **STK Push** — student picker → autoloads outstanding invoices → guardian phone → "Send" (existing `mpesa-stk-push`) → polls request status with timeout.
+## Phase B — Channel providers + delivery
+Wire actual sending. Each provider is one edge function reading per-tenant config.
 
-Backend:
-- Rewrite `supabase/functions/mpesa-c2b-callback`: idempotent on `mpesa_receipt_number`, normalize `account_reference` (regex strip spaces/dashes/case), find student by admission_number, find oldest outstanding invoice, insert payment + allocation + receipt, queue notification, mark `matched`/`unmatched`.
-- Add `manual_reconcile_mpesa(_txn, _student, _invoice)` SQL function used by the Resolve dialog.
-- Realtime: enable on `mpesa_transactions` so the feed updates live.
+- `tenant_messaging_config` table (Africa's Talking creds, Twilio creds, WhatsApp creds, Resend key, sender IDs, country code) — encrypted via Vault.
+- **Edge functions**:
+  - `send-sms` (Africa's Talking primary, Twilio fallback)
+  - `send-whatsapp` (Meta Cloud API, template messages + free-form within 24h window)
+  - `send-email` (Resend)
+  - `whatsapp-webhook` (already exists — extend for inbox threading + auto-reconcile by guardian phone)
+  - `africastalking-dlr` (delivery reports webhook)
+  - `dispatch-message` (router: takes a `messages` row, fans out to the right provider, retries, writes status back)
+- **Inbox UI**: WhatsApp-style threaded by `(guardian_phone, student_id)`, with class-teacher routing rule.
+- **Opt-out**: inbound "STOP" → `opt_outs` row, blocks future non-emergency sends.
 
-## Phase C — Student fee ledger + bursar dashboard
-- `StudentProfile.tsx` — add **Fees** tab: current balance, statement (charges + payments interleaved), outstanding invoices with **Pay now** (opens STK dialog prefilled), receipt download buttons, PDF export.
-- Replace stats area of `Finance.tsx` with bursar dashboard cards: today's collections by method, term collected vs invoiced %, outstanding by class, aging buckets (0-30/31-60/61-90/90+), top defaulters, method mix donut, recent transactions feed.
-- Edge function `generate-statement-pdf` (pdf-lib).
+## Phase C — Parent Portal (PWA, mobile-first)
+Separate shell at `/portal/*`, lazy-loaded route group.
 
-## Phase D — Reminders & scheduling
-- `process-fee-reminders` edge function: scans invoices, sends SMS/WhatsApp per tenant config, logs to `reminder_log` (uses existing WhatsApp + SMS infra).
-- pg_cron job to run hourly. (Tenant-specific cron written via `supabase--insert`.)
+- **Auth**: phone + OTP via Africa's Talking SMS, fallback email/password. New `guardian_users` link table (guardian_id ↔ auth.users.id) since guardians aren't tenant staff.
+- **Layout**: bottom tab bar (Home / Academics / Fees / Chat / More), child switcher in header.
+- **Pages**: Dashboard, Children, Academics (term performance + past report cards), Attendance (calendar), Fees (balance, statement, STK Push button → reuses existing mpesa-stk-push), Communication (announcements + thread to class teacher), Calendar, Documents, Settings.
+- **PWA**: vite-plugin-pwa, manifest, service worker with cache-first for shell, network-first for data. Skeleton loaders everywhere.
 
-## Phase E — Payroll (Kenya-first)
-- Tables: `payroll_runs`, `payroll_items` with `gross`, `allowances jsonb`, `paye`, `shif`, `nssf_tier1`, `nssf_tier2`, `housing_levy`, `other_deductions jsonb`, `net_pay`.
-- Pure-SQL function `compute_kenya_payroll(_gross numeric)` with current 2026 PAYE bands, SHIF 2.75%, NSSF Tier I/II caps, Housing Levy 1.5%, personal relief KES 2,400.
-- Pages: `Payroll.tsx` (runs list, "New run" → pulls active staff → previews computed slips → "Process" locks the run).
-- Edge function `generate-payslips` (PDF per staff, optional WhatsApp/email).
-- Country variants: stub functions `compute_uganda_payroll`, `compute_tanzania_payroll`, `compute_rwanda_payroll` with placeholder formulas; user can refine.
+## Phase D — Student Portal + Notifications Hub + Voice/IVR
+- **Student portal**: reuses parent portal shell, different nav + role-gated pages (assignments upload, library, restricted-hours messaging).
+- **Notifications bell**: header dropdown with grouping, categories, mark-read, preferences page (per-channel per-category toggles + quiet hours).
+- **Voice/IVR** (optional, behind Pro flag): Africa's Talking Voice for fee-reminder pre-recorded calls + simple IVR menu.
+- **Announcements**: rich composer with multi-channel fan-out.
 
-## Phase F — Expenses
-- Tables: `expense_categories`, `expenses`, `expense_approvals`.
-- Page `Expenses.tsx`: capture → submit → approve → export.
-- Export endpoints for QuickBooks/Xero CSV.
+## Technical notes (for me, skim if you want)
+- All provider creds go in Supabase Vault, not the `tenant_messaging_config` row directly — row stores references.
+- `dispatch-message` is the only function that touches providers; everything else just inserts into `messages` and lets the dispatcher pick it up via pg_cron every 30s (or trigger-invoked for urgent).
+- Cost preview uses a static `provider_pricing` table seeded with current Africa's Talking + Meta + Resend rates per country.
+- Parent portal uses the same Supabase project but a separate `guardian_users` mapping so RLS policies can scope to "guardian can see students they're linked to in `student_guardians`".
 
-## Technical notes (for the curious)
-- Existing trigger `recompute_invoice_totals` already keeps invoice balance/status synced — adjustments will be folded into `fee_discounts` (already there).
-- M-Pesa credentials remain in `mpesa_config` table (already RLS-protected); not moving to Vault unless explicitly requested — it would require breaking changes to existing functions.
-- Airtel Money / MTN MoMo: schema-ready (`payment_method_enum` already includes them) but I'll **stub** the actual API integration in Phase B and surface it as "coming soon" rather than half-build it. Each takes its own multi-day sprint.
-- Card payments (Pesapal/Flutterwave/Paystack): same — schema supports, integration is a follow-up phase.
+---
 
-## Out of scope for this loop
-- True double-entry accounting (we keep operational view + export to QBO/Xero per spec).
-- B2C disbursement flows.
-- Loan management beyond a `loan_deductions` jsonb field on payroll items.
+**My recommendation: start with Phase A** (1 message, cleanly reviewable, unlocks B). Then B, then C, then D.
 
-## Suggested execution order
-Phase A → B → C are the highest leverage (matches "Priority: M-Pesa, fee collection, reconciliation"). I'll do them in this loop and stop before Phase D so you can review. Payroll (E) and Expenses (F) ship in a follow-up.
-
-Reply **continue** to proceed with A→B→C, or tell me which phases to include/skip.
+**Questions before I start Phase A:**
+1. Confirm provider priority: Africa's Talking primary for SMS, Resend for email — OK?
+2. Parent portal route: keep at `/portal/*` on the same app (simpler, shared auth) or scaffold a separate Vite project (cleaner bundle, more setup)? I recommend `/portal/*` with code-splitting.
+3. WhatsApp templates: I'll create them as DB rows with placeholder Meta `template_name` values — you'll need to actually submit them in Meta Business Manager and paste the approved names back. OK?
+4. Should I ship Phase A now and pause for review, or queue all 4 phases back-to-back?

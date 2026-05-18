@@ -436,6 +436,93 @@ export type Database = {
           },
         ]
       }
+      broadcast_campaigns: {
+        Row: {
+          audience_filter: Json
+          channels: Database["public"]["Enums"]["message_channel_enum"][]
+          cost_currency: string | null
+          created_at: string
+          created_by: string | null
+          delivered_count: number
+          description: string | null
+          failed_count: number
+          id: string
+          is_emergency: boolean
+          name: string
+          recipient_count: number
+          scheduled_for: string | null
+          sent_at: string | null
+          sent_count: number
+          status: Database["public"]["Enums"]["campaign_status_enum"]
+          template_id: string | null
+          template_variables: Json | null
+          tenant_id: string
+          total_cost: number | null
+          updated_at: string
+        }
+        Insert: {
+          audience_filter?: Json
+          channels?: Database["public"]["Enums"]["message_channel_enum"][]
+          cost_currency?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivered_count?: number
+          description?: string | null
+          failed_count?: number
+          id?: string
+          is_emergency?: boolean
+          name: string
+          recipient_count?: number
+          scheduled_for?: string | null
+          sent_at?: string | null
+          sent_count?: number
+          status?: Database["public"]["Enums"]["campaign_status_enum"]
+          template_id?: string | null
+          template_variables?: Json | null
+          tenant_id: string
+          total_cost?: number | null
+          updated_at?: string
+        }
+        Update: {
+          audience_filter?: Json
+          channels?: Database["public"]["Enums"]["message_channel_enum"][]
+          cost_currency?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivered_count?: number
+          description?: string | null
+          failed_count?: number
+          id?: string
+          is_emergency?: boolean
+          name?: string
+          recipient_count?: number
+          scheduled_for?: string | null
+          sent_at?: string | null
+          sent_count?: number
+          status?: Database["public"]["Enums"]["campaign_status_enum"]
+          template_id?: string | null
+          template_variables?: Json | null
+          tenant_id?: string
+          total_cost?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcast_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "message_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "broadcast_campaigns_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cbc_assessment_scores: {
         Row: {
           comment: string | null
@@ -1936,6 +2023,228 @@ export type Database = {
           },
         ]
       }
+      message_opt_outs: {
+        Row: {
+          address: string
+          channel: Database["public"]["Enums"]["message_channel_enum"]
+          id: string
+          opted_out_at: string
+          reason: string | null
+          tenant_id: string
+        }
+        Insert: {
+          address: string
+          channel: Database["public"]["Enums"]["message_channel_enum"]
+          id?: string
+          opted_out_at?: string
+          reason?: string | null
+          tenant_id: string
+        }
+        Update: {
+          address?: string
+          channel?: Database["public"]["Enums"]["message_channel_enum"]
+          id?: string
+          opted_out_at?: string
+          reason?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_opt_outs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_templates: {
+        Row: {
+          body: string
+          category: Database["public"]["Enums"]["template_category_enum"]
+          channel: Database["public"]["Enums"]["message_channel_enum"]
+          created_at: string
+          id: string
+          is_active: boolean
+          is_system: boolean
+          name: string
+          slug: string
+          subject: string | null
+          tenant_id: string
+          updated_at: string
+          variables: Json
+          whatsapp_language: string | null
+          whatsapp_template_name: string | null
+        }
+        Insert: {
+          body: string
+          category?: Database["public"]["Enums"]["template_category_enum"]
+          channel: Database["public"]["Enums"]["message_channel_enum"]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name: string
+          slug: string
+          subject?: string | null
+          tenant_id: string
+          updated_at?: string
+          variables?: Json
+          whatsapp_language?: string | null
+          whatsapp_template_name?: string | null
+        }
+        Update: {
+          body?: string
+          category?: Database["public"]["Enums"]["template_category_enum"]
+          channel?: Database["public"]["Enums"]["message_channel_enum"]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name?: string
+          slug?: string
+          subject?: string | null
+          tenant_id?: string
+          updated_at?: string
+          variables?: Json
+          whatsapp_language?: string | null
+          whatsapp_template_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_templates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          body: string
+          campaign_id: string | null
+          channel: Database["public"]["Enums"]["message_channel_enum"]
+          cost: number | null
+          cost_currency: string | null
+          created_at: string
+          delivered_at: string | null
+          error: string | null
+          failed_at: string | null
+          id: string
+          metadata: Json | null
+          provider: string | null
+          provider_message_id: string | null
+          read_at: string | null
+          recipient_address: string | null
+          recipient_id: string | null
+          recipient_name: string | null
+          recipient_type: Database["public"]["Enums"]["message_recipient_type_enum"]
+          retry_count: number
+          scheduled_for: string | null
+          sender_user_id: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["message_status_enum"]
+          student_id: string | null
+          subject: string | null
+          template_id: string | null
+          template_variables: Json | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          campaign_id?: string | null
+          channel: Database["public"]["Enums"]["message_channel_enum"]
+          cost?: number | null
+          cost_currency?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          error?: string | null
+          failed_at?: string | null
+          id?: string
+          metadata?: Json | null
+          provider?: string | null
+          provider_message_id?: string | null
+          read_at?: string | null
+          recipient_address?: string | null
+          recipient_id?: string | null
+          recipient_name?: string | null
+          recipient_type: Database["public"]["Enums"]["message_recipient_type_enum"]
+          retry_count?: number
+          scheduled_for?: string | null
+          sender_user_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["message_status_enum"]
+          student_id?: string | null
+          subject?: string | null
+          template_id?: string | null
+          template_variables?: Json | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          campaign_id?: string | null
+          channel?: Database["public"]["Enums"]["message_channel_enum"]
+          cost?: number | null
+          cost_currency?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          error?: string | null
+          failed_at?: string | null
+          id?: string
+          metadata?: Json | null
+          provider?: string | null
+          provider_message_id?: string | null
+          read_at?: string | null
+          recipient_address?: string | null
+          recipient_id?: string | null
+          recipient_name?: string | null
+          recipient_type?: Database["public"]["Enums"]["message_recipient_type_enum"]
+          retry_count?: number
+          scheduled_for?: string | null
+          sender_user_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["message_status_enum"]
+          student_id?: string | null
+          subject?: string | null
+          template_id?: string | null
+          template_variables?: Json | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_campaign_fk"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "broadcast_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "message_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mpesa_config: {
         Row: {
           callback_url: string | null
@@ -2120,6 +2429,103 @@ export type Database = {
             columns: ["matched_payment_id"]
             isOneToOne: false
             referencedRelation: "student_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          language: string | null
+          preferences: Json
+          quiet_hours_enabled: boolean
+          quiet_hours_end: string | null
+          quiet_hours_start: string | null
+          tenant_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          language?: string | null
+          preferences?: Json
+          quiet_hours_enabled?: boolean
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          language?: string | null
+          preferences?: Json
+          quiet_hours_enabled?: boolean
+          quiet_hours_end?: string | null
+          quiet_hours_start?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          action_url: string | null
+          body: string | null
+          category: Database["public"]["Enums"]["notification_category_enum"]
+          created_at: string
+          icon: string | null
+          id: string
+          metadata: Json | null
+          read_at: string | null
+          tenant_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          action_url?: string | null
+          body?: string | null
+          category?: Database["public"]["Enums"]["notification_category_enum"]
+          created_at?: string
+          icon?: string | null
+          id?: string
+          metadata?: Json | null
+          read_at?: string | null
+          tenant_id: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          action_url?: string | null
+          body?: string | null
+          category?: Database["public"]["Enums"]["notification_category_enum"]
+          created_at?: string
+          icon?: string | null
+          id?: string
+          metadata?: Json | null
+          read_at?: string | null
+          tenant_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -2441,6 +2847,53 @@ export type Database = {
           {
             foreignKeyName: "profiles_school_id_fkey"
             columns: ["default_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_pricing: {
+        Row: {
+          channel: Database["public"]["Enums"]["message_channel_enum"]
+          country_code: string
+          currency: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          provider: string
+          tenant_id: string | null
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["message_channel_enum"]
+          country_code?: string
+          currency?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          provider: string
+          tenant_id?: string | null
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["message_channel_enum"]
+          country_code?: string
+          currency?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          provider?: string
+          tenant_id?: string | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_pricing_tenant_id_fkey"
+            columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
@@ -4593,6 +5046,10 @@ export type Database = {
         Args: { _tenant: string }
         Returns: undefined
       }
+      seed_default_message_templates: {
+        Args: { _tenant: string }
+        Returns: undefined
+      }
       seed_expense_categories: { Args: { _tenant: string }; Returns: undefined }
       seed_fee_categories: { Args: { _tenant: string }; Returns: undefined }
       seed_grade_levels: {
@@ -4618,6 +5075,13 @@ export type Database = {
         | "AB+"
         | "AB-"
         | "unknown"
+      campaign_status_enum:
+        | "draft"
+        | "scheduled"
+        | "sending"
+        | "sent"
+        | "failed"
+        | "cancelled"
       curriculum_type: "cbc" | "8-4-4" | "igcse" | "ib" | "cambridge" | "mixed"
       discount_type_enum: "percent" | "fixed"
       document_owner_type_enum: "student" | "staff" | "guardian"
@@ -4710,6 +5174,35 @@ export type Database = {
         | "weekly_boarder"
         | "special_needs"
       lesson_status_enum: "draft" | "pending_review" | "approved" | "rejected"
+      message_channel_enum:
+        | "in_app"
+        | "sms"
+        | "email"
+        | "whatsapp"
+        | "voice"
+        | "push"
+      message_recipient_type_enum:
+        | "student"
+        | "guardian"
+        | "staff"
+        | "user"
+        | "group"
+        | "phone"
+        | "email"
+      message_status_enum:
+        | "queued"
+        | "sending"
+        | "sent"
+        | "delivered"
+        | "read"
+        | "failed"
+        | "opted_out"
+      notification_category_enum:
+        | "academic"
+        | "financial"
+        | "communication"
+        | "attendance"
+        | "system"
       payment_method_enum:
         | "cash"
         | "mpesa"
@@ -4746,6 +5239,15 @@ export type Database = {
         | "life_skills"
       subscription_plan: "free" | "starter" | "standard" | "pro" | "enterprise"
       subscription_status: "trial" | "active" | "past_due" | "cancelled"
+      template_category_enum:
+        | "fee_reminder"
+        | "attendance_alert"
+        | "exam_result"
+        | "announcement"
+        | "payment_receipt"
+        | "meeting"
+        | "emergency"
+        | "custom"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4892,6 +5394,14 @@ export const Constants = {
         "AB-",
         "unknown",
       ],
+      campaign_status_enum: [
+        "draft",
+        "scheduled",
+        "sending",
+        "sent",
+        "failed",
+        "cancelled",
+      ],
       curriculum_type: ["cbc", "8-4-4", "igcse", "ib", "cambridge", "mixed"],
       discount_type_enum: ["percent", "fixed"],
       document_owner_type_enum: ["student", "staff", "guardian"],
@@ -4995,6 +5505,39 @@ export const Constants = {
         "special_needs",
       ],
       lesson_status_enum: ["draft", "pending_review", "approved", "rejected"],
+      message_channel_enum: [
+        "in_app",
+        "sms",
+        "email",
+        "whatsapp",
+        "voice",
+        "push",
+      ],
+      message_recipient_type_enum: [
+        "student",
+        "guardian",
+        "staff",
+        "user",
+        "group",
+        "phone",
+        "email",
+      ],
+      message_status_enum: [
+        "queued",
+        "sending",
+        "sent",
+        "delivered",
+        "read",
+        "failed",
+        "opted_out",
+      ],
+      notification_category_enum: [
+        "academic",
+        "financial",
+        "communication",
+        "attendance",
+        "system",
+      ],
       payment_method_enum: [
         "cash",
         "mpesa",
@@ -5035,6 +5578,16 @@ export const Constants = {
       ],
       subscription_plan: ["free", "starter", "standard", "pro", "enterprise"],
       subscription_status: ["trial", "active", "past_due", "cancelled"],
+      template_category_enum: [
+        "fee_reminder",
+        "attendance_alert",
+        "exam_result",
+        "announcement",
+        "payment_receipt",
+        "meeting",
+        "emergency",
+        "custom",
+      ],
     },
   },
 } as const
