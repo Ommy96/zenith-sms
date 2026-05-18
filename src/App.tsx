@@ -26,6 +26,7 @@ import Attendance from "./pages/Attendance";
 import Staff from "./pages/Staff";
 import StaffProfile from "./pages/StaffProfile";
 import Communication from "./pages/Communication";
+import Messaging from "./pages/Messaging";
 import Admissions from "./pages/Admissions";
 import Operations from "./pages/Operations";
 import Reports from "./pages/Reports";
@@ -104,7 +105,7 @@ function AppRoutes() {
       <Route path="/finance-reports" element={<ProtectedRoute><DashboardLayout><Finance /></DashboardLayout></ProtectedRoute>} />
       <Route path="/finance/mobile-money" element={<ProtectedRoute><DashboardLayout><MobileMoney /></DashboardLayout></ProtectedRoute>} />
       <Route path="/announcements" element={<ProtectedRoute><DashboardLayout><Communication /></DashboardLayout></ProtectedRoute>} />
-      <Route path="/messaging" element={<ProtectedRoute><DashboardLayout><Communication /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/messaging" element={<ProtectedRoute><DashboardLayout><Messaging /></DashboardLayout></ProtectedRoute>} />
       <Route path="/communication/whatsapp" element={<ProtectedRoute><DashboardLayout><WhatsApp /></DashboardLayout></ProtectedRoute>} />
       <Route path="/staff" element={<ProtectedRoute><DashboardLayout><Staff /></DashboardLayout></ProtectedRoute>} />
       <Route path="/staff/:id" element={<ProtectedRoute><DashboardLayout><StaffProfile /></DashboardLayout></ProtectedRoute>} />
