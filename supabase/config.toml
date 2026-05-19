@@ -11,3 +11,15 @@ verify_jwt = false
 
 [functions.whatsapp-webhook]
 verify_jwt = false
+
+[functions.send-sms]
+verify_jwt = false
+
+[functions.send-email]
+verify_jwt = false
+
+[functions.send-whatsapp]
+verify_jwt = false
+
+[functions.dispatch-messages]
+verify_jwt = false

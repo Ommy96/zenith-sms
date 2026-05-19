@@ -5,6 +5,7 @@ import { ComposeTab } from "@/components/messaging/ComposeTab";
 import { TemplatesTab } from "@/components/messaging/TemplatesTab";
 import { CampaignsTab } from "@/components/messaging/CampaignsTab";
 import { HistoryTab } from "@/components/messaging/HistoryTab";
+import { SettingsTab } from "@/components/messaging/SettingsTab";
 import { MessageSquare } from "lucide-react";
 
 export default function Messaging() {
@@ -31,11 +32,13 @@ export default function Messaging() {
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         <TabsContent value="compose" className="mt-4"><ComposeTab tenantId={tenantId} /></TabsContent>
         <TabsContent value="templates" className="mt-4"><TemplatesTab tenantId={tenantId} /></TabsContent>
         <TabsContent value="campaigns" className="mt-4"><CampaignsTab tenantId={tenantId} /></TabsContent>
         <TabsContent value="history" className="mt-4"><HistoryTab tenantId={tenantId} /></TabsContent>
+        <TabsContent value="settings" className="mt-4"><SettingsTab tenantId={tenantId} /></TabsContent>
       </Tabs>
     </div>
   );

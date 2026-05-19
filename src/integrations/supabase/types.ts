@@ -2129,6 +2129,7 @@ export type Database = {
           cost_currency: string | null
           created_at: string
           delivered_at: string | null
+          direction: string
           error: string | null
           failed_at: string | null
           id: string
@@ -2150,6 +2151,7 @@ export type Database = {
           template_id: string | null
           template_variables: Json | null
           tenant_id: string
+          thread_id: string | null
           updated_at: string
         }
         Insert: {
@@ -2160,6 +2162,7 @@ export type Database = {
           cost_currency?: string | null
           created_at?: string
           delivered_at?: string | null
+          direction?: string
           error?: string | null
           failed_at?: string | null
           id?: string
@@ -2181,6 +2184,7 @@ export type Database = {
           template_id?: string | null
           template_variables?: Json | null
           tenant_id: string
+          thread_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -2191,6 +2195,7 @@ export type Database = {
           cost_currency?: string | null
           created_at?: string
           delivered_at?: string | null
+          direction?: string
           error?: string | null
           failed_at?: string | null
           id?: string
@@ -2212,6 +2217,7 @@ export type Database = {
           template_id?: string | null
           template_variables?: Json | null
           tenant_id?: string
+          thread_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2238,6 +2244,76 @@ export type Database = {
           },
           {
             foreignKeyName: "messages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "messaging_inbox_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messaging_inbox_threads: {
+        Row: {
+          assigned_to: string | null
+          channel: Database["public"]["Enums"]["message_channel_enum"]
+          contact_address: string
+          contact_name: string | null
+          created_at: string
+          id: string
+          last_message_at: string
+          last_message_preview: string | null
+          status: string
+          student_id: string | null
+          tenant_id: string
+          unread_count: number
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          channel: Database["public"]["Enums"]["message_channel_enum"]
+          contact_address: string
+          contact_name?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          last_message_preview?: string | null
+          status?: string
+          student_id?: string | null
+          tenant_id: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          channel?: Database["public"]["Enums"]["message_channel_enum"]
+          contact_address?: string
+          contact_name?: string | null
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          last_message_preview?: string | null
+          status?: string
+          student_id?: string | null
+          tenant_id?: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_inbox_threads_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messaging_inbox_threads_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -4384,6 +4460,89 @@ export type Database = {
         }
         Relationships: []
       }
+      tenant_messaging_config: {
+        Row: {
+          at_api_key: string | null
+          at_sender_id: string | null
+          at_username: string | null
+          country_code: string
+          created_at: string
+          email_daily_limit: number
+          email_from_address: string | null
+          email_from_name: string | null
+          email_provider: string
+          email_sent_today: number
+          id: string
+          is_active: boolean
+          last_reset_date: string
+          resend_api_key: string | null
+          sms_daily_limit: number
+          sms_provider: string
+          sms_sent_today: number
+          tenant_id: string
+          twilio_account_sid: string | null
+          twilio_auth_token: string | null
+          twilio_from_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          at_api_key?: string | null
+          at_sender_id?: string | null
+          at_username?: string | null
+          country_code?: string
+          created_at?: string
+          email_daily_limit?: number
+          email_from_address?: string | null
+          email_from_name?: string | null
+          email_provider?: string
+          email_sent_today?: number
+          id?: string
+          is_active?: boolean
+          last_reset_date?: string
+          resend_api_key?: string | null
+          sms_daily_limit?: number
+          sms_provider?: string
+          sms_sent_today?: number
+          tenant_id: string
+          twilio_account_sid?: string | null
+          twilio_auth_token?: string | null
+          twilio_from_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          at_api_key?: string | null
+          at_sender_id?: string | null
+          at_username?: string | null
+          country_code?: string
+          created_at?: string
+          email_daily_limit?: number
+          email_from_address?: string | null
+          email_from_name?: string | null
+          email_provider?: string
+          email_sent_today?: number
+          id?: string
+          is_active?: boolean
+          last_reset_date?: string
+          resend_api_key?: string | null
+          sms_daily_limit?: number
+          sms_provider?: string
+          sms_sent_today?: number
+          tenant_id?: string
+          twilio_account_sid?: string | null
+          twilio_auth_token?: string | null
+          twilio_from_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_messaging_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_settings: {
         Row: {
           created_at: string
@@ -4995,6 +5154,48 @@ export type Database = {
           _transport: number
         }
         Returns: Json
+      }
+      claim_due_messages: {
+        Args: { _limit?: number }
+        Returns: {
+          body: string
+          campaign_id: string | null
+          channel: Database["public"]["Enums"]["message_channel_enum"]
+          cost: number | null
+          cost_currency: string | null
+          created_at: string
+          delivered_at: string | null
+          direction: string
+          error: string | null
+          failed_at: string | null
+          id: string
+          metadata: Json | null
+          provider: string | null
+          provider_message_id: string | null
+          read_at: string | null
+          recipient_address: string | null
+          recipient_id: string | null
+          recipient_name: string | null
+          recipient_type: Database["public"]["Enums"]["message_recipient_type_enum"]
+          retry_count: number
+          scheduled_for: string | null
+          sender_user_id: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["message_status_enum"]
+          student_id: string | null
+          subject: string | null
+          template_id: string | null
+          template_variables: Json | null
+          tenant_id: string
+          thread_id: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "messages"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       compute_grade: {
         Args: { _pct: number; _scale: string }
