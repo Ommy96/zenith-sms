@@ -168,6 +168,10 @@ export function ComposeTab({ tenantId }: { tenantId: string | undefined }) {
         const { error } = await supabase.from("messages").insert(rows.slice(i, i + 500));
         if (error) throw error;
       }
+      // Kick the dispatcher (fire and forget — it will claim & send what's due)
+      if (!scheduledFor) {
+        supabase.functions.invoke("dispatch-messages", { body: { limit: Math.min(rows.length, 200) } }).catch(() => {});
+      }
       return { campaign: camp.id, count: rows.length };
     },
     onSuccess: ({ count }) => {
