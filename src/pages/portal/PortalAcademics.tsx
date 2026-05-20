@@ -22,7 +22,7 @@ export default function PortalAcademics() {
           .eq("student_id", activeChild.id)
           .order("created_at", { ascending: false })
           .limit(20),
-        supabase.from("attendance_records")
+        supabase.from("attendance")
           .select("date, status")
           .eq("student_id", activeChild.id)
           .order("date", { ascending: false })

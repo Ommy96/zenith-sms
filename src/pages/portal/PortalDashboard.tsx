@@ -22,7 +22,7 @@ export default function PortalDashboard() {
       const [{ data: inv }, { data: tenant }, { data: att }, { data: results }] = await Promise.all([
         supabase.from("student_invoices").select("balance").eq("student_id", activeChild.id),
         supabase.from("tenants").select("currency_code").eq("id", activeChild.tenant_id).maybeSingle(),
-        supabase.from("attendance_records").select("status").eq("student_id", activeChild.id).limit(60),
+        supabase.from("attendance").select("status").eq("student_id", activeChild.id).limit(60),
         supabase.from("student_exam_results").select("raw_marks, max_marks").eq("student_id", activeChild.id).order("created_at", { ascending: false }).limit(10),
       ]);
       setBalance((inv || []).reduce((s: number, r: any) => s + Number(r.balance || 0), 0));
