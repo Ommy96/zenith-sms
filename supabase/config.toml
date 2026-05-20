@@ -23,3 +23,9 @@ verify_jwt = false
 
 [functions.dispatch-messages]
 verify_jwt = false
+
+[functions.portal-send-otp]
+verify_jwt = false
+
+[functions.portal-verify-otp]
+verify_jwt = false
