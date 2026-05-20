@@ -2888,6 +2888,36 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_otps: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -5234,6 +5264,22 @@ export type Database = {
         Returns: string
       }
       normalize_account_ref: { Args: { _raw: string }; Returns: string }
+      portal_link_guardian_user: {
+        Args: { _phone: string; _user_id: string }
+        Returns: number
+      }
+      portal_my_guardian_tenants: {
+        Args: { _user?: string }
+        Returns: {
+          tenant_id: string
+        }[]
+      }
+      portal_my_student_ids: {
+        Args: { _user?: string }
+        Returns: {
+          student_id: string
+        }[]
+      }
       process_payroll_period: {
         Args: { _period: string; _user?: string }
         Returns: number
