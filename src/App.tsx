@@ -38,6 +38,15 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
+import { PortalProvider } from "@/contexts/PortalContext";
+import { PortalLayout } from "@/components/portal/PortalLayout";
+import PortalLogin from "./pages/portal/PortalLogin";
+import PortalDashboard from "./pages/portal/PortalDashboard";
+import PortalFees from "./pages/portal/PortalFees";
+import PortalAcademics from "./pages/portal/PortalAcademics";
+import PortalMessages from "./pages/portal/PortalMessages";
+import PortalProfile from "./pages/portal/PortalProfile";
+import PortalCalendar from "./pages/portal/PortalCalendar";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +63,23 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
+}
+
+function PortalProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/portal/login" replace />;
+  return (
+    <PortalProvider>
+      <PortalLayout>{children}</PortalLayout>
+    </PortalProvider>
+  );
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
@@ -79,6 +105,15 @@ function AppRoutes() {
       <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+
+      {/* Parent Portal */}
+      <Route path="/portal/login" element={<PortalLogin />} />
+      <Route path="/portal" element={<PortalProtectedRoute><PortalDashboard /></PortalProtectedRoute>} />
+      <Route path="/portal/fees" element={<PortalProtectedRoute><PortalFees /></PortalProtectedRoute>} />
+      <Route path="/portal/academics" element={<PortalProtectedRoute><PortalAcademics /></PortalProtectedRoute>} />
+      <Route path="/portal/messages" element={<PortalProtectedRoute><PortalMessages /></PortalProtectedRoute>} />
+      <Route path="/portal/profile" element={<PortalProtectedRoute><PortalProfile /></PortalProtectedRoute>} />
+      <Route path="/portal/calendar" element={<PortalProtectedRoute><PortalCalendar /></PortalProtectedRoute>} />
 
       {/* Protected routes */}
       <Route path="/" element={
