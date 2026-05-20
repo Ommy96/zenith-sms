@@ -1,0 +1,14 @@
+{
+  "name": "SomaSphere Parent Portal",
+  "short_name": "SomaSphere",
+  "description": "Track fees, attendance, results and school messages for your child.",
+  "start_url": "/portal",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0F172A",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "64x64", "type": "image/x-icon" }
+  ]
+}
