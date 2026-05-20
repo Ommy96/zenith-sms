@@ -5,6 +5,8 @@ import { useAuth } from "./AuthContext";
 export interface PortalChild {
   id: string;
   full_name: string;
+  first_name: string;
+  last_name: string;
   admission_number: string | null;
   photo_url: string | null;
   tenant_id: string;
@@ -41,8 +43,11 @@ export function PortalProvider({ children: kids }: { children: ReactNode }) {
     setLoading(true);
     const { data } = await supabase
       .from("students")
-      .select("id, full_name, admission_number, photo_url, tenant_id, current_class_id, stream");
-    const list = (data || []) as PortalChild[];
+      .select("id, first_name, last_name, admission_number, photo_url, tenant_id, current_class_id, stream");
+    const list: PortalChild[] = (data || []).map((s: any) => ({
+      ...s,
+      full_name: [s.first_name, s.last_name].filter(Boolean).join(" "),
+    }));
     setItems(list);
     if (list.length && (!activeId || !list.find((c) => c.id === activeId))) {
       setActiveId(list[0].id);
