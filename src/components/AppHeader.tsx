@@ -1,4 +1,4 @@
-import { Bell, Search, Plus, ChevronDown, LogOut, User, Settings, Command as CommandIcon } from "lucide-react";
+import { Search, Plus, ChevronDown, LogOut, User, Settings, Command as CommandIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "./ThemeToggle";
@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { CommandPalette, useCommandPalette } from "./CommandPalette";
 import { useNavigate } from "react-router-dom";
+import { NotificationsBell } from "./NotificationsBell";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel,
@@ -80,10 +81,7 @@ export function AppHeader() {
 
         <ThemeToggle />
 
-        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg relative">
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive" />
-        </Button>
+        <NotificationsBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

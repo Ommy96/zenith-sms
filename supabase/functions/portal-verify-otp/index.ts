@@ -65,8 +65,11 @@ Deno.serve(async (req) => {
       userId = created.user!.id;
     }
 
-    // Link guardian rows
-    await admin.rpc("portal_link_guardian_user", { _phone: normalized, _user_id: userId });
+    // Link guardian + student rows (single phone may be either or both)
+    await Promise.all([
+      admin.rpc("portal_link_guardian_user", { _phone: normalized, _user_id: userId }),
+      admin.rpc("portal_link_student_user", { _phone: normalized, _user_id: userId }),
+    ]);
 
     // Generate magic link to mint a session for the client
     const { data: link, error: lErr } = await admin.auth.admin.generateLink({

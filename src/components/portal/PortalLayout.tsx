@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, GraduationCap, Wallet, MessageSquare, User, ChevronDown, LogOut, Calendar } from "lucide-react";
+import { Home, GraduationCap, Wallet, MessageSquare, User, ChevronDown, LogOut, Megaphone } from "lucide-react";
 import { usePortal } from "@/contexts/PortalContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,6 +8,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { NotificationsBell } from "@/components/NotificationsBell";
 
 const tabs = [
   { to: "/portal", icon: Home, label: "Home", end: true },
@@ -64,9 +65,12 @@ export function PortalLayout({ children }: { children: ReactNode }) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button size="icon" variant="ghost" onClick={() => navigate("/portal/calendar")}>
-            <Calendar className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button size="icon" variant="ghost" onClick={() => navigate("/portal/announcements")} title="Announcements">
+              <Megaphone className="h-5 w-5" />
+            </Button>
+            <NotificationsBell portal />
+          </div>
         </div>
       </header>
 
