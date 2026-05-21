@@ -4241,6 +4241,7 @@ export type Database = {
           nhif_or_shif_number: string | null
           phone: string | null
           photo_url: string | null
+          portal_user_id: string | null
           postal_code: string | null
           preferred_name: string | null
           prems_number: string | null
@@ -4318,6 +4319,7 @@ export type Database = {
           nhif_or_shif_number?: string | null
           phone?: string | null
           photo_url?: string | null
+          portal_user_id?: string | null
           postal_code?: string | null
           preferred_name?: string | null
           prems_number?: string | null
@@ -4395,6 +4397,7 @@ export type Database = {
           nhif_or_shif_number?: string | null
           phone?: string | null
           photo_url?: string | null
+          portal_user_id?: string | null
           postal_code?: string | null
           preferred_name?: string | null
           prems_number?: string | null
@@ -5268,6 +5271,10 @@ export type Database = {
         Args: { _phone: string; _user_id: string }
         Returns: number
       }
+      portal_link_student_user: {
+        Args: { _phone: string; _user_id: string }
+        Returns: number
+      }
       portal_my_guardian_tenants: {
         Args: { _user?: string }
         Returns: {
@@ -5278,6 +5285,12 @@ export type Database = {
         Args: { _user?: string }
         Returns: {
           student_id: string
+        }[]
+      }
+      portal_my_tenants: {
+        Args: { _user?: string }
+        Returns: {
+          tenant_id: string
         }[]
       }
       process_payroll_period: {
