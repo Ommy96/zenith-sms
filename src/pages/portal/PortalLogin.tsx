@@ -55,9 +55,9 @@ export default function PortalLogin() {
           <div className="mx-auto h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center">
             {step === "phone" ? <Phone className="h-7 w-7 text-primary" /> : <ShieldCheck className="h-7 w-7 text-primary" />}
           </div>
-          <CardTitle className="text-2xl">Parent Portal</CardTitle>
+          <CardTitle className="text-2xl">Portal Sign-in</CardTitle>
           <p className="text-sm text-muted-foreground">
-            {step === "phone" ? "Sign in with your registered phone number" : `Enter the 6-digit code sent to ${maskedPhone}`}
+            {step === "phone" ? "Parents and students — sign in with your registered phone number" : `Enter the 6-digit code sent to ${maskedPhone}`}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
