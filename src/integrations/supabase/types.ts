@@ -330,34 +330,49 @@ export type Database = {
       }
       attendance: {
         Row: {
+          arrival_time: string | null
           class_id: string | null
           created_at: string | null
           date: string
           id: string
+          marked_at: string
           notes: string | null
+          notify_status: string
+          period_id: string | null
           recorded_by: string | null
+          source: string
           status: string
           student_id: string
           tenant_id: string
         }
         Insert: {
+          arrival_time?: string | null
           class_id?: string | null
           created_at?: string | null
           date?: string
           id?: string
+          marked_at?: string
           notes?: string | null
+          notify_status?: string
+          period_id?: string | null
           recorded_by?: string | null
+          source?: string
           status?: string
           student_id: string
           tenant_id: string
         }
         Update: {
+          arrival_time?: string | null
           class_id?: string | null
           created_at?: string | null
           date?: string
           id?: string
+          marked_at?: string
           notes?: string | null
+          notify_status?: string
+          period_id?: string | null
           recorded_by?: string | null
+          source?: string
           status?: string
           student_id?: string
           tenant_id?: string
@@ -368,6 +383,13 @@ export type Database = {
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "periods"
             referencedColumns: ["id"]
           },
           {
@@ -382,6 +404,70 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_sessions: {
+        Row: {
+          class_id: string | null
+          created_at: string
+          date: string
+          id: string
+          locked: boolean
+          marked_at: string
+          marked_by: string | null
+          notes: string | null
+          period_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          locked?: boolean
+          marked_at?: string
+          marked_by?: string | null
+          notes?: string | null
+          period_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          locked?: boolean
+          marked_at?: string
+          marked_by?: string | null
+          notes?: string | null
+          period_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_sessions_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_sessions_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_sessions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -5171,6 +5257,35 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      attendance_chronic_absentees: {
+        Args: {
+          _from: string
+          _min_absences?: number
+          _tenant: string
+          _to: string
+        }
+        Returns: {
+          absence_pct: number
+          absent_days: number
+          admission_number: string
+          class_name: string
+          full_name: string
+          late_days: number
+          student_id: string
+          total_marked: number
+        }[]
+      }
+      attendance_student_summary: {
+        Args: { _from: string; _student: string; _tenant: string; _to: string }
+        Returns: {
+          absent_days: number
+          attendance_pct: number
+          excused_days: number
+          late_days: number
+          present_days: number
+          total_days: number
+        }[]
+      }
       calc_kenya_payroll: {
         Args: {
           _basic: number

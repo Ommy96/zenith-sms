@@ -1,60 +1,55 @@
-# Communication Layer + Parent/Student Portals
+# SomaSphere Operations — Build Plan
 
-This is ~6–8 hours of work if shipped in one batch. I'll split it into 4 phases so each lands working and reviewable. Confirm the phasing (or reorder), and I'll start.
+This is a very large scope (8 modules, ~30 tables, multiple capture flows). To ship something usable instead of a half-broken everything, I'll deliver it in **5 phases**, each independently shippable. Confirm scope and I'll start with Phase 1.
 
-## Phase A — Unified messaging core (DB + Admin UI)
-The foundation everything else plugs into.
+## Phase 1 — Attendance (core operations workhorse)
+- Tables: `attendance_records`, `attendance_sessions`, tenant setting for mode (daily / per-period / boarding)
+- Class register grid (rows=students, cols=status radios), "All present" one-tap, bulk select, late time entry
+- Mobile-first layout, offline cache via IndexedDB queue, auto-sync
+- Auto-notify guardians on absence (reuses messaging dispatcher + `attendance_absence` template, already seeded)
+- Pattern detection trigger: 3 consecutive absences flags class teacher
+- Reports: daily register, term summary per student, class trends, chronic absentees
+- Capture: manual (Phase 1), QR scan (Phase 1b stub), biometric/face (out of scope now)
 
-- **Schema**: `messages`, `message_templates`, `broadcast_campaigns`, `notification_preferences`, `notifications` (in-app bell), `opt_outs`. Tenant-scoped RLS, indexes on `(tenant_id, sent_at)` and `(recipient_id, channel)`.
-- **Seed templates**: the 7 WhatsApp templates you listed + SMS/email variants, with `{{variable}}` merge syntax.
-- **Admin UI** at `/communication`:
-  - Templates tab (CRUD, preview with sample data)
-  - Compose tab (audience filter → channel picker → template → cost preview → send/schedule)
-  - Campaigns tab (history, delivery stats)
-  - Inbox tab (placeholder — wired in Phase B)
-- **Audience filter engine**: shared util that resolves `{class_id, role, defaulters_only, custom_ids}` → recipient list.
-- **Cost estimator**: per-channel pricing table per tenant, returns total before send.
+## Phase 2 — Discipline + Health + Events
+- Discipline: `discipline_incidents`, `disciplinary_actions`, `merit_points`, severity 3+ auto-notify guardian
+- Health: `health_visits`, `medication_administration`, `immunization_records`, `accident_reports` — RLS gated to `health.view`
+- Events: `calendar_events` (month/week/agenda views), iCal subscription URL per user, resource booking on rooms
 
-## Phase B — Channel providers + delivery
-Wire actual sending. Each provider is one edge function reading per-tenant config.
+## Phase 3 — Library + Inventory/Procurement
+- Library: `library_items`, `library_loans`, barcode scan checkout/return, fines, overdue reminders, student catalog in portal
+- Inventory: `stores`, `stock_items`, `stock_movements`, suppliers, asset register with QR tags
+- Requisition → PO → GRN workflow with amount-band approval matrix
+- Auto-draft requisition when stock < reorder_level (trigger)
 
-- `tenant_messaging_config` table (Africa's Talking creds, Twilio creds, WhatsApp creds, Resend key, sender IDs, country code) — encrypted via Vault.
-- **Edge functions**:
-  - `send-sms` (Africa's Talking primary, Twilio fallback)
-  - `send-whatsapp` (Meta Cloud API, template messages + free-form within 24h window)
-  - `send-email` (Resend)
-  - `whatsapp-webhook` (already exists — extend for inbox threading + auto-reconcile by guardian phone)
-  - `africastalking-dlr` (delivery reports webhook)
-  - `dispatch-message` (router: takes a `messages` row, fans out to the right provider, retries, writes status back)
-- **Inbox UI**: WhatsApp-style threaded by `(guardian_phone, student_id)`, with class-teacher routing rule.
-- **Opt-out**: inbound "STOP" → `opt_outs` row, blocks future non-emergency sends.
+## Phase 4 — Transport
+- Tables: `vehicles`, `drivers`, `routes`, `route_stops`, `student_transport_subscriptions`, `vehicle_location_pings`, `boarding_scans`, `maintenance_logs`, `fuel_logs`
+- Route designer with stop sequence, ETA calc from last ping
+- Boarding/alighting QR scanner page, daily roster
+- Parent app: live bus tracking + geofenced arrival SMS
+- Reports: utilization, maintenance cost, driver mileage, transport-fee outstanding
 
-## Phase C — Parent Portal (PWA, mobile-first)
-Separate shell at `/portal/*`, lazy-loaded route group.
+## Phase 5 — Hostel / Boarding
+- Tables: `hostels`, `rooms`, `beds`, `hostel_allocations`, `roll_calls`, `visitor_log`, `out_passes`, `bedding_inventory`
+- Drag-drop bed allocation grid
+- Roll-call sessions (morning, lights-out, weekend)
+- Out-pass: student request → guardian approves in portal → matron logs out/in
 
-- **Auth**: phone + OTP via Africa's Talking SMS, fallback email/password. New `guardian_users` link table (guardian_id ↔ auth.users.id) since guardians aren't tenant staff.
-- **Layout**: bottom tab bar (Home / Academics / Fees / Chat / More), child switcher in header.
-- **Pages**: Dashboard, Children, Academics (term performance + past report cards), Attendance (calendar), Fees (balance, statement, STK Push button → reuses existing mpesa-stk-push), Communication (announcements + thread to class teacher), Calendar, Documents, Settings.
-- **PWA**: vite-plugin-pwa, manifest, service worker with cache-first for shell, network-first for data. Skeleton loaders everywhere.
+## Technical notes
+- Each phase = 1 migration + page(s) under `src/pages/operations/*` + tab components, registered in `App.tsx` and `AppSidebar.tsx`
+- All tables tenant-scoped with RLS using existing `is_tenant_member` / `has_perm`
+- All guardian notifications go through `messages` table → existing `dispatch-messages` edge function (no new providers)
+- New permissions added: `attendance.mark`, `attendance.view`, `discipline.manage`, `health.view`, `health.manage`, `library.manage`, `inventory.manage`, `procurement.approve`, `transport.manage`, `hostel.manage`, `events.manage`
+- Auto-notify and reorder-draft logic implemented as Postgres triggers + edge function calls
+- Offline attendance uses a small IndexedDB wrapper (`src/lib/offline/queue.ts`) flushed on `online` event
 
-## Phase D — Student Portal + Notifications Hub + Voice/IVR
-- **Student portal**: reuses parent portal shell, different nav + role-gated pages (assignments upload, library, restricted-hours messaging).
-- **Notifications bell**: header dropdown with grouping, categories, mark-read, preferences page (per-channel per-category toggles + quiet hours).
-- **Voice/IVR** (optional, behind Pro flag): Africa's Talking Voice for fee-reminder pre-recorded calls + simple IVR menu.
-- **Announcements**: rich composer with multi-channel fan-out.
+## What's intentionally out of Phase 1–5 (call out before building)
+- Biometric/fingerprint hardware integration (needs vendor SDK)
+- Face-recognition attendance (Phase 6 per spec — needs vision model)
+- Real GPS hardware integration for buses (Phase 4 will use driver-phone web geolocation as v1)
+- Google/Outlook OAuth calendar sync (Phase 2 ships read-only iCal feed; full 2-way sync later)
 
-## Technical notes (for me, skim if you want)
-- All provider creds go in Supabase Vault, not the `tenant_messaging_config` row directly — row stores references.
-- `dispatch-message` is the only function that touches providers; everything else just inserts into `messages` and lets the dispatcher pick it up via pg_cron every 30s (or trigger-invoked for urgent).
-- Cost preview uses a static `provider_pricing` table seeded with current Africa's Talking + Meta + Resend rates per country.
-- Parent portal uses the same Supabase project but a separate `guardian_users` mapping so RLS policies can scope to "guardian can see students they're linked to in `student_guardians`".
+## Proposed order
+Start with **Phase 1 (Attendance)** since it's the daily-use workhorse, gives immediate parent-comms value, and exercises the messaging pipeline you just built.
 
----
-
-**My recommendation: start with Phase A** (1 message, cleanly reviewable, unlocks B). Then B, then C, then D.
-
-**Questions before I start Phase A:**
-1. Confirm provider priority: Africa's Talking primary for SMS, Resend for email — OK?
-2. Parent portal route: keep at `/portal/*` on the same app (simpler, shared auth) or scaffold a separate Vite project (cleaner bundle, more setup)? I recommend `/portal/*` with code-splitting.
-3. WhatsApp templates: I'll create them as DB rows with placeholder Meta `template_name` values — you'll need to actually submit them in Meta Business Manager and paste the approved names back. OK?
-4. Should I ship Phase A now and pause for review, or queue all 4 phases back-to-back?
+Reply with: **"go phase 1"** (or pick a different starting phase, or adjust scope) and I'll ship it.
