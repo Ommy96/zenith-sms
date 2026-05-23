@@ -3,6 +3,7 @@ import {
   BookOpen, MessageSquare, UserCog, Bus, Library, BarChart3, Settings,
   ChevronRight, Briefcase, FileText, CalendarDays, UserPlus,
   Megaphone, Mail, DollarSign, Receipt, Package, Smartphone, MessageCircle,
+  ShieldAlert, HeartPulse, Calendar as CalendarIcon,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -50,6 +51,9 @@ const sections: NavSection[] = [
     { title: "Transport", url: "/transport", icon: Bus, perm: "transport.view" },
     { title: "Library", url: "/library", icon: Library, perm: "library.view" },
     { title: "Inventory", url: "/inventory", icon: Package, perm: "inventory.view" },
+    { title: "Discipline", url: "/discipline", icon: ShieldAlert, perm: "discipline.view" },
+    { title: "Health", url: "/health", icon: HeartPulse, perm: "health.view" },
+    { title: "Events", url: "/events", icon: CalendarIcon, perm: "events.view" },
   ]},
   { label: "Insights", items: [
     { title: "Reports", url: "/reports", icon: BarChart3, perm: "reports.view" },
