@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.portal-verify-otp]
 verify_jwt = false
+
+[functions.ical-feed]
+verify_jwt = false
