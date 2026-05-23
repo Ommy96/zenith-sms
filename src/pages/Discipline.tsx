@@ -21,8 +21,8 @@ const sevColor = (s: number) =>
   : "bg-muted text-muted-foreground border-border";
 
 export default function Discipline() {
-  const { currentTenant } = useTenant();
-  const tenantId = currentTenant?.id;
+  const { tenant } = useTenant();
+  const tenantId = tenant?.id;
 
   return (
     <div className="space-y-6 max-w-7xl">
