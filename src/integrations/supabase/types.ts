@@ -47,6 +47,66 @@ export type Database = {
         }
         Relationships: []
       }
+      accident_reports: {
+        Row: {
+          created_at: string
+          description: string
+          first_aid_given: string | null
+          hospital_name: string | null
+          hospital_referred: boolean | null
+          id: string
+          incident_date: string
+          incident_time: string | null
+          injury_type: string | null
+          location: string | null
+          parent_notified: boolean | null
+          parent_notified_at: string | null
+          reported_by: string | null
+          severity: string | null
+          student_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          first_aid_given?: string | null
+          hospital_name?: string | null
+          hospital_referred?: boolean | null
+          id?: string
+          incident_date?: string
+          incident_time?: string | null
+          injury_type?: string | null
+          location?: string | null
+          parent_notified?: boolean | null
+          parent_notified_at?: string | null
+          reported_by?: string | null
+          severity?: string | null
+          student_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          first_aid_given?: string | null
+          hospital_name?: string | null
+          hospital_referred?: boolean | null
+          id?: string
+          incident_date?: string
+          incident_time?: string | null
+          injury_type?: string | null
+          location?: string | null
+          parent_notified?: boolean | null
+          parent_notified_at?: string | null
+          reported_by?: string | null
+          severity?: string | null
+          student_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       activity_logs: {
         Row: {
           action: string
@@ -609,6 +669,60 @@ export type Database = {
           },
         ]
       }
+      calendar_events: {
+        Row: {
+          all_day: boolean | null
+          audience: string
+          category: string | null
+          class_id: string | null
+          color: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          ends_at: string
+          id: string
+          location: string | null
+          starts_at: string
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          all_day?: boolean | null
+          audience?: string
+          category?: string | null
+          class_id?: string | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at: string
+          id?: string
+          location?: string | null
+          starts_at: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          all_day?: boolean | null
+          audience?: string
+          category?: string | null
+          class_id?: string | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ends_at?: string
+          id?: string
+          location?: string | null
+          starts_at?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cbc_assessment_scores: {
         Row: {
           comment: string | null
@@ -848,6 +962,119 @@ export type Database = {
           id?: string
           name?: string
           tenant_id?: string
+        }
+        Relationships: []
+      }
+      disciplinary_actions: {
+        Row: {
+          action_type: string
+          created_at: string
+          end_date: string | null
+          id: string
+          incident_id: string
+          issued_by: string | null
+          notes: string | null
+          start_date: string | null
+          student_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          incident_id: string
+          issued_by?: string | null
+          notes?: string | null
+          start_date?: string | null
+          student_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          incident_id?: string
+          issued_by?: string | null
+          notes?: string | null
+          start_date?: string | null
+          student_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disciplinary_actions_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "discipline_incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discipline_incidents: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          incident_date: string
+          incident_time: string | null
+          location: string | null
+          notify_status: string
+          reported_by: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: number
+          status: string
+          student_id: string
+          tenant_id: string
+          updated_at: string
+          witnesses: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description: string
+          id?: string
+          incident_date?: string
+          incident_time?: string | null
+          location?: string | null
+          notify_status?: string
+          reported_by?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: number
+          status?: string
+          student_id: string
+          tenant_id: string
+          updated_at?: string
+          witnesses?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          incident_date?: string
+          incident_time?: string | null
+          location?: string | null
+          notify_status?: string
+          reported_by?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: number
+          status?: string
+          student_id?: string
+          tenant_id?: string
+          updated_at?: string
+          witnesses?: string | null
         }
         Relationships: []
       }
@@ -1748,6 +1975,108 @@ export type Database = {
         }
         Relationships: []
       }
+      health_visits: {
+        Row: {
+          attended_by: string | null
+          blood_pressure: string | null
+          complaint: string
+          created_at: string
+          diagnosis: string | null
+          id: string
+          notes: string | null
+          pulse: number | null
+          referred_to: string | null
+          sent_home: boolean | null
+          student_id: string
+          temperature: number | null
+          tenant_id: string
+          treatment: string | null
+          updated_at: string
+          visit_date: string
+          visit_time: string | null
+        }
+        Insert: {
+          attended_by?: string | null
+          blood_pressure?: string | null
+          complaint: string
+          created_at?: string
+          diagnosis?: string | null
+          id?: string
+          notes?: string | null
+          pulse?: number | null
+          referred_to?: string | null
+          sent_home?: boolean | null
+          student_id: string
+          temperature?: number | null
+          tenant_id: string
+          treatment?: string | null
+          updated_at?: string
+          visit_date?: string
+          visit_time?: string | null
+        }
+        Update: {
+          attended_by?: string | null
+          blood_pressure?: string | null
+          complaint?: string
+          created_at?: string
+          diagnosis?: string | null
+          id?: string
+          notes?: string | null
+          pulse?: number | null
+          referred_to?: string | null
+          sent_home?: boolean | null
+          student_id?: string
+          temperature?: number | null
+          tenant_id?: string
+          treatment?: string | null
+          updated_at?: string
+          visit_date?: string
+          visit_time?: string | null
+        }
+        Relationships: []
+      }
+      immunization_records: {
+        Row: {
+          administered_by: string | null
+          batch_number: string | null
+          created_at: string
+          date_given: string
+          dose_number: number | null
+          id: string
+          next_due_date: string | null
+          notes: string | null
+          student_id: string
+          tenant_id: string
+          vaccine_name: string
+        }
+        Insert: {
+          administered_by?: string | null
+          batch_number?: string | null
+          created_at?: string
+          date_given: string
+          dose_number?: number | null
+          id?: string
+          next_due_date?: string | null
+          notes?: string | null
+          student_id: string
+          tenant_id: string
+          vaccine_name: string
+        }
+        Update: {
+          administered_by?: string | null
+          batch_number?: string | null
+          created_at?: string
+          date_given?: string
+          dose_number?: number | null
+          id?: string
+          next_due_date?: string | null
+          notes?: string | null
+          student_id?: string
+          tenant_id?: string
+          vaccine_name?: string
+        }
+        Relationships: []
+      }
       import_mappings: {
         Row: {
           created_at: string
@@ -2108,6 +2437,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      medication_administration: {
+        Row: {
+          administered_at: string
+          administered_by: string | null
+          created_at: string
+          dose: string | null
+          id: string
+          medication_name: string
+          notes: string | null
+          reason: string | null
+          student_id: string
+          tenant_id: string
+        }
+        Insert: {
+          administered_at?: string
+          administered_by?: string | null
+          created_at?: string
+          dose?: string | null
+          id?: string
+          medication_name: string
+          notes?: string | null
+          reason?: string | null
+          student_id: string
+          tenant_id: string
+        }
+        Update: {
+          administered_at?: string
+          administered_by?: string | null
+          created_at?: string
+          dose?: string | null
+          id?: string
+          medication_name?: string
+          notes?: string | null
+          reason?: string | null
+          student_id?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
+      merit_points: {
+        Row: {
+          awarded_by: string | null
+          awarded_date: string
+          category: string
+          created_at: string
+          id: string
+          points: number
+          reason: string
+          student_id: string
+          tenant_id: string
+        }
+        Insert: {
+          awarded_by?: string | null
+          awarded_date?: string
+          category?: string
+          created_at?: string
+          id?: string
+          points?: number
+          reason: string
+          student_id: string
+          tenant_id: string
+        }
+        Update: {
+          awarded_by?: string | null
+          awarded_date?: string
+          category?: string
+          created_at?: string
+          id?: string
+          points?: number
+          reason?: string
+          student_id?: string
+          tenant_id?: string
+        }
+        Relationships: []
       }
       message_opt_outs: {
         Row: {
@@ -3290,6 +3694,53 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resource_bookings: {
+        Row: {
+          booked_by: string | null
+          created_at: string
+          ends_at: string
+          event_id: string | null
+          id: string
+          purpose: string | null
+          resource_name: string
+          resource_type: string
+          starts_at: string
+          tenant_id: string
+        }
+        Insert: {
+          booked_by?: string | null
+          created_at?: string
+          ends_at: string
+          event_id?: string | null
+          id?: string
+          purpose?: string | null
+          resource_name: string
+          resource_type: string
+          starts_at: string
+          tenant_id: string
+        }
+        Update: {
+          booked_by?: string | null
+          created_at?: string
+          ends_at?: string
+          event_id?: string | null
+          id?: string
+          purpose?: string | null
+          resource_name?: string
+          resource_type?: string
+          starts_at?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_bookings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
             referencedColumns: ["id"]
           },
         ]
