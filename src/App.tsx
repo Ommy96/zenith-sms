@@ -32,6 +32,8 @@ import Operations from "./pages/Operations";
 import Discipline from "./pages/Discipline";
 import Health from "./pages/Health";
 import Events from "./pages/Events";
+import Library from "./pages/Library";
+import Inventory from "./pages/Inventory";
 import Reports from "./pages/Reports";
 import SettingsPage from "./pages/Settings";
 import SchoolSetup from "./pages/SchoolSetup";
@@ -152,8 +154,8 @@ function AppRoutes() {
       <Route path="/staff" element={<ProtectedRoute><DashboardLayout><Staff /></DashboardLayout></ProtectedRoute>} />
       <Route path="/staff/:id" element={<ProtectedRoute><DashboardLayout><StaffProfile /></DashboardLayout></ProtectedRoute>} />
       <Route path="/transport" element={<ProtectedRoute><DashboardLayout><Operations /></DashboardLayout></ProtectedRoute>} />
-      <Route path="/library" element={<ProtectedRoute><DashboardLayout><Operations /></DashboardLayout></ProtectedRoute>} />
-      <Route path="/inventory" element={<ProtectedRoute><DashboardLayout><Operations /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/library" element={<ProtectedRoute><DashboardLayout><Library /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/inventory" element={<ProtectedRoute><DashboardLayout><Inventory /></DashboardLayout></ProtectedRoute>} />
       <Route path="/discipline" element={<ProtectedRoute><DashboardLayout><Discipline /></DashboardLayout></ProtectedRoute>} />
       <Route path="/health" element={<ProtectedRoute><DashboardLayout><Health /></DashboardLayout></ProtectedRoute>} />
       <Route path="/events" element={<ProtectedRoute><DashboardLayout><Events /></DashboardLayout></ProtectedRoute>} />
