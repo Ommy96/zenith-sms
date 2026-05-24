@@ -388,6 +388,85 @@ export type Database = {
           },
         ]
       }
+      assets: {
+        Row: {
+          asset_tag: string
+          assigned_to_staff_id: string | null
+          category: string | null
+          created_at: string
+          id: string
+          location: string | null
+          name: string
+          notes: string | null
+          purchase_cost: number | null
+          purchase_date: string | null
+          serial_number: string | null
+          status: Database["public"]["Enums"]["asset_status_enum"]
+          supplier_id: string | null
+          tenant_id: string
+          updated_at: string
+          warranty_expiry: string | null
+        }
+        Insert: {
+          asset_tag: string
+          assigned_to_staff_id?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          name: string
+          notes?: string | null
+          purchase_cost?: number | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          status?: Database["public"]["Enums"]["asset_status_enum"]
+          supplier_id?: string | null
+          tenant_id: string
+          updated_at?: string
+          warranty_expiry?: string | null
+        }
+        Update: {
+          asset_tag?: string
+          assigned_to_staff_id?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          name?: string
+          notes?: string | null
+          purchase_cost?: number | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          status?: Database["public"]["Enums"]["asset_status_enum"]
+          supplier_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+          warranty_expiry?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_assigned_to_staff_id_fkey"
+            columns: ["assigned_to_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance: {
         Row: {
           arrival_time: string | null
@@ -1823,6 +1902,70 @@ export type Database = {
           },
         ]
       }
+      goods_received_notes: {
+        Row: {
+          created_at: string
+          delivery_note: string | null
+          grn_number: string | null
+          id: string
+          notes: string | null
+          po_id: string | null
+          received_by: string | null
+          received_date: string
+          supplier_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_note?: string | null
+          grn_number?: string | null
+          id?: string
+          notes?: string | null
+          po_id?: string | null
+          received_by?: string | null
+          received_date?: string
+          supplier_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_note?: string | null
+          grn_number?: string | null
+          id?: string
+          notes?: string | null
+          po_id?: string | null
+          received_by?: string | null
+          received_date?: string
+          supplier_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goods_received_notes_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_received_notes_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goods_received_notes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       grade_bands: {
         Row: {
           created_at: string
@@ -1920,6 +2063,71 @@ export type Database = {
           tenant_id?: string
         }
         Relationships: []
+      }
+      grn_lines: {
+        Row: {
+          created_at: string
+          description: string
+          grn_id: string
+          id: string
+          po_line_id: string | null
+          quantity_received: number
+          stock_item_id: string | null
+          tenant_id: string
+          unit_cost: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          grn_id: string
+          id?: string
+          po_line_id?: string | null
+          quantity_received: number
+          stock_item_id?: string | null
+          tenant_id: string
+          unit_cost?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          grn_id?: string
+          id?: string
+          po_line_id?: string | null
+          quantity_received?: number
+          stock_item_id?: string | null
+          tenant_id?: string
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grn_lines_grn_id_fkey"
+            columns: ["grn_id"]
+            isOneToOne: false
+            referencedRelation: "goods_received_notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grn_lines_po_line_id_fkey"
+            columns: ["po_line_id"]
+            isOneToOne: false
+            referencedRelation: "po_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grn_lines_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grn_lines_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       guardians: {
         Row: {
@@ -2431,6 +2639,169 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "library_books_school_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_items: {
+        Row: {
+          author: string | null
+          available_copies: number
+          barcode: string | null
+          category: string | null
+          cover_url: string | null
+          created_at: string
+          edition: string | null
+          id: string
+          isbn: string | null
+          language: string | null
+          location: string | null
+          notes: string | null
+          publish_year: number | null
+          publisher: string | null
+          status: Database["public"]["Enums"]["library_item_status_enum"]
+          tenant_id: string
+          title: string
+          total_copies: number
+          updated_at: string
+        }
+        Insert: {
+          author?: string | null
+          available_copies?: number
+          barcode?: string | null
+          category?: string | null
+          cover_url?: string | null
+          created_at?: string
+          edition?: string | null
+          id?: string
+          isbn?: string | null
+          language?: string | null
+          location?: string | null
+          notes?: string | null
+          publish_year?: number | null
+          publisher?: string | null
+          status?: Database["public"]["Enums"]["library_item_status_enum"]
+          tenant_id: string
+          title: string
+          total_copies?: number
+          updated_at?: string
+        }
+        Update: {
+          author?: string | null
+          available_copies?: number
+          barcode?: string | null
+          category?: string | null
+          cover_url?: string | null
+          created_at?: string
+          edition?: string | null
+          id?: string
+          isbn?: string | null
+          language?: string | null
+          location?: string | null
+          notes?: string | null
+          publish_year?: number | null
+          publisher?: string | null
+          status?: Database["public"]["Enums"]["library_item_status_enum"]
+          tenant_id?: string
+          title?: string
+          total_copies?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_loans: {
+        Row: {
+          borrower_type: string
+          checked_out_at: string
+          created_at: string
+          due_date: string
+          fine_amount: number
+          fine_paid: boolean
+          id: string
+          issued_by: string | null
+          item_id: string
+          notes: string | null
+          returned_at: string | null
+          returned_by: string | null
+          staff_id: string | null
+          status: Database["public"]["Enums"]["library_loan_status_enum"]
+          student_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          borrower_type: string
+          checked_out_at?: string
+          created_at?: string
+          due_date: string
+          fine_amount?: number
+          fine_paid?: boolean
+          id?: string
+          issued_by?: string | null
+          item_id: string
+          notes?: string | null
+          returned_at?: string | null
+          returned_by?: string | null
+          staff_id?: string | null
+          status?: Database["public"]["Enums"]["library_loan_status_enum"]
+          student_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          borrower_type?: string
+          checked_out_at?: string
+          created_at?: string
+          due_date?: string
+          fine_amount?: number
+          fine_paid?: boolean
+          id?: string
+          issued_by?: string | null
+          item_id?: string
+          notes?: string | null
+          returned_at?: string | null
+          returned_by?: string | null
+          staff_id?: string | null
+          status?: Database["public"]["Enums"]["library_loan_status_enum"]
+          student_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_loans_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "library_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_loans_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_loans_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_loans_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -3378,6 +3749,70 @@ export type Database = {
         }
         Relationships: []
       }
+      po_lines: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          line_total: number
+          po_id: string
+          quantity: number
+          received_qty: number
+          stock_item_id: string | null
+          tenant_id: string
+          unit: string
+          unit_cost: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          line_total?: number
+          po_id: string
+          quantity: number
+          received_qty?: number
+          stock_item_id?: string | null
+          tenant_id: string
+          unit?: string
+          unit_cost?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          line_total?: number
+          po_id?: string
+          quantity?: number
+          received_qty?: number
+          stock_item_id?: string | null
+          tenant_id?: string
+          unit?: string
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "po_lines_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "po_lines_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "po_lines_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portal_otps: {
         Row: {
           attempts: number
@@ -3489,6 +3924,88 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "provider_pricing_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          expected_date: string | null
+          id: string
+          notes: string | null
+          order_date: string
+          po_number: string | null
+          requisition_id: string | null
+          status: Database["public"]["Enums"]["po_status_enum"]
+          subtotal: number
+          supplier_id: string | null
+          tax_total: number
+          tenant_id: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          expected_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          po_number?: string | null
+          requisition_id?: string | null
+          status?: Database["public"]["Enums"]["po_status_enum"]
+          subtotal?: number
+          supplier_id?: string | null
+          tax_total?: number
+          tenant_id: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          expected_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          po_number?: string | null
+          requisition_id?: string | null
+          status?: Database["public"]["Enums"]["po_status_enum"]
+          subtotal?: number
+          supplier_id?: string | null
+          tax_total?: number
+          tenant_id?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_requisition_id_fkey"
+            columns: ["requisition_id"]
+            isOneToOne: false
+            referencedRelation: "requisitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -3694,6 +4211,129 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      requisition_lines: {
+        Row: {
+          created_at: string
+          description: string
+          estimated_total: number
+          estimated_unit_cost: number
+          id: string
+          quantity: number
+          requisition_id: string
+          stock_item_id: string | null
+          tenant_id: string
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          estimated_total?: number
+          estimated_unit_cost?: number
+          id?: string
+          quantity: number
+          requisition_id: string
+          stock_item_id?: string | null
+          tenant_id: string
+          unit?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          estimated_total?: number
+          estimated_unit_cost?: number
+          id?: string
+          quantity?: number
+          requisition_id?: string
+          stock_item_id?: string | null
+          tenant_id?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requisition_lines_requisition_id_fkey"
+            columns: ["requisition_id"]
+            isOneToOne: false
+            referencedRelation: "requisitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requisition_lines_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requisition_lines_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      requisitions: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          department: string | null
+          id: string
+          is_auto_generated: boolean
+          justification: string | null
+          needed_by: string | null
+          rejection_reason: string | null
+          requested_by: string | null
+          requisition_number: string | null
+          status: Database["public"]["Enums"]["requisition_status_enum"]
+          tenant_id: string
+          total_estimated: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          department?: string | null
+          id?: string
+          is_auto_generated?: boolean
+          justification?: string | null
+          needed_by?: string | null
+          rejection_reason?: string | null
+          requested_by?: string | null
+          requisition_number?: string | null
+          status?: Database["public"]["Enums"]["requisition_status_enum"]
+          tenant_id: string
+          total_estimated?: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          department?: string | null
+          id?: string
+          is_auto_generated?: boolean
+          justification?: string | null
+          needed_by?: string | null
+          rejection_reason?: string | null
+          requested_by?: string | null
+          requisition_number?: string | null
+          status?: Database["public"]["Enums"]["requisition_status_enum"]
+          tenant_id?: string
+          total_estimated?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requisitions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -4160,6 +4800,187 @@ export type Database = {
           },
           {
             foreignKeyName: "staff_compensation_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_items: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          preferred_supplier_id: string | null
+          quantity_on_hand: number
+          reorder_level: number
+          sku: string | null
+          store_id: string | null
+          tenant_id: string
+          unit: string
+          unit_cost: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          preferred_supplier_id?: string | null
+          quantity_on_hand?: number
+          reorder_level?: number
+          sku?: string | null
+          store_id?: string | null
+          tenant_id: string
+          unit?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          preferred_supplier_id?: string | null
+          quantity_on_hand?: number
+          reorder_level?: number
+          sku?: string | null
+          store_id?: string | null
+          tenant_id?: string
+          unit?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_items_preferred_supplier_id_fkey"
+            columns: ["preferred_supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_items_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_movements: {
+        Row: {
+          created_at: string
+          id: string
+          movement_type: Database["public"]["Enums"]["stock_movement_type_enum"]
+          performed_at: string
+          performed_by: string | null
+          quantity: number
+          reason: string | null
+          reference: string | null
+          stock_item_id: string
+          tenant_id: string
+          unit_cost: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          movement_type: Database["public"]["Enums"]["stock_movement_type_enum"]
+          performed_at?: string
+          performed_by?: string | null
+          quantity: number
+          reason?: string | null
+          reference?: string | null
+          stock_item_id: string
+          tenant_id: string
+          unit_cost?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          movement_type?: Database["public"]["Enums"]["stock_movement_type_enum"]
+          performed_at?: string
+          performed_by?: string | null
+          quantity?: number
+          reason?: string | null
+          reference?: string | null
+          stock_item_id?: string
+          tenant_id?: string
+          unit_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          location: string | null
+          manager_staff_id: string | null
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          manager_staff_id?: string | null
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          manager_staff_id?: string | null
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stores_manager_staff_id_fkey"
+            columns: ["manager_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stores_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -5030,6 +5851,62 @@ export type Database = {
         }
         Relationships: []
       }
+      suppliers: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          payment_terms: string | null
+          phone: string | null
+          tax_pin: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          tax_pin?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          payment_terms?: string | null
+          phone?: string | null
+          tax_pin?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_messaging_config: {
         Row: {
           at_api_key: string | null
@@ -5807,6 +6684,10 @@ export type Database = {
       current_academic_year: { Args: { _tenant: string }; Returns: string }
       current_term: { Args: { _tenant: string }; Returns: string }
       generate_admission_number: { Args: { _tenant: string }; Returns: string }
+      generate_doc_number: {
+        Args: { _key: string; _prefix: string; _tenant: string }
+        Returns: string
+      }
       generate_expense_number: { Args: { _tenant: string }; Returns: string }
       generate_invoice_number: { Args: { _tenant: string }; Returns: string }
       generate_receipt_number: { Args: { _tenant: string }; Returns: string }
@@ -5891,6 +6772,7 @@ export type Database = {
         | "practical"
         | "oral"
         | "other"
+      asset_status_enum: "active" | "in_repair" | "disposed" | "lost"
       blood_group_enum:
         | "A+"
         | "A-"
@@ -6000,6 +6882,14 @@ export type Database = {
         | "weekly_boarder"
         | "special_needs"
       lesson_status_enum: "draft" | "pending_review" | "approved" | "rejected"
+      library_item_status_enum:
+        | "available"
+        | "checked_out"
+        | "reserved"
+        | "lost"
+        | "damaged"
+        | "retired"
+      library_loan_status_enum: "active" | "returned" | "overdue" | "lost"
       message_channel_enum:
         | "in_app"
         | "sms"
@@ -6038,8 +6928,23 @@ export type Database = {
         | "card"
         | "pos"
         | "other"
+      po_status_enum:
+        | "draft"
+        | "approved"
+        | "sent"
+        | "partially_received"
+        | "received"
+        | "closed"
+        | "cancelled"
       reminder_channel_enum: "sms" | "whatsapp" | "email"
       report_run_status_enum: "queued" | "running" | "ready" | "failed"
+      requisition_status_enum:
+        | "draft"
+        | "submitted"
+        | "approved"
+        | "rejected"
+        | "ordered"
+        | "closed"
       room_type_enum:
         | "classroom"
         | "lab"
@@ -6056,6 +6961,12 @@ export type Database = {
         | "tertiary"
         | "tvet"
         | "international"
+      stock_movement_type_enum:
+        | "in"
+        | "out"
+        | "adjustment"
+        | "transfer"
+        | "write_off"
       structure_applies_to_enum: "all" | "grade" | "class" | "individual"
       subject_assessment_enum: "continuous" | "exam" | "both"
       subject_category_enum:
@@ -6209,6 +7120,7 @@ export const Constants = {
         "oral",
         "other",
       ],
+      asset_status_enum: ["active", "in_repair", "disposed", "lost"],
       blood_group_enum: [
         "A+",
         "A-",
@@ -6331,6 +7243,15 @@ export const Constants = {
         "special_needs",
       ],
       lesson_status_enum: ["draft", "pending_review", "approved", "rejected"],
+      library_item_status_enum: [
+        "available",
+        "checked_out",
+        "reserved",
+        "lost",
+        "damaged",
+        "retired",
+      ],
+      library_loan_status_enum: ["active", "returned", "overdue", "lost"],
       message_channel_enum: [
         "in_app",
         "sms",
@@ -6374,8 +7295,25 @@ export const Constants = {
         "pos",
         "other",
       ],
+      po_status_enum: [
+        "draft",
+        "approved",
+        "sent",
+        "partially_received",
+        "received",
+        "closed",
+        "cancelled",
+      ],
       reminder_channel_enum: ["sms", "whatsapp", "email"],
       report_run_status_enum: ["queued", "running", "ready", "failed"],
+      requisition_status_enum: [
+        "draft",
+        "submitted",
+        "approved",
+        "rejected",
+        "ordered",
+        "closed",
+      ],
       room_type_enum: [
         "classroom",
         "lab",
@@ -6393,6 +7331,13 @@ export const Constants = {
         "tertiary",
         "tvet",
         "international",
+      ],
+      stock_movement_type_enum: [
+        "in",
+        "out",
+        "adjustment",
+        "transfer",
+        "write_off",
       ],
       structure_applies_to_enum: ["all", "grade", "class", "individual"],
       subject_assessment_enum: ["continuous", "exam", "both"],
