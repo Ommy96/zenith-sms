@@ -29,6 +29,7 @@ import Communication from "./pages/Communication";
 import Messaging from "./pages/Messaging";
 import Admissions from "./pages/Admissions";
 import Operations from "./pages/Operations";
+import Transport from "./pages/Transport";
 import Discipline from "./pages/Discipline";
 import Health from "./pages/Health";
 import Events from "./pages/Events";
@@ -153,7 +154,7 @@ function AppRoutes() {
       <Route path="/communication/whatsapp" element={<ProtectedRoute><DashboardLayout><WhatsApp /></DashboardLayout></ProtectedRoute>} />
       <Route path="/staff" element={<ProtectedRoute><DashboardLayout><Staff /></DashboardLayout></ProtectedRoute>} />
       <Route path="/staff/:id" element={<ProtectedRoute><DashboardLayout><StaffProfile /></DashboardLayout></ProtectedRoute>} />
-      <Route path="/transport" element={<ProtectedRoute><DashboardLayout><Operations /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/transport" element={<ProtectedRoute><DashboardLayout><Transport /></DashboardLayout></ProtectedRoute>} />
       <Route path="/library" element={<ProtectedRoute><DashboardLayout><Library /></DashboardLayout></ProtectedRoute>} />
       <Route path="/inventory" element={<ProtectedRoute><DashboardLayout><Inventory /></DashboardLayout></ProtectedRoute>} />
       <Route path="/discipline" element={<ProtectedRoute><DashboardLayout><Discipline /></DashboardLayout></ProtectedRoute>} />
