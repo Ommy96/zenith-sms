@@ -404,7 +404,7 @@ function RollCallsTab({ tenantId }: { tenantId: string }) {
     if (!activeSession) return;
     const existing = entries.find(e => e.student_id === studentId);
     if (existing) {
-      const { error } = await supabase.from("hostel_roll_call_entries").update({ status }).eq("id", existing.id);
+      const { error } = await supabase.from("hostel_roll_call_entries").update({ status: status as any }).eq("id", existing.id);
       if (error) return toast.error(error.message);
       setEntries(entries.map(e => e.id === existing.id ? { ...e, status } : e));
     } else {
