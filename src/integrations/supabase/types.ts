@@ -2303,6 +2303,506 @@ export type Database = {
         }
         Relationships: []
       }
+      hostel_allocations: {
+        Row: {
+          allocated_by: string | null
+          bed_id: string
+          created_at: string
+          end_date: string | null
+          hostel_id: string
+          id: string
+          notes: string | null
+          room_id: string
+          start_date: string
+          status: Database["public"]["Enums"]["allocation_status_enum"]
+          student_id: string
+          tenant_id: string
+          term_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          allocated_by?: string | null
+          bed_id: string
+          created_at?: string
+          end_date?: string | null
+          hostel_id: string
+          id?: string
+          notes?: string | null
+          room_id: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["allocation_status_enum"]
+          student_id: string
+          tenant_id: string
+          term_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          allocated_by?: string | null
+          bed_id?: string
+          created_at?: string
+          end_date?: string | null
+          hostel_id?: string
+          id?: string
+          notes?: string | null
+          room_id?: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["allocation_status_enum"]
+          student_id?: string
+          tenant_id?: string
+          term_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_allocations_bed_id_fkey"
+            columns: ["bed_id"]
+            isOneToOne: false
+            referencedRelation: "hostel_beds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hostel_bedding_inventory: {
+        Row: {
+          bed_id: string | null
+          condition: string | null
+          created_at: string
+          hostel_id: string
+          id: string
+          item_name: string
+          last_checked_at: string | null
+          notes: string | null
+          quantity: number
+          room_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          bed_id?: string | null
+          condition?: string | null
+          created_at?: string
+          hostel_id: string
+          id?: string
+          item_name: string
+          last_checked_at?: string | null
+          notes?: string | null
+          quantity?: number
+          room_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          bed_id?: string | null
+          condition?: string | null
+          created_at?: string
+          hostel_id?: string
+          id?: string
+          item_name?: string
+          last_checked_at?: string | null
+          notes?: string | null
+          quantity?: number
+          room_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_bedding_inventory_bed_id_fkey"
+            columns: ["bed_id"]
+            isOneToOne: false
+            referencedRelation: "hostel_beds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hostel_bedding_inventory_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hostel_bedding_inventory_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "hostel_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hostel_beds: {
+        Row: {
+          bed_label: string
+          created_at: string
+          hostel_id: string
+          id: string
+          notes: string | null
+          room_id: string
+          status: Database["public"]["Enums"]["bed_status_enum"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          bed_label: string
+          created_at?: string
+          hostel_id: string
+          id?: string
+          notes?: string | null
+          room_id: string
+          status?: Database["public"]["Enums"]["bed_status_enum"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          bed_label?: string
+          created_at?: string
+          hostel_id?: string
+          id?: string
+          notes?: string | null
+          room_id?: string
+          status?: Database["public"]["Enums"]["bed_status_enum"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_beds_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hostel_beds_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "hostel_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hostel_out_passes: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          checked_out_at: string | null
+          checked_out_by: string | null
+          created_at: string
+          destination: string | null
+          expected_return_at: string
+          guardian_id: string | null
+          guardian_response_at: string | null
+          guardian_response_note: string | null
+          hostel_id: string | null
+          id: string
+          leave_at: string
+          notes: string | null
+          reason: string
+          requested_at: string
+          requested_by: string | null
+          returned_at: string | null
+          returned_by: string | null
+          status: Database["public"]["Enums"]["out_pass_status_enum"]
+          student_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          checked_out_at?: string | null
+          checked_out_by?: string | null
+          created_at?: string
+          destination?: string | null
+          expected_return_at: string
+          guardian_id?: string | null
+          guardian_response_at?: string | null
+          guardian_response_note?: string | null
+          hostel_id?: string | null
+          id?: string
+          leave_at: string
+          notes?: string | null
+          reason: string
+          requested_at?: string
+          requested_by?: string | null
+          returned_at?: string | null
+          returned_by?: string | null
+          status?: Database["public"]["Enums"]["out_pass_status_enum"]
+          student_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          checked_out_at?: string | null
+          checked_out_by?: string | null
+          created_at?: string
+          destination?: string | null
+          expected_return_at?: string
+          guardian_id?: string | null
+          guardian_response_at?: string | null
+          guardian_response_note?: string | null
+          hostel_id?: string | null
+          id?: string
+          leave_at?: string
+          notes?: string | null
+          reason?: string
+          requested_at?: string
+          requested_by?: string | null
+          returned_at?: string | null
+          returned_by?: string | null
+          status?: Database["public"]["Enums"]["out_pass_status_enum"]
+          student_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hostel_roll_call_entries: {
+        Row: {
+          id: string
+          marked_at: string
+          notes: string | null
+          roll_call_id: string
+          status: Database["public"]["Enums"]["roll_call_status_enum"]
+          student_id: string
+          tenant_id: string
+        }
+        Insert: {
+          id?: string
+          marked_at?: string
+          notes?: string | null
+          roll_call_id: string
+          status?: Database["public"]["Enums"]["roll_call_status_enum"]
+          student_id: string
+          tenant_id: string
+        }
+        Update: {
+          id?: string
+          marked_at?: string
+          notes?: string | null
+          roll_call_id?: string
+          status?: Database["public"]["Enums"]["roll_call_status_enum"]
+          student_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_roll_call_entries_roll_call_id_fkey"
+            columns: ["roll_call_id"]
+            isOneToOne: false
+            referencedRelation: "hostel_roll_calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hostel_roll_calls: {
+        Row: {
+          conducted_by: string | null
+          created_at: string
+          ended_at: string | null
+          hostel_id: string
+          id: string
+          notes: string | null
+          session_date: string
+          session_type: Database["public"]["Enums"]["roll_call_type_enum"]
+          started_at: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          conducted_by?: string | null
+          created_at?: string
+          ended_at?: string | null
+          hostel_id: string
+          id?: string
+          notes?: string | null
+          session_date?: string
+          session_type?: Database["public"]["Enums"]["roll_call_type_enum"]
+          started_at?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          conducted_by?: string | null
+          created_at?: string
+          ended_at?: string | null
+          hostel_id?: string
+          id?: string
+          notes?: string | null
+          session_date?: string
+          session_type?: Database["public"]["Enums"]["roll_call_type_enum"]
+          started_at?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_roll_calls_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hostel_rooms: {
+        Row: {
+          capacity: number
+          created_at: string
+          floor: string | null
+          hostel_id: string
+          id: string
+          notes: string | null
+          room_number: string
+          room_type: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          floor?: string | null
+          hostel_id: string
+          id?: string
+          notes?: string | null
+          room_number: string
+          room_type?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          floor?: string | null
+          hostel_id?: string
+          id?: string
+          notes?: string | null
+          room_number?: string
+          room_type?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_rooms_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hostel_visitors: {
+        Row: {
+          checked_in_at: string
+          checked_out_at: string | null
+          created_at: string
+          hostel_id: string | null
+          id: string
+          notes: string | null
+          purpose: string | null
+          recorded_by: string | null
+          relationship: string | null
+          student_id: string | null
+          tenant_id: string
+          visitor_id_number: string | null
+          visitor_name: string
+          visitor_phone: string | null
+        }
+        Insert: {
+          checked_in_at?: string
+          checked_out_at?: string | null
+          created_at?: string
+          hostel_id?: string | null
+          id?: string
+          notes?: string | null
+          purpose?: string | null
+          recorded_by?: string | null
+          relationship?: string | null
+          student_id?: string | null
+          tenant_id: string
+          visitor_id_number?: string | null
+          visitor_name: string
+          visitor_phone?: string | null
+        }
+        Update: {
+          checked_in_at?: string
+          checked_out_at?: string | null
+          created_at?: string
+          hostel_id?: string | null
+          id?: string
+          notes?: string | null
+          purpose?: string | null
+          recorded_by?: string | null
+          relationship?: string | null
+          student_id?: string | null
+          tenant_id?: string
+          visitor_id_number?: string | null
+          visitor_name?: string
+          visitor_phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_visitors_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hostels: {
+        Row: {
+          capacity: number
+          code: string | null
+          created_at: string
+          gender: Database["public"]["Enums"]["hostel_gender_enum"]
+          id: string
+          is_active: boolean
+          location: string | null
+          matron_name: string | null
+          matron_phone: string | null
+          name: string
+          notes: string | null
+          tenant_id: string
+          updated_at: string
+          warden_staff_id: string | null
+        }
+        Insert: {
+          capacity?: number
+          code?: string | null
+          created_at?: string
+          gender?: Database["public"]["Enums"]["hostel_gender_enum"]
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          matron_name?: string | null
+          matron_phone?: string | null
+          name: string
+          notes?: string | null
+          tenant_id: string
+          updated_at?: string
+          warden_staff_id?: string | null
+        }
+        Update: {
+          capacity?: number
+          code?: string | null
+          created_at?: string
+          gender?: Database["public"]["Enums"]["hostel_gender_enum"]
+          id?: string
+          is_active?: boolean
+          location?: string | null
+          matron_name?: string | null
+          matron_phone?: string | null
+          name?: string
+          notes?: string | null
+          tenant_id?: string
+          updated_at?: string
+          warden_staff_id?: string | null
+        }
+        Relationships: []
+      }
       immunization_records: {
         Row: {
           administered_by: string | null
@@ -7377,6 +7877,7 @@ export type Database = {
       }
     }
     Enums: {
+      allocation_status_enum: "active" | "ended" | "transferred"
       assessment_type_enum:
         | "assignment"
         | "quiz"
@@ -7385,6 +7886,12 @@ export type Database = {
         | "oral"
         | "other"
       asset_status_enum: "active" | "in_repair" | "disposed" | "lost"
+      bed_status_enum:
+        | "available"
+        | "occupied"
+        | "reserved"
+        | "maintenance"
+        | "out_of_service"
       blood_group_enum:
         | "A+"
         | "A-"
@@ -7487,6 +7994,7 @@ export type Database = {
         | "aunt"
         | "sibling"
         | "other"
+      hostel_gender_enum: "boys" | "girls" | "mixed"
       invoice_status_enum:
         | "draft"
         | "issued"
@@ -7537,6 +8045,16 @@ export type Database = {
         | "communication"
         | "attendance"
         | "system"
+      out_pass_status_enum:
+        | "requested"
+        | "guardian_approved"
+        | "guardian_denied"
+        | "approved"
+        | "denied"
+        | "checked_out"
+        | "returned"
+        | "overdue"
+        | "cancelled"
       payment_method_enum:
         | "cash"
         | "mpesa"
@@ -7563,6 +8081,18 @@ export type Database = {
         | "rejected"
         | "ordered"
         | "closed"
+      roll_call_status_enum:
+        | "present"
+        | "absent"
+        | "sick"
+        | "out_pass"
+        | "unaccounted"
+      roll_call_type_enum:
+        | "morning"
+        | "evening"
+        | "lights_out"
+        | "weekend"
+        | "custom"
       room_type_enum:
         | "classroom"
         | "lab"
@@ -7745,6 +8275,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      allocation_status_enum: ["active", "ended", "transferred"],
       assessment_type_enum: [
         "assignment",
         "quiz",
@@ -7754,6 +8285,13 @@ export const Constants = {
         "other",
       ],
       asset_status_enum: ["active", "in_repair", "disposed", "lost"],
+      bed_status_enum: [
+        "available",
+        "occupied",
+        "reserved",
+        "maintenance",
+        "out_of_service",
+      ],
       blood_group_enum: [
         "A+",
         "A-",
@@ -7868,6 +8406,7 @@ export const Constants = {
         "sibling",
         "other",
       ],
+      hostel_gender_enum: ["boys", "girls", "mixed"],
       invoice_status_enum: [
         "draft",
         "issued",
@@ -7925,6 +8464,17 @@ export const Constants = {
         "attendance",
         "system",
       ],
+      out_pass_status_enum: [
+        "requested",
+        "guardian_approved",
+        "guardian_denied",
+        "approved",
+        "denied",
+        "checked_out",
+        "returned",
+        "overdue",
+        "cancelled",
+      ],
       payment_method_enum: [
         "cash",
         "mpesa",
@@ -7953,6 +8503,20 @@ export const Constants = {
         "rejected",
         "ordered",
         "closed",
+      ],
+      roll_call_status_enum: [
+        "present",
+        "absent",
+        "sick",
+        "out_pass",
+        "unaccounted",
+      ],
+      roll_call_type_enum: [
+        "morning",
+        "evening",
+        "lights_out",
+        "weekend",
+        "custom",
       ],
       room_type_enum: [
         "classroom",
