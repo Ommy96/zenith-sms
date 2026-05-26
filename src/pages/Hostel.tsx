@@ -460,7 +460,7 @@ function RollCallsTab({ tenantId }: { tenantId: string }) {
                 <div className="text-sm">{b.first_name} {b.last_name} <span className="text-xs text-muted-foreground">· {b.admission_number}</span></div>
                 <div className="flex gap-1">
                   {(["present","absent","sick","out_pass","unaccounted"] as const).map(s => (
-                    <Button key={s} size="sm" variant={e?.status === s ? "default" : "outline"} onClick={() => mark(b.id, s)} className="text-xs capitalize">
+                    <Button key={s} size="sm" variant={e?.status === s ? "default" : "outline"} onClick={() => mark(b.id, s as string)} className="text-xs capitalize">
                       {s.replace("_", " ")}
                     </Button>
                   ))}
