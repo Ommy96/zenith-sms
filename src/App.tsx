@@ -35,6 +35,7 @@ import Health from "./pages/Health";
 import Events from "./pages/Events";
 import Library from "./pages/Library";
 import Inventory from "./pages/Inventory";
+import Hostel from "./pages/Hostel";
 import Reports from "./pages/Reports";
 import SettingsPage from "./pages/Settings";
 import SchoolSetup from "./pages/SchoolSetup";
@@ -160,6 +161,7 @@ function AppRoutes() {
       <Route path="/discipline" element={<ProtectedRoute><DashboardLayout><Discipline /></DashboardLayout></ProtectedRoute>} />
       <Route path="/health" element={<ProtectedRoute><DashboardLayout><Health /></DashboardLayout></ProtectedRoute>} />
       <Route path="/events" element={<ProtectedRoute><DashboardLayout><Events /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/hostel" element={<ProtectedRoute><DashboardLayout><Hostel /></DashboardLayout></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><DashboardLayout><Reports /></DashboardLayout></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/setup" element={<ProtectedRoute><DashboardLayout><SchoolSetup /></DashboardLayout></ProtectedRoute>} />
