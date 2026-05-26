@@ -4,6 +4,7 @@ import {
   ChevronRight, Briefcase, FileText, CalendarDays, UserPlus,
   Megaphone, Mail, DollarSign, Receipt, Package, Smartphone, MessageCircle,
   ShieldAlert, HeartPulse, Calendar as CalendarIcon,
+  BedDouble,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -54,6 +55,7 @@ const sections: NavSection[] = [
     { title: "Discipline", url: "/discipline", icon: ShieldAlert, perm: "discipline.view" },
     { title: "Health", url: "/health", icon: HeartPulse, perm: "health.view" },
     { title: "Events", url: "/events", icon: CalendarIcon, perm: "events.view" },
+    { title: "Hostel", url: "/hostel", icon: BedDouble, perm: "hostel.view" },
   ]},
   { label: "Insights", items: [
     { title: "Reports", url: "/reports", icon: BarChart3, perm: "reports.view" },
