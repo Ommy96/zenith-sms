@@ -59,7 +59,7 @@ export function AiSettingsTab() {
           .eq("tenant_id", tenantId).order("created_at", { ascending: false }).limit(20),
         supabase.from("tenant_settings").select("key,value").eq("tenant_id", tenantId).in("key", ["ai.house_tone","ai.default_language","ai.hard_stop"]),
       ]);
-      if (q.data) setQuota(q.data as QuotaInfo);
+      if (q.data) setQuota(q.data as unknown as QuotaInfo);
       if (r.data) setRecent(r.data as UsageRow[]);
       if (s.data) {
         for (const row of s.data as any[]) {
