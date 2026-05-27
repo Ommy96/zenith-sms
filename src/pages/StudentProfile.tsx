@@ -22,6 +22,7 @@ import { getStudentGovIdFields } from "@/lib/sis/countryFields";
 export default function StudentProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useAuth();
   const { tenant, can } = useTenant();
   const [student, setStudent] = useState<any>(null);
@@ -36,6 +37,41 @@ export default function StudentProfile() {
   const [stkForm, setStkForm] = useState({ amount: "", phone: "", invoice_id: "" });
   const [stkBusy, setStkBusy] = useState(false);
   const [stmtBusy, setStmtBusy] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState<any>({});
+  const [editSaving, setEditSaving] = useState(false);
+
+  const openEdit = () => {
+    if (!student) return;
+    setEditForm({
+      first_name: student.first_name || "",
+      middle_name: student.middle_name || "",
+      last_name: student.last_name || "",
+      email: student.email || "",
+      phone: student.phone || "",
+      admission_number: student.admission_number || "",
+      gender: student.gender || "",
+      date_of_birth: student.date_of_birth || "",
+      address: student.address || "",
+      stream: student.stream || "",
+      enrollment_status: student.enrollment_status || student.status || "active",
+    });
+    setEditOpen(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!id) return;
+    setEditSaving(true);
+    const payload = { ...editForm };
+    if (!payload.date_of_birth) delete payload.date_of_birth;
+    const { error } = await supabase.from("students").update(payload).eq("id", id);
+    setEditSaving(false);
+    if (error) { toast({ title: "Update failed", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Student updated" });
+    setStudent({ ...student, ...payload });
+    setEditOpen(false);
+    if (searchParams.get("edit")) { searchParams.delete("edit"); setSearchParams(searchParams, { replace: true }); }
+  };
 
   const canViewMedical = can("students.view_medical");
 
