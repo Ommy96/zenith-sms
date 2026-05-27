@@ -12,6 +12,7 @@ import {
   Camera,
   Database, ShieldCheck, GraduationCap as GradCap,
   Lock, FileSearch, Trash2, FileText as FileTextIcon,
+  ClipboardCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -79,6 +80,8 @@ const sections: NavSection[] = [
     { title: "NEMIS (KE)", url: "/integrations/nemis", icon: Database, perm: "settings.manage" },
     { title: "TSC (KE)", url: "/integrations/tsc", icon: GradCap, perm: "settings.manage" },
     { title: "Statutory Filings (KE)", url: "/compliance/statutory", icon: ShieldCheck, perm: "payroll.manage" },
+    { title: "Audit Reports (PDF)", url: "/compliance/audit-reports", icon: ClipboardCheck, perm: "reports.view" },
+    { title: "Exam Bodies", url: "/compliance/exam-bodies", icon: GradCap, perm: "exams.view" },
     { title: "EMIS / UNEB (UG)", url: "/integrations/uganda", icon: Database, perm: "settings.manage" },
     { title: "PREMS / NECTA (TZ)", url: "/integrations/tanzania", icon: Database, perm: "settings.manage" },
     { title: "REB (RW)", url: "/integrations/rwanda", icon: Database, perm: "settings.manage" },
