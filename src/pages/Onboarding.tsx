@@ -62,8 +62,8 @@ export default function Onboarding() {
     const { error } = await supabase.from("tenants").update({
       name: identity.name,
       country_code: identity.country,
-      curriculum: identity.curriculum,
-      school_type: identity.school_type,
+      curriculum: identity.curriculum as any,
+      school_type: identity.school_type as any,
     }).eq("id", tenant.id);
     setSaving(false);
     if (error) return toast({ title: "Save failed", description: error.message, variant: "destructive" });

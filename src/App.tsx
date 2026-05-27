@@ -52,6 +52,7 @@ import RwandaPage from "./pages/integrations/Rwanda";
 import EthiopiaPage from "./pages/integrations/Ethiopia";
 import SettingsPage from "./pages/Settings";
 import SchoolSetup from "./pages/SchoolSetup";
+import Onboarding from "./pages/Onboarding";
 import DataProtection from "./pages/dpa/DataProtection";
 import SubjectRequests from "./pages/dpa/SubjectRequests";
 import ErasureRequests from "./pages/dpa/ErasureRequests";
@@ -206,6 +207,7 @@ function AppRoutes() {
       <Route path="/compliance/exam-bodies" element={<ProtectedRoute><DashboardLayout><ExamBodies /></DashboardLayout></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/setup" element={<ProtectedRoute><DashboardLayout><SchoolSetup /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

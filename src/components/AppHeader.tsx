@@ -7,6 +7,7 @@ import { useTenant } from "@/contexts/TenantContext";
 import { CommandPalette, useCommandPalette } from "./CommandPalette";
 import { useNavigate } from "react-router-dom";
 import { NotificationsBell } from "./NotificationsBell";
+import { SetupProgressBadge } from "./SetupProgressBadge";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel,
@@ -81,6 +82,7 @@ export function AppHeader() {
 
         <ThemeToggle />
 
+        <SetupProgressBadge />
         <NotificationsBell />
 
         <DropdownMenu>
