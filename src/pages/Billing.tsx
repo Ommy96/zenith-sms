@@ -116,7 +116,7 @@ export default function Billing() {
                   className="w-full"
                   variant={isCurrent ? "outline" : "default"}
                   disabled={isCurrent || switching === plan.code}
-                  onClick={() => isEnterprise ? window.open("mailto:sales@somasphere.app") : switchPlan(plan.code)}
+                  onClick={() => isEnterprise ? window.open("mailto:sales@zenith.app") : switchPlan(plan.code)}
                 >
                   {switching === plan.code ? <Loader2 className="h-4 w-4 animate-spin" /> : isCurrent ? "Current plan" : isEnterprise ? "Talk to sales" : "Switch plan"}
                 </Button>

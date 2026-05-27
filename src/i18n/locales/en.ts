@@ -1,6 +1,6 @@
 const en = {
   common: {
-    appName: "SomaSphere",
+    appName: "Zenith",
     loading: "Loading...",
     save: "Save",
     cancel: "Cancel",

@@ -30,12 +30,12 @@ Deno.serve(async (req) => {
     const lines = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
-      "PRODID:-//SomaSphere//Calendar//EN",
+      "PRODID:-//Zenith//Calendar//EN",
       `X-WR-CALNAME:${esc(tenantRow?.name || "School")} Calendar`,
     ];
     for (const e of events || []) {
       lines.push("BEGIN:VEVENT");
-      lines.push(`UID:${e.id}@somasphere`);
+      lines.push(`UID:${e.id}@zenith`);
       lines.push(`DTSTAMP:${fmt(new Date(e.created_at))}`);
       lines.push(`DTSTART:${fmt(new Date(e.starts_at))}`);
       lines.push(`DTEND:${fmt(new Date(e.ends_at))}`);

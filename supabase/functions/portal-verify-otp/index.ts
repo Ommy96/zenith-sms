@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
     await admin.from("portal_otps").update({ consumed_at: new Date().toISOString() }).eq("id", otp.id);
 
     // Create-or-find auth user with phone as email-like id
-    const portalEmail = `portal+${normalized.replace(/[^0-9]/g, "")}@parent.somasphere.local`;
+    const portalEmail = `portal+${normalized.replace(/[^0-9]/g, "")}@parent.zenith.local`;
     let userId: string | null = null;
 
     const { data: existing } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });

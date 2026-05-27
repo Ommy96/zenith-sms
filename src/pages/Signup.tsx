@@ -48,7 +48,7 @@ export default function Signup() {
             <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">S</div>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Create your account</h1>
-          <p className="text-sm text-muted-foreground mt-1">Start managing your school with SomaSphere</p>
+          <p className="text-sm text-muted-foreground mt-1">Start managing your school with Zenith</p>
         </div>
 
         <form onSubmit={handleSignup} className="space-y-4">

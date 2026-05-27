@@ -1,6 +1,6 @@
 {
-  "name": "SomaSphere Parent Portal",
-  "short_name": "SomaSphere",
+  "name": "Zenith Parent Portal",
+  "short_name": "Zenith",
   "description": "Track fees, attendance, results and school messages for your child.",
   "start_url": "/portal",
   "scope": "/",
