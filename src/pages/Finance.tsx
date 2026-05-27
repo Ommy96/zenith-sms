@@ -37,6 +37,8 @@ export default function Finance() {
   const { user, profile } = useAuth();
   const { can } = useTenant();
   const tenantId = profile?.tenant_id;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get("tab") || "dashboard";
 
   const [loading, setLoading] = useState(true);
   const [structures, setStructures] = useState<Row[]>([]);
