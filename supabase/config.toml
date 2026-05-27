@@ -44,3 +44,9 @@ verify_jwt = false
 
 [functions.ai-copilot]
 verify_jwt = false
+
+[functions.ai-parent-bot]
+verify_jwt = false
+
+[functions.ai-study-buddy]
+verify_jwt = false

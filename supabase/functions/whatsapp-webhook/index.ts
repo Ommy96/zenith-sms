@@ -5,6 +5,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "*",
 };
 
+async function sendWhatsAppReply(cfg: any, to: string, text: string) {
+  try {
+    const res = await fetch(`https://graph.facebook.com/v20.0/${cfg.phone_number_id}/messages`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${cfg.access_token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ messaging_product: "whatsapp", to, type: "text", text: { body: text } }),
+    });
+    return await res.json();
+  } catch (e) {
+    console.warn("WA reply failed:", e);
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -31,7 +45,7 @@ Deno.serve(async (req) => {
         const value = change.value || {};
         const phone_number_id = value?.metadata?.phone_number_id;
         if (!phone_number_id) continue;
-        const { data: cfg } = await admin.from("whatsapp_config").select("tenant_id").eq("phone_number_id", phone_number_id).maybeSingle();
+        const { data: cfg } = await admin.from("whatsapp_config").select("*").eq("phone_number_id", phone_number_id).maybeSingle();
         if (!cfg?.tenant_id) continue;
         const tenant_id = cfg.tenant_id;
 
@@ -50,6 +64,32 @@ Deno.serve(async (req) => {
             tenant_id, direction: "in", wa_message_id: msg.id, from_phone: from,
             student_id, body: text, status: "received", raw_payload: msg,
           });
+
+          // AI parent bot: only answer free-text from a known guardian.
+          if (msg.type === "text" && student_id && from && text && text.trim().length > 1) {
+            try {
+              const fnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/ai-parent-bot`;
+              const aiRes = await fetch(fnUrl, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-internal-key": Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+                  Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!}`,
+                },
+                body: JSON.stringify({ tenantId: tenant_id, studentId: student_id, question: text }),
+              });
+              const aiData = await aiRes.json().catch(() => ({}));
+              const reply = (aiData?.text as string) || "Sorry, I couldn't process that. Please try again or contact the school office.";
+              const sendRes = await sendWhatsAppReply(cfg, from, reply);
+              await admin.from("whatsapp_messages").insert({
+                tenant_id, direction: "out", wa_message_id: sendRes?.messages?.[0]?.id || null,
+                to_phone: from, student_id, body: reply,
+                status: sendRes?.messages ? "sent" : "failed", raw_payload: sendRes,
+              });
+            } catch (e) {
+              console.warn("Parent bot reply failed:", e);
+            }
+          }
         }
 
         // Status updates
