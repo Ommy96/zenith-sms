@@ -39,6 +39,7 @@ import Hostel from "./pages/Hostel";
 import Reports from "./pages/Reports";
 import Documents from "./pages/Documents";
 import Copilot from "./pages/Copilot";
+import FeeRisk from "./pages/FeeRisk";
 import SettingsPage from "./pages/Settings";
 import SchoolSetup from "./pages/SchoolSetup";
 import Login from "./pages/Login";
