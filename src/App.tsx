@@ -8,6 +8,7 @@ import { TenantProvider } from "@/contexts/TenantContext";
 import { DashboardLayout } from "./components/DashboardLayout";
 import { lazy, Suspense } from "react";
 import { ConsentBanner } from "@/components/ConsentBanner";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -247,6 +248,7 @@ const App = () => (
           <TenantProvider>
             <AppRoutes />
             <ConsentBanner />
+            <OfflineIndicator />
           </TenantProvider>
         </AuthProvider>
       </BrowserRouter>
