@@ -155,7 +155,6 @@
   h3, h4 { font-weight: 600; }
   /* Tabular numerals for money / counts / IDs */
   .tabular-nums, [data-numeric] { font-variant-numeric: tabular-nums; }
-  }
 }
 
 @layer utilities {
