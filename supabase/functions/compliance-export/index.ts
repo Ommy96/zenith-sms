@@ -570,3 +570,154 @@ async function helbReturn(svc: any, tenantId: string, p: any) {
 
 function n(v: any) { return Number(v ?? 0).toFixed(2); }
 function todayStamp() { return new Date().toISOString().slice(0, 10); }
+
+// ============================================================
+// Phase H2 — Other East African countries
+// ============================================================
+
+const COUNTRY_CFG: Record<string, {
+  name: string;
+  idCol: string;
+  idLabel: string;
+  altCol?: string;
+  altLabel?: string;
+  nationality: string;
+}> = {
+  UG: { name: "Uganda", idCol: "uganda_lin", idLabel: "LIN", altCol: "uneb_index_number", altLabel: "UNEB Index No", nationality: "Ugandan" },
+  TZ: { name: "Tanzania", idCol: "tanzania_prems_id", idLabel: "PREMS ID", altCol: "necta_index_number", altLabel: "NECTA Index No", nationality: "Tanzanian" },
+  RW: { name: "Rwanda", idCol: "rwanda_reb_id", idLabel: "REB Student ID", altCol: "rwanda_national_id", altLabel: "National ID", nationality: "Rwandan" },
+  ET: { name: "Ethiopia", idCol: "ethiopia_moe_id", idLabel: "MoE Student ID", altCol: "ethiopian_birth_date", altLabel: "Birth Date (EC)", nationality: "Ethiopian" },
+};
+
+async function countryLearners(svc: any, tenantId: string, p: any, cc: keyof typeof COUNTRY_CFG) {
+  const cfg = COUNTRY_CFG[cc];
+  const selectCols = `first_name, middle_name, last_name, gender, date_of_birth, nationality, admission_number, admission_date, sne_category, ${cfg.idCol}${cfg.altCol ? `, ${cfg.altCol}` : ""}, classes:current_class_id ( name, grade_level:grade_level_id ( code, name ) )`;
+  const { data: students } = await svc
+    .from("students")
+    .select(selectCols)
+    .eq("tenant_id", tenantId)
+    .eq("status", p.status ?? "active")
+    .order("last_name");
+  const header = [
+    cfg.idLabel, ...(cfg.altLabel ? [cfg.altLabel] : []),
+    "First Name", "Middle Name", "Surname",
+    "Sex", "Date of Birth (YYYY-MM-DD)", "Nationality",
+    "Grade", "Class", "Admission No", "Admission Date",
+    "SNE Category",
+  ];
+  const rows: any[][] = [header];
+  for (const s of students ?? []) {
+    const row: any[] = [s[cfg.idCol] ?? ""];
+    if (cfg.altCol) row.push(s[cfg.altCol] ?? "");
+    row.push(
+      s.first_name ?? "", s.middle_name ?? "", s.last_name ?? "",
+      genderCode(s.gender), s.date_of_birth ?? "", s.nationality ?? cfg.nationality,
+      s.classes?.grade_level?.code ?? "", s.classes?.name ?? "",
+      s.admission_number ?? "", s.admission_date ?? "",
+      s.sne_category ?? "",
+    );
+    rows.push(row);
+  }
+  return { rows, row_count: rows.length - 1, filename: `${cc.toLowerCase()}_learners_${todayStamp()}.csv` };
+}
+
+async function enrolmentByGrade(svc: any, tenantId: string, cc: string) {
+  const { data } = await svc
+    .from("students")
+    .select("gender, classes:current_class_id(name, grade_level:grade_level_id(code,name,sort_order))")
+    .eq("tenant_id", tenantId)
+    .eq("status", "active");
+  const buckets = new Map<string, { code: string; name: string; sort: number; m: number; f: number }>();
+  for (const s of data ?? []) {
+    const code = s.classes?.grade_level?.code ?? "Unassigned";
+    const name = s.classes?.grade_level?.name ?? "Unassigned";
+    const sort = s.classes?.grade_level?.sort_order ?? 9999;
+    if (!buckets.has(code)) buckets.set(code, { code, name, sort, m: 0, f: 0 });
+    const b = buckets.get(code)!;
+    if (genderCode(s.gender) === "M") b.m++;
+    else if (genderCode(s.gender) === "F") b.f++;
+  }
+  const sorted = Array.from(buckets.values()).sort((a, b) => a.sort - b.sort);
+  const rows: any[][] = [["Grade Code", "Grade Name", "Boys", "Girls", "Total"]];
+  let tm = 0, tf = 0;
+  for (const b of sorted) { rows.push([b.code, b.name, b.m, b.f, b.m + b.f]); tm += b.m; tf += b.f; }
+  rows.push(["", "TOTAL", tm, tf, tm + tf]);
+  return { rows, row_count: sorted.length, filename: `${cc.toLowerCase()}_enrolment_${todayStamp()}.csv` };
+}
+
+async function unebRegistration(svc: any, tenantId: string, p: any) {
+  // PLE (P7), UCE (S4), UACE (S6). Caller passes params.grade in ["P7","S4","S6"]
+  const grade = (p.grade ?? "P7").toUpperCase();
+  const { data } = await svc.from("students").select(`
+    first_name, middle_name, last_name, gender, date_of_birth, uneb_index_number, uganda_lin,
+    classes:current_class_id(name, grade_level:grade_level_id(code))
+  `).eq("tenant_id", tenantId).eq("status", "active");
+  const filtered = (data ?? []).filter((s: any) => s.classes?.grade_level?.code === grade);
+  const rows: any[][] = [["UNEB Index No", "LIN", "Surname", "First Name", "Middle Name", "Sex", "Date of Birth"]];
+  for (const s of filtered) {
+    rows.push([
+      s.uneb_index_number ?? "", s.uganda_lin ?? "",
+      s.last_name ?? "", s.first_name ?? "", s.middle_name ?? "",
+      genderCode(s.gender), s.date_of_birth ?? "",
+    ]);
+  }
+  return { rows, row_count: filtered.length, filename: `uneb_${grade.toLowerCase()}_${todayStamp()}.csv` };
+}
+
+async function nectaRegistration(svc: any, tenantId: string, p: any) {
+  // PSLE (STD VII), CSEE (Form IV), ACSEE (Form VI)
+  const grade = (p.grade ?? "VII").toUpperCase();
+  const { data } = await svc.from("students").select(`
+    first_name, middle_name, last_name, gender, date_of_birth, necta_index_number, tanzania_prems_id,
+    classes:current_class_id(name, grade_level:grade_level_id(code))
+  `).eq("tenant_id", tenantId).eq("status", "active");
+  const filtered = (data ?? []).filter((s: any) => s.classes?.grade_level?.code === grade);
+  const rows: any[][] = [["NECTA Index No", "PREMS ID", "Surname", "First Name", "Middle Name", "Sex", "Date of Birth"]];
+  for (const s of filtered) {
+    rows.push([
+      s.necta_index_number ?? "", s.tanzania_prems_id ?? "",
+      s.last_name ?? "", s.first_name ?? "", s.middle_name ?? "",
+      genderCode(s.gender), s.date_of_birth ?? "",
+    ]);
+  }
+  return { rows, row_count: filtered.length, filename: `necta_${grade.toLowerCase()}_${todayStamp()}.csv` };
+}
+
+async function rwNationalExam(svc: any, tenantId: string, p: any) {
+  // P6, S3, S6 national exams
+  const grade = (p.grade ?? "P6").toUpperCase();
+  const { data } = await svc.from("students").select(`
+    first_name, middle_name, last_name, gender, date_of_birth, rwanda_reb_id, rwanda_national_id,
+    classes:current_class_id(name, grade_level:grade_level_id(code))
+  `).eq("tenant_id", tenantId).eq("status", "active");
+  const filtered = (data ?? []).filter((s: any) => s.classes?.grade_level?.code === grade);
+  const rows: any[][] = [["REB Student ID", "National ID", "Surname (Izina)", "First Name (Andi mazina)", "Sex", "Date of Birth"]];
+  for (const s of filtered) {
+    rows.push([
+      s.rwanda_reb_id ?? "", s.rwanda_national_id ?? "",
+      s.last_name ?? "", `${s.first_name ?? ""} ${s.middle_name ?? ""}`.trim(),
+      genderCode(s.gender), s.date_of_birth ?? "",
+    ]);
+  }
+  return { rows, row_count: filtered.length, filename: `reb_${grade.toLowerCase()}_${todayStamp()}.csv` };
+}
+
+async function countryPaye(svc: any, tenantId: string, p: any, currency: string, label: string) {
+  // Generic monthly payroll/PAYE CSV. Pulls from payslips for the given month.
+  const rowsData = await getPayslipsForPeriod(svc, tenantId, p.period_id, p.month);
+  const rows: any[][] = [["Employee No", "National ID / TIN", "Full Name", `Gross (${currency})`, `Taxable (${currency})`, `PAYE (${currency})`, `Net (${currency})`]];
+  let totGross = 0, totPaye = 0;
+  for (const ps of rowsData) {
+    const s = ps.staff ?? {};
+    rows.push([
+      s.employee_number ?? "",
+      s.national_id_number ?? s.tin_number ?? "",
+      `${s.last_name ?? ""} ${s.first_name ?? ""}`.trim(),
+      n(ps.gross_pay), n(ps.taxable_pay), n(ps.paye), n(ps.net_pay),
+    ]);
+    totGross += Number(ps.gross_pay ?? 0);
+    totPaye += Number(ps.paye ?? 0);
+  }
+  rows.push(["", "", "TOTAL", n(totGross), "", n(totPaye), ""]);
+  return { rows, row_count: rowsData.length, filename: `${label}_${(p.month ?? todayStamp())}.csv` };
+}
