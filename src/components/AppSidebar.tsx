@@ -12,7 +12,7 @@ import {
   Camera,
   Database, ShieldCheck, GraduationCap as GradCap,
   Lock, FileSearch, Trash2, FileText as FileTextIcon,
-  ClipboardCheck,
+  ClipboardCheck, Crown, Activity as ActivityIcon,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -29,8 +29,8 @@ import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-interface NavItem { title: string; url: string; icon: any; perm?: string; }
-interface NavSection { label: string; items: NavItem[]; }
+interface NavItem { title: string; url: string; icon: any; perm?: string; superAdminOnly?: boolean; }
+interface NavSection { label: string; items: NavItem[]; superAdminOnly?: boolean; }
 
 const sections: NavSection[] = [
   { label: "Overview", items: [{ title: "Dashboard", url: "/", icon: LayoutDashboard }] },
@@ -90,13 +90,19 @@ const sections: NavSection[] = [
     { title: "Subject Requests (SAR)", url: "/dpa/requests", icon: FileSearch, perm: "settings.manage" },
     { title: "Right to Erasure", url: "/dpa/erasure", icon: Trash2, perm: "settings.manage" },
     { title: "Policies & Terms", url: "/dpa/policies", icon: FileTextIcon, perm: "settings.manage" },
+    { title: "Billing & Plan", url: "/billing", icon: CreditCard, perm: "settings.manage" },
     { title: "Settings", url: "/settings", icon: Settings, perm: "settings.manage" },
+  ]},
+  { label: "Super Admin", superAdminOnly: true, items: [
+    { title: "All Tenants", url: "/admin/tenants", icon: Crown, superAdminOnly: true },
+    { title: "Audit Log", url: "/admin/audit", icon: ActivityIcon, superAdminOnly: true },
   ]},
 ];
 
-function filterSections(can: (perm: string) => boolean, showAll: boolean): NavSection[] {
+function filterSections(can: (perm: string) => boolean, showAll: boolean, isSuper: boolean): NavSection[] {
   return sections
-    .map(s => ({ ...s, items: s.items.filter(i => !i.perm || showAll || can(i.perm)) }))
+    .filter(s => !s.superAdminOnly || isSuper)
+    .map(s => ({ ...s, items: s.items.filter(i => (!i.superAdminOnly || isSuper) && (!i.perm || showAll || can(i.perm))) }))
     .filter(s => s.items.length > 0);
 }
 
