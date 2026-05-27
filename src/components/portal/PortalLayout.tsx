@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, GraduationCap, Wallet, MessageSquare, User, ChevronDown, LogOut, Megaphone } from "lucide-react";
+import { Home, GraduationCap, Wallet, MessageSquare, User, ChevronDown, LogOut, Megaphone, Sparkles } from "lucide-react";
 import { usePortal } from "@/contexts/PortalContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,9 +13,9 @@ import { NotificationsBell } from "@/components/NotificationsBell";
 const tabs = [
   { to: "/portal", icon: Home, label: "Home", end: true },
   { to: "/portal/academics", icon: GraduationCap, label: "Academics" },
+  { to: "/portal/study-buddy", icon: Sparkles, label: "Study" },
   { to: "/portal/fees", icon: Wallet, label: "Fees" },
   { to: "/portal/messages", icon: MessageSquare, label: "Messages" },
-  { to: "/portal/profile", icon: User, label: "Profile" },
 ];
 
 export function PortalLayout({ children }: { children: ReactNode }) {
