@@ -9,20 +9,22 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/NotificationsBell";
-
-const tabs = [
-  { to: "/portal", icon: Home, label: "Home", end: true },
-  { to: "/portal/academics", icon: GraduationCap, label: "Academics" },
-  { to: "/portal/study-buddy", icon: Sparkles, label: "Study" },
-  { to: "/portal/fees", icon: Wallet, label: "Fees" },
-  { to: "/portal/messages", icon: MessageSquare, label: "Messages" },
-];
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 
 export function PortalLayout({ children }: { children: ReactNode }) {
   const { activeChild, children: kids, setActiveChildId } = usePortal();
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
+  const tabs = [
+    { to: "/portal", icon: Home, label: t("portal.welcome"), end: true },
+    { to: "/portal/academics", icon: GraduationCap, label: t("portal.academics") },
+    { to: "/portal/study-buddy", icon: Sparkles, label: t("portal.studyBuddy") },
+    { to: "/portal/fees", icon: Wallet, label: t("portal.fees") },
+    { to: "/portal/messages", icon: MessageSquare, label: t("portal.messages") },
+  ];
   const initials = activeChild
     ? `${activeChild.first_name?.[0] || ""}${activeChild.last_name?.[0] || ""}`.toUpperCase()
     : "?";
@@ -49,7 +51,7 @@ export function PortalLayout({ children }: { children: ReactNode }) {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-64">
-              <DropdownMenuLabel>Your children</DropdownMenuLabel>
+              <DropdownMenuLabel>{t("portal.myChildren")}</DropdownMenuLabel>
               {kids.map((k) => (
                 <DropdownMenuItem key={k.id} onClick={() => setActiveChildId(k.id)}>
                   <Avatar className="h-7 w-7 mr-2">
@@ -61,11 +63,12 @@ export function PortalLayout({ children }: { children: ReactNode }) {
               ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={async () => { await signOut(); navigate("/portal/login", { replace: true }); }}>
-                <LogOut className="h-4 w-4 mr-2" /> Sign out
+                <LogOut className="h-4 w-4 mr-2" /> {t("common.signOut")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <div className="flex items-center gap-1">
+            <LanguageSwitcher />
             <Button size="icon" variant="ghost" onClick={() => navigate("/portal/announcements")} title="Announcements">
               <Megaphone className="h-5 w-5" />
             </Button>
