@@ -39,6 +39,7 @@ import Hostel from "./pages/Hostel";
 import Reports from "./pages/Reports";
 import Documents from "./pages/Documents";
 import Copilot from "./pages/Copilot";
+import FeeRisk from "./pages/FeeRisk";
 import SettingsPage from "./pages/Settings";
 import SchoolSetup from "./pages/SchoolSetup";
 import Login from "./pages/Login";
@@ -169,6 +170,7 @@ function AppRoutes() {
       <Route path="/reports" element={<ProtectedRoute><DashboardLayout><Reports /></DashboardLayout></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><DashboardLayout><Documents /></DashboardLayout></ProtectedRoute>} />
       <Route path="/copilot" element={<ProtectedRoute><DashboardLayout><Copilot /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/fees/risk" element={<ProtectedRoute><DashboardLayout><FeeRisk /></DashboardLayout></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/setup" element={<ProtectedRoute><DashboardLayout><SchoolSetup /></DashboardLayout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />

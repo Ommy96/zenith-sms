@@ -50,3 +50,9 @@ verify_jwt = false
 
 [functions.ai-study-buddy]
 verify_jwt = false
+
+[functions.auto-timetable]
+verify_jwt = false
+
+[functions.ai-fee-predictor]
+verify_jwt = false
