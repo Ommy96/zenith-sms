@@ -1,4 +1,8 @@
-import { Search, Plus, ChevronDown, LogOut, User, Settings, Command as CommandIcon } from "lucide-react";
+import {
+  Search, Plus, ChevronDown, LogOut, Settings,
+  Command as CommandIcon, UserPlus, Wallet, ClipboardCheck,
+  Megaphone, Receipt, FileBarChart,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "./ThemeToggle";
@@ -34,7 +38,7 @@ export function AppHeader() {
   return (
     <>
     <CommandPalette open={open} onOpenChange={setOpen} />
-    <header className="h-14 border-b border-border bg-card/50 backdrop-blur-sm flex items-center gap-4 px-4 sticky top-0 z-30">
+    <header className="h-14 border-b border-border bg-background flex items-center gap-4 px-4 sticky top-0 z-30">
       <SidebarTrigger className="h-8 w-8" />
 
       {tenant && (
@@ -46,40 +50,59 @@ export function AppHeader() {
               {tenant.name.slice(0, 1).toUpperCase()}
             </div>
           )}
-          <span className="text-sm font-medium text-foreground truncate max-w-[180px]">{tenant.name}</span>
+          <span className="text-sm font-semibold text-foreground truncate max-w-[180px]">{tenant.name}</span>
         </div>
       )}
 
-      <div className="flex-1 max-w-md">
+      <div className="flex-1 max-w-xl hidden md:block">
         <button
           onClick={() => setOpen(true)}
-          className="w-full h-9 rounded-md bg-secondary text-muted-foreground text-sm flex items-center gap-2 px-3 hover:bg-secondary/80 transition-colors"
+          className="w-full h-10 rounded-md border border-border bg-background text-left text-sm flex items-center gap-2.5 px-3 hover:border-strong focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
         >
-          <Search className="h-4 w-4" />
-          <span className="flex-1 text-left">{t("common.search")}</span>
-          <kbd className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-background border border-border">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <span className="flex-1 text-muted-foreground truncate">Search students, fees, classes…</span>
+          <kbd className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
             <CommandIcon className="h-3 w-3" />K
           </kbd>
         </button>
       </div>
+      <button
+        onClick={() => setOpen(true)}
+        className="md:hidden h-9 w-9 rounded-md border border-border flex items-center justify-center text-muted-foreground hover:bg-muted ml-auto"
+        aria-label="Search"
+      >
+        <Search className="h-4 w-4" />
+      </button>
 
-      <div className="flex items-center gap-1 ml-auto">
+      <div className="flex items-center gap-1.5 ml-auto">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="sm" className="h-8 gap-1.5 rounded-lg text-xs">
-              <Plus className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Quick Action</span>
+            <Button size="sm" className="h-9 gap-1.5 rounded-md px-3 font-semibold">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Quick action</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel className="text-xs">Create New</DropdownMenuLabel>
-            <DropdownMenuItem className="text-sm">Add Student</DropdownMenuItem>
-            <DropdownMenuItem className="text-sm">Create Invoice</DropdownMenuItem>
-            <DropdownMenuItem className="text-sm">Record Payment</DropdownMenuItem>
-            <DropdownMenuItem className="text-sm">Post Announcement</DropdownMenuItem>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Create</DropdownMenuLabel>
+            <DropdownMenuItem className="text-sm gap-2" onClick={() => navigate("/students/import")}>
+              <UserPlus className="h-4 w-4 text-muted-foreground" /> Add student
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-sm gap-2" onClick={() => navigate("/fees")}>
+              <Wallet className="h-4 w-4 text-muted-foreground" /> Record payment
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-sm gap-2" onClick={() => navigate("/attendance")}>
+              <ClipboardCheck className="h-4 w-4 text-muted-foreground" /> Mark attendance
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-sm gap-2" onClick={() => navigate("/announcements")}>
+              <Megaphone className="h-4 w-4 text-muted-foreground" /> Send announcement
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-sm gap-2" onClick={() => navigate("/invoices")}>
+              <Receipt className="h-4 w-4 text-muted-foreground" /> Create invoice
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-sm">Mark Attendance</DropdownMenuItem>
-            <DropdownMenuItem className="text-sm">Schedule Exam</DropdownMenuItem>
+            <DropdownMenuItem className="text-sm gap-2" onClick={() => navigate("/reports")}>
+              <FileBarChart className="h-4 w-4 text-muted-foreground" /> Generate report
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
