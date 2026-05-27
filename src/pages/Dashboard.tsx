@@ -225,7 +225,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome back, {firstName}</h1>
           <p className="text-sm text-muted-foreground mt-1 tabular-nums">
-            {dateLabel} <span className="text-border-strong mx-1">•</span> Week {weekOfTerm} of Term {term}
+            {dateLabel} <span className="mx-1 opacity-50">•</span> Week {weekOfTerm} of Term {term}
           </p>
         </div>
       </motion.div>
