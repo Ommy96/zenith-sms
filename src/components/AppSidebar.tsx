@@ -10,6 +10,7 @@ import {
   ScanLine,
   UserCheck,
   Camera,
+  Database, ShieldCheck, GraduationCap as GradCap,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -74,6 +75,9 @@ const sections: NavSection[] = [
     { title: "Reports", url: "/reports", icon: BarChart3, perm: "reports.view" },
   ]},
   { label: "System", items: [
+    { title: "NEMIS (KE)", url: "/integrations/nemis", icon: Database, perm: "settings.manage" },
+    { title: "TSC (KE)", url: "/integrations/tsc", icon: GradCap, perm: "settings.manage" },
+    { title: "Statutory Filings (KE)", url: "/compliance/statutory", icon: ShieldCheck, perm: "payroll.manage" },
     { title: "Settings", url: "/settings", icon: Settings, perm: "settings.manage" },
   ]},
 ];
