@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,6 +37,8 @@ export default function Finance() {
   const { user, profile } = useAuth();
   const { can } = useTenant();
   const tenantId = profile?.tenant_id;
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get("tab") || "dashboard";
 
   const [loading, setLoading] = useState(true);
   const [structures, setStructures] = useState<Row[]>([]);
@@ -107,7 +110,7 @@ export default function Finance() {
         <StatCard icon={<AlertCircle className="h-4 w-4" />} label="Overdue invoices" value={stats.overdueCount} accent="text-destructive" />
       </div>
 
-      <Tabs defaultValue="dashboard">
+      <Tabs value={tabFromUrl} onValueChange={(v) => setSearchParams(v === "dashboard" ? {} : { tab: v })}>
         <TabsList>
           <TabsTrigger value="dashboard"><TrendingUp className="h-3 w-3 mr-1" />Dashboard</TabsTrigger>
           <TabsTrigger value="invoices"><FileText className="h-3 w-3 mr-1" />Invoices</TabsTrigger>

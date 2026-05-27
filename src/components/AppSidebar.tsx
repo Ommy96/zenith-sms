@@ -44,7 +44,7 @@ const sections: NavSection[] = [
   { label: "Finance", items: [
     { title: "Fees & Invoices", url: "/fees", icon: Receipt, perm: "fees.view" },
     { title: "Payments", url: "/finance/mobile-money", icon: Smartphone, perm: "fees.configure" },
-    { title: "Payroll", url: "/staff?tab=payroll", icon: DollarSign, perm: "payroll.manage" },
+    { title: "Payroll", url: "/finance?tab=payroll", icon: DollarSign, perm: "payroll.manage" },
   ]},
   { label: "Communication", items: [
     { title: "Announcements", url: "/announcements", icon: Megaphone, perm: "communication.send" },
