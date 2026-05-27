@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Calendar, Loader2, Plus, Trash2, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { OptimizerPanel } from "@/components/timetable/OptimizerPanel";
+import { TeacherUnavailabilityPanel } from "@/components/timetable/TeacherUnavailabilityPanel";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
@@ -80,6 +82,12 @@ export default function Timetable() {
     const { error } = await supabase.functions.invoke("auto-timetable", { body: { tenantId, classId, termId } });
     if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
     toast({ title: "Auto-timetable generated" });
+    const { data } = await supabase.from("timetable_slots").select("*").eq("class_id", classId).eq("term_id", termId);
+    setSlots(data || []);
+  };
+
+  const reloadSlots = async () => {
+    if (!classId || !termId) return;
     const { data } = await supabase.from("timetable_slots").select("*").eq("class_id", classId).eq("term_id", termId);
     setSlots(data || []);
   };
@@ -167,6 +175,19 @@ export default function Timetable() {
           }
         </CardContent>
       </Card>
+
+      {tenantId && periods.length > 0 && (
+        <TeacherUnavailabilityPanel tenantId={tenantId} teachers={teachers} periods={periods} />
+      )}
+
+      {tenantId && classId && termId && (
+        <OptimizerPanel
+          tenantId={tenantId}
+          classId={classId}
+          termId={termId}
+          onApplied={reloadSlots}
+        />
+      )}
     </motion.div>
   );
 }

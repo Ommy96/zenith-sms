@@ -1138,6 +1138,8 @@ export type Database = {
           created_at: string
           id: string
           periods_per_week: number
+          preferred_room_id: string | null
+          prefers_double_period: boolean
           subject_id: string
           teacher_id: string | null
           tenant_id: string
@@ -1147,6 +1149,8 @@ export type Database = {
           created_at?: string
           id?: string
           periods_per_week?: number
+          preferred_room_id?: string | null
+          prefers_double_period?: boolean
           subject_id: string
           teacher_id?: string | null
           tenant_id: string
@@ -1156,6 +1160,8 @@ export type Database = {
           created_at?: string
           id?: string
           periods_per_week?: number
+          preferred_room_id?: string | null
+          prefers_double_period?: boolean
           subject_id?: string
           teacher_id?: string | null
           tenant_id?: string
@@ -1166,6 +1172,13 @@ export type Database = {
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_subjects_preferred_room_id_fkey"
+            columns: ["preferred_room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
           {
@@ -6799,6 +6812,9 @@ export type Database = {
           id: string
           is_assessed: boolean
           name: string
+          required_room_type:
+            | Database["public"]["Enums"]["room_type_enum"]
+            | null
           tenant_id: string
         }
         Insert: {
@@ -6810,6 +6826,9 @@ export type Database = {
           id?: string
           is_assessed?: boolean
           name: string
+          required_room_type?:
+            | Database["public"]["Enums"]["room_type_enum"]
+            | null
           tenant_id: string
         }
         Update: {
@@ -6821,6 +6840,9 @@ export type Database = {
           id?: string
           is_assessed?: boolean
           name?: string
+          required_room_type?:
+            | Database["public"]["Enums"]["room_type_enum"]
+            | null
           tenant_id?: string
         }
         Relationships: []
@@ -6877,6 +6899,51 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teacher_unavailability: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          id: string
+          period_id: string | null
+          reason: string | null
+          teacher_id: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          id?: string
+          period_id?: string | null
+          reason?: string | null
+          teacher_id: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          period_id?: string | null
+          reason?: string | null
+          teacher_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_unavailability_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "periods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teacher_unavailability_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]
@@ -7185,6 +7252,75 @@ export type Database = {
             columns: ["academic_year_id"]
             isOneToOne: false
             referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timetable_optimization_runs: {
+        Row: {
+          class_id: string | null
+          created_at: string
+          duration_ms: number | null
+          hard_violations: number
+          id: string
+          placed: number
+          ran_by: string | null
+          scope: string
+          score: number | null
+          settings: Json
+          soft_violations: number
+          tenant_id: string
+          term_id: string
+          unplaced: number
+          violations: Json
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          hard_violations?: number
+          id?: string
+          placed?: number
+          ran_by?: string | null
+          scope?: string
+          score?: number | null
+          settings?: Json
+          soft_violations?: number
+          tenant_id: string
+          term_id: string
+          unplaced?: number
+          violations?: Json
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          hard_violations?: number
+          id?: string
+          placed?: number
+          ran_by?: string | null
+          scope?: string
+          score?: number | null
+          settings?: Json
+          soft_violations?: number
+          tenant_id?: string
+          term_id?: string
+          unplaced?: number
+          violations?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timetable_optimization_runs_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timetable_optimization_runs_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "terms"
             referencedColumns: ["id"]
           },
         ]
