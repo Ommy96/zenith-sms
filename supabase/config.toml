@@ -68,3 +68,12 @@ verify_jwt = false
 
 [functions.ai-face-attendance]
 verify_jwt = false
+
+[functions.compliance-export]
+verify_jwt = false
+
+[functions.nemis-credentials]
+verify_jwt = false
+
+[functions.nemis-import]
+verify_jwt = false
