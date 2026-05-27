@@ -80,3 +80,9 @@ verify_jwt = false
 
 [functions.sar-export]
 verify_jwt = false
+
+[functions.audit-report-pdf]
+verify_jwt = false
+
+[functions.knec-results-import]
+verify_jwt = false

@@ -56,6 +56,8 @@ import DataProtection from "./pages/dpa/DataProtection";
 import SubjectRequests from "./pages/dpa/SubjectRequests";
 import ErasureRequests from "./pages/dpa/ErasureRequests";
 import Policies from "./pages/dpa/Policies";
+import AuditReports from "./pages/compliance/AuditReports";
+import ExamBodies from "./pages/compliance/ExamBodies";
 import { ConsentBanner } from "@/components/ConsentBanner";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -200,6 +202,8 @@ function AppRoutes() {
       <Route path="/dpa/requests" element={<ProtectedRoute><DashboardLayout><SubjectRequests /></DashboardLayout></ProtectedRoute>} />
       <Route path="/dpa/erasure" element={<ProtectedRoute><DashboardLayout><ErasureRequests /></DashboardLayout></ProtectedRoute>} />
       <Route path="/dpa/policies" element={<ProtectedRoute><DashboardLayout><Policies /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/compliance/audit-reports" element={<ProtectedRoute><DashboardLayout><AuditReports /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/compliance/exam-bodies" element={<ProtectedRoute><DashboardLayout><ExamBodies /></DashboardLayout></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/setup" element={<ProtectedRoute><DashboardLayout><SchoolSetup /></DashboardLayout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
