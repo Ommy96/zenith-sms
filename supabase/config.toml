@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.ai-fee-predictor]
 verify_jwt = false
+
+[functions.auto-timetable-optimize]
+verify_jwt = false
