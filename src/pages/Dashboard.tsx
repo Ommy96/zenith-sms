@@ -12,11 +12,11 @@ import { ProgressiveHint } from "@/components/ProgressiveHint";
 type TileColor = "primary" | "success" | "warning" | "info" | "destructive";
 
 const colorMap: Record<TileColor, string> = {
-  primary: "bg-primary/10 text-primary",
-  success: "bg-success/10 text-success",
-  warning: "bg-warning/10 text-warning",
-  info: "bg-info/10 text-info",
-  destructive: "bg-destructive/10 text-destructive",
+  primary: "bg-accent text-accent-foreground",
+  success: "bg-success/15 text-success",
+  warning: "bg-warning/15 text-warning",
+  info: "bg-info/15 text-info",
+  destructive: "bg-destructive/15 text-destructive",
 };
 
 interface ActionTileProps {
@@ -38,19 +38,19 @@ function ActionTile({ title, value, cta, icon: Icon, color, to, hint, delay = 0 
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
       onClick={() => navigate(to)}
-      className="group text-left rounded-xl border border-border bg-card p-5 hover:shadow-md hover:border-primary/40 transition-all w-full"
+      className="group text-left rounded-xl border border-border bg-card p-6 hover:border-strong transition-colors w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-2 min-w-0 flex-1">
-          <p className="text-sm text-muted-foreground font-medium">{title}</p>
-          <p className="text-2xl font-bold tracking-tight text-card-foreground truncate">{value}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-muted-foreground">{title}</p>
+          <p className="text-3xl font-bold tracking-tight text-foreground truncate tabular-nums">{value}</p>
           {hint && <div className="text-xs text-muted-foreground">{hint}</div>}
         </div>
-        <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${colorMap[color]}`}>
-          <Icon className="h-5 w-5" />
+        <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${colorMap[color]}`}>
+          <Icon className="h-[18px] w-[18px]" />
         </div>
       </div>
-      <div className="mt-4 flex items-center gap-1.5 text-xs font-medium text-primary group-hover:gap-2.5 transition-all">
+      <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-primary group-hover:gap-2.5 transition-all">
         {cta}
         <ArrowRight className="h-3.5 w-3.5" />
       </div>
@@ -110,6 +110,14 @@ export default function Dashboard() {
   const { profile } = useAuth();
   const schoolId = profile?.tenant_id;
   const firstName = profile?.full_name?.split(" ")[0] || "there";
+
+  const today = new Date();
+  const dateLabel = today.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+  // Naive "Week N of Term M" — derive from month: terms roughly Jan-Apr / May-Aug / Sep-Dec
+  const month = today.getMonth();
+  const term = month < 4 ? 1 : month < 8 ? 2 : 3;
+  const termStart = new Date(today.getFullYear(), term === 1 ? 0 : term === 2 ? 4 : 8, 1);
+  const weekOfTerm = Math.max(1, Math.ceil((today.getTime() - termStart.getTime()) / (7 * 86400000)));
 
   const [currency, setCurrency] = useState("KES");
   const [data, setData] = useState({
@@ -213,9 +221,13 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 max-w-7xl">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">Welcome back, {firstName}. Here's what needs your attention today.</p>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-end justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome back, {firstName}</h1>
+          <p className="text-sm text-muted-foreground mt-1 tabular-nums">
+            {dateLabel} <span className="text-border-strong mx-1">•</span> Week {weekOfTerm} of Term {term}
+          </p>
+        </div>
       </motion.div>
 
       {/* Progressive onboarding hints */}
