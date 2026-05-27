@@ -8,6 +8,8 @@ import { CommandPalette, useCommandPalette } from "./CommandPalette";
 import { useNavigate } from "react-router-dom";
 import { NotificationsBell } from "./NotificationsBell";
 import { SetupProgressBadge } from "./SetupProgressBadge";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel,
@@ -18,6 +20,7 @@ export function AppHeader() {
   const { tenant } = useTenant();
   const { open, setOpen } = useCommandPalette();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -53,7 +56,7 @@ export function AppHeader() {
           className="w-full h-9 rounded-md bg-secondary text-muted-foreground text-sm flex items-center gap-2 px-3 hover:bg-secondary/80 transition-colors"
         >
           <Search className="h-4 w-4" />
-          <span className="flex-1 text-left">Search or jump to...</span>
+          <span className="flex-1 text-left">{t("common.search")}</span>
           <kbd className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-background border border-border">
             <CommandIcon className="h-3 w-3" />K
           </kbd>
@@ -82,6 +85,7 @@ export function AppHeader() {
 
         <ThemeToggle />
 
+        <LanguageSwitcher />
         <SetupProgressBadge />
         <NotificationsBell />
 
@@ -103,11 +107,11 @@ export function AppHeader() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-sm gap-2" onClick={() => navigate("/settings")}>
-              <Settings className="h-4 w-4" /> Settings
+              <Settings className="h-4 w-4" /> {t("common.settings")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-sm gap-2 text-destructive" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4" /> Sign Out
+              <LogOut className="h-4 w-4" /> {t("common.signOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
