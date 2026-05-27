@@ -148,6 +148,62 @@ export type Database = {
           },
         ]
       }
+      ai_cache: {
+        Row: {
+          cache_key: string
+          completion_tokens: number
+          created_at: string
+          expires_at: string
+          feature: string
+          hit_count: number
+          id: string
+          model: string
+          prompt_tokens: number
+          provider: string
+          response_json: Json | null
+          response_text: string | null
+          tenant_id: string
+        }
+        Insert: {
+          cache_key: string
+          completion_tokens?: number
+          created_at?: string
+          expires_at?: string
+          feature: string
+          hit_count?: number
+          id?: string
+          model: string
+          prompt_tokens?: number
+          provider: string
+          response_json?: Json | null
+          response_text?: string | null
+          tenant_id: string
+        }
+        Update: {
+          cache_key?: string
+          completion_tokens?: number
+          created_at?: string
+          expires_at?: string
+          feature?: string
+          hit_count?: number
+          id?: string
+          model?: string
+          prompt_tokens?: number
+          provider?: string
+          response_json?: Json | null
+          response_text?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_cache_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_comment_usage: {
         Row: {
           count: number
@@ -177,6 +233,198 @@ export type Database = {
           year_month?: string
         }
         Relationships: []
+      }
+      ai_plan_quotas: {
+        Row: {
+          created_at: string
+          monthly_cost_cap_usd: number | null
+          monthly_request_limit: number | null
+          plan: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          monthly_cost_cap_usd?: number | null
+          monthly_request_limit?: number | null
+          plan: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          monthly_cost_cap_usd?: number | null
+          monthly_request_limit?: number | null
+          plan?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_prompt_template_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          model: string | null
+          notes: string | null
+          system_prompt: string | null
+          temperature: number | null
+          template_id: string
+          user_prompt: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          model?: string | null
+          notes?: string | null
+          system_prompt?: string | null
+          temperature?: number | null
+          template_id: string
+          user_prompt: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          model?: string | null
+          notes?: string | null
+          system_prompt?: string | null
+          temperature?: number | null
+          template_id?: string
+          user_prompt?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_prompt_template_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_prompt_templates: {
+        Row: {
+          active_version: number
+          created_at: string
+          default_model: string | null
+          description: string | null
+          feature: string
+          id: string
+          is_system: boolean
+          name: string
+          slug: string
+          tenant_id: string | null
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          active_version?: number
+          created_at?: string
+          default_model?: string | null
+          description?: string | null
+          feature: string
+          id?: string
+          is_system?: boolean
+          name: string
+          slug: string
+          tenant_id?: string | null
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          active_version?: number
+          created_at?: string
+          default_model?: string | null
+          description?: string | null
+          feature?: string
+          id?: string
+          is_system?: boolean
+          name?: string
+          slug?: string
+          tenant_id?: string | null
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_prompt_templates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_usage_logs: {
+        Row: {
+          cache_hit: boolean
+          completion_tokens: number
+          cost_usd: number
+          created_at: string
+          error_message: string | null
+          feature: string
+          id: string
+          latency_ms: number | null
+          model: string
+          prompt_tokens: number
+          provider: string
+          request_meta: Json | null
+          response_meta: Json | null
+          status: string
+          tenant_id: string
+          total_tokens: number | null
+          user_id: string | null
+        }
+        Insert: {
+          cache_hit?: boolean
+          completion_tokens?: number
+          cost_usd?: number
+          created_at?: string
+          error_message?: string | null
+          feature: string
+          id?: string
+          latency_ms?: number | null
+          model: string
+          prompt_tokens?: number
+          provider: string
+          request_meta?: Json | null
+          response_meta?: Json | null
+          status?: string
+          tenant_id: string
+          total_tokens?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          cache_hit?: boolean
+          completion_tokens?: number
+          cost_usd?: number
+          created_at?: string
+          error_message?: string | null
+          feature?: string
+          id?: string
+          latency_ms?: number | null
+          model?: string
+          prompt_tokens?: number
+          provider?: string
+          request_meta?: Json | null
+          response_meta?: Json | null
+          status?: string
+          tenant_id?: string
+          total_tokens?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       announcements: {
         Row: {
@@ -7697,6 +7945,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ai_check_quota: { Args: { _tenant: string }; Returns: Json }
+      ai_current_month_usage: {
+        Args: { _tenant: string }
+        Returns: {
+          request_count: number
+          total_cost_usd: number
+          total_tokens: number
+        }[]
+      }
       attendance_chronic_absentees: {
         Args: {
           _from: string
