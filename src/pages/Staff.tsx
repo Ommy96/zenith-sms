@@ -336,9 +336,13 @@ export default function Staff() {
                 <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="head teacher">Head Teacher</SelectItem>
+                    <SelectItem value="deputy head teacher">Deputy Head Teacher</SelectItem>
                     <SelectItem value="teacher">Teacher</SelectItem>
                     <SelectItem value="head of department">Head of Department</SelectItem>
                     <SelectItem value="senior teacher">Senior Teacher</SelectItem>
+                    <SelectItem value="assistant teacher">Assistant Teacher</SelectItem>
+                    <SelectItem value="intern teacher">Intern Teacher</SelectItem>
                     <SelectItem value="administrator">Administrator</SelectItem>
                     <SelectItem value="support staff">Support Staff</SelectItem>
                   </SelectContent>
