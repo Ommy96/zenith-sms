@@ -58,6 +58,7 @@ import PortalProfile from "./pages/portal/PortalProfile";
 import PortalCalendar from "./pages/portal/PortalCalendar";
 import PortalAnnouncements from "./pages/portal/PortalAnnouncements";
 import PortalNotifications from "./pages/portal/PortalNotifications";
+import PortalStudyBuddy from "./pages/portal/PortalStudyBuddy";
 
 const queryClient = new QueryClient();
 
@@ -127,6 +128,7 @@ function AppRoutes() {
       <Route path="/portal/calendar" element={<PortalProtectedRoute><PortalCalendar /></PortalProtectedRoute>} />
       <Route path="/portal/announcements" element={<PortalProtectedRoute><PortalAnnouncements /></PortalProtectedRoute>} />
       <Route path="/portal/notifications" element={<PortalProtectedRoute><PortalNotifications /></PortalProtectedRoute>} />
+      <Route path="/portal/study-buddy" element={<PortalProtectedRoute><PortalStudyBuddy /></PortalProtectedRoute>} />
 
       {/* Protected routes */}
       <Route path="/" element={
