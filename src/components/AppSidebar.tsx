@@ -47,6 +47,7 @@ const sections: NavSection[] = [
     { title: "Announcements", url: "/announcements", icon: Megaphone, perm: "communication.send" },
     { title: "Messaging", url: "/messaging", icon: Mail, perm: "communication.send" },
     { title: "WhatsApp", url: "/communication/whatsapp", icon: MessageCircle, perm: "communication.send" },
+    { title: "AI Documents", url: "/documents", icon: FileText },
   ]},
   { label: "Operations", items: [
     { title: "Transport", url: "/transport", icon: Bus, perm: "transport.view" },

@@ -35,3 +35,9 @@ verify_jwt = false
 
 [functions.ai-invoke]
 verify_jwt = false
+
+[functions.generate-report-comment]
+verify_jwt = false
+
+[functions.ai-document-draft]
+verify_jwt = false
