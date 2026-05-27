@@ -136,6 +136,55 @@ Deno.serve(async (req) => {
       case "helb_return":
         result = await helbReturn(svc, tenantId, params);
         break;
+      // ---- Uganda ----
+      case "ug_emis_learners":
+        result = await countryLearners(svc, tenantId, params, "UG");
+        break;
+      case "ug_uneb_registration":
+        result = await unebRegistration(svc, tenantId, params);
+        break;
+      case "ug_ura_paye":
+        result = await countryPaye(svc, tenantId, params, "UGX", "ura_paye");
+        break;
+      case "ug_enrolment":
+        result = await enrolmentByGrade(svc, tenantId, "UG");
+        break;
+      // ---- Tanzania ----
+      case "tz_prems_learners":
+        result = await countryLearners(svc, tenantId, params, "TZ");
+        break;
+      case "tz_necta_registration":
+        result = await nectaRegistration(svc, tenantId, params);
+        break;
+      case "tz_tra_paye":
+        result = await countryPaye(svc, tenantId, params, "TZS", "tra_paye");
+        break;
+      case "tz_enrolment":
+        result = await enrolmentByGrade(svc, tenantId, "TZ");
+        break;
+      // ---- Rwanda ----
+      case "rw_reb_learners":
+        result = await countryLearners(svc, tenantId, params, "RW");
+        break;
+      case "rw_national_exam_registration":
+        result = await rwNationalExam(svc, tenantId, params);
+        break;
+      case "rw_rra_paye":
+        result = await countryPaye(svc, tenantId, params, "RWF", "rra_paye");
+        break;
+      case "rw_enrolment":
+        result = await enrolmentByGrade(svc, tenantId, "RW");
+        break;
+      // ---- Ethiopia ----
+      case "et_moe_learners":
+        result = await countryLearners(svc, tenantId, params, "ET");
+        break;
+      case "et_enrolment":
+        result = await enrolmentByGrade(svc, tenantId, "ET");
+        break;
+      case "et_payroll":
+        result = await countryPaye(svc, tenantId, params, "ETB", "et_payroll");
+        break;
       default:
         return json({ error: `Unknown export type: ${type}` }, 400);
     }
