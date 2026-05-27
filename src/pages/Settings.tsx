@@ -261,6 +261,10 @@ export default function SettingsPage() {
             </div>
           </div>
         </TabsContent>
+
+        <TabsContent value="ai" className="mt-6">
+          <AiSettingsTab />
+        </TabsContent>
       </Tabs>
     </div>
   );
