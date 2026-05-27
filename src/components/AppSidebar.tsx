@@ -5,6 +5,7 @@ import {
   Megaphone, Mail, DollarSign, Receipt, Package, Smartphone, MessageCircle,
   ShieldAlert, HeartPulse, Calendar as CalendarIcon,
   BedDouble,
+  Bot,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -26,6 +27,9 @@ interface NavSection { label: string; items: NavItem[]; }
 
 const sections: NavSection[] = [
   { label: "Overview", items: [{ title: "Dashboard", url: "/", icon: LayoutDashboard }] },
+  { label: "Copilot", items: [
+    { title: "Admin Copilot", url: "/copilot", icon: Bot },
+  ]},
   { label: "Academics", items: [
     { title: "Classes & Subjects", url: "/academics", icon: BookOpen, perm: "academics.view" },
     { title: "Attendance", url: "/attendance", icon: UserCog, perm: "attendance.view" },

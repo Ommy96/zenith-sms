@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.ai-document-draft]
 verify_jwt = false
+
+[functions.ai-copilot]
+verify_jwt = false
