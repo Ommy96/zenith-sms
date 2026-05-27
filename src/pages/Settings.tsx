@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Building, Palette, GraduationCap, Bell, Sparkles, RotateCcw, Trash2, Loader2 } from "lucide-react";
+import { Building, Palette, GraduationCap, Bell, Sparkles, RotateCcw, Trash2, Loader2, Brain } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { clearDemoData, seedDemoData } from "@/lib/demoSeed";
+import { AiSettingsTab } from "@/components/settings/AiSettingsTab";
 
 export default function SettingsPage() {
   const { profile, role, refreshSchool } = useAuth();
@@ -68,6 +69,7 @@ export default function SettingsPage() {
           <TabsTrigger value="academic" className="text-sm gap-1.5"><GraduationCap className="h-3.5 w-3.5" /> Academic</TabsTrigger>
           <TabsTrigger value="branding" className="text-sm gap-1.5"><Palette className="h-3.5 w-3.5" /> Branding</TabsTrigger>
           <TabsTrigger value="notifications" className="text-sm gap-1.5"><Bell className="h-3.5 w-3.5" /> Notifications</TabsTrigger>
+          <TabsTrigger value="ai" className="text-sm gap-1.5"><Brain className="h-3.5 w-3.5" /> AI</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
