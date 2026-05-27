@@ -13,10 +13,11 @@ import {
   Database, ShieldCheck, GraduationCap as GradCap,
   Lock, FileSearch, Trash2, FileText as FileTextIcon,
   ClipboardCheck, Crown, Activity as ActivityIcon,
+  Search as SearchIcon,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
@@ -33,70 +34,54 @@ interface NavItem { title: string; url: string; icon: any; perm?: string; superA
 interface NavSection { label: string; items: NavItem[]; superAdminOnly?: boolean; }
 
 const sections: NavSection[] = [
-  { label: "Overview", items: [{ title: "Dashboard", url: "/", icon: LayoutDashboard }] },
-  { label: "Copilot", items: [
-    { title: "Admin Copilot", url: "/copilot", icon: Bot },
-  ]},
   { label: "Academics", items: [
-    { title: "Classes & Subjects", url: "/academics", icon: BookOpen, perm: "academics.view" },
-    { title: "Attendance", url: "/attendance", icon: UserCog, perm: "attendance.view" },
-    { title: "Face Attendance (AI)", url: "/attendance/face", icon: Camera, perm: "attendance.view" },
-    { title: "Examinations", url: "/examinations", icon: ClipboardList, perm: "exams.view" },
-    { title: "OCR Grader (AI)", url: "/examinations/ocr", icon: ScanLine, perm: "exams.view" },
-    { title: "Timetable", url: "/timetable", icon: CalendarDays, perm: "academics.view" },
-  ]},
-  { label: "People", items: [
     { title: "Students", url: "/students", icon: Users, perm: "students.view" },
-    { title: "Admissions", url: "/admissions", icon: UserPlus, perm: "admissions.view" },
-    { title: "Admission Screener (AI)", url: "/admissions/screener", icon: UserCheck, perm: "admissions.view" },
-    { title: "Staff & HR", url: "/staff", icon: Briefcase, perm: "staff.view" },
+    { title: "Classes & Subjects", url: "/academics", icon: BookOpen, perm: "academics.view" },
+    { title: "Timetable", url: "/timetable", icon: CalendarDays, perm: "academics.view" },
+    { title: "Examinations", url: "/examinations", icon: ClipboardList, perm: "exams.view" },
+    { title: "Attendance", url: "/attendance", icon: UserCog, perm: "attendance.view" },
   ]},
   { label: "Finance", items: [
-    { title: "Fee Management", url: "/fees", icon: DollarSign, perm: "fees.view" },
-    { title: "Invoices", url: "/invoices", icon: Receipt, perm: "fees.view" },
-    { title: "Mobile Money", url: "/finance/mobile-money", icon: Smartphone, perm: "fees.configure" },
-    { title: "Fee Risk (AI)", url: "/fees/risk", icon: TrendingDown, perm: "fees.view" },
-    { title: "Reports", url: "/finance-reports", icon: FileText, perm: "fees.view" },
+    { title: "Fees & Invoices", url: "/fees", icon: Receipt, perm: "fees.view" },
+    { title: "Payments", url: "/finance/mobile-money", icon: Smartphone, perm: "fees.configure" },
+    { title: "Payroll", url: "/staff?tab=payroll", icon: DollarSign, perm: "payroll.manage" },
   ]},
   { label: "Communication", items: [
     { title: "Announcements", url: "/announcements", icon: Megaphone, perm: "communication.send" },
-    { title: "Messaging", url: "/messaging", icon: Mail, perm: "communication.send" },
+    { title: "Messages", url: "/messaging", icon: Mail, perm: "communication.send" },
     { title: "WhatsApp", url: "/communication/whatsapp", icon: MessageCircle, perm: "communication.send" },
-    { title: "AI Documents", url: "/documents", icon: FileText },
   ]},
   { label: "Operations", items: [
+    { title: "Admissions", url: "/admissions", icon: UserPlus, perm: "admissions.view" },
+    { title: "Staff & HR", url: "/staff", icon: Briefcase, perm: "staff.view" },
     { title: "Transport", url: "/transport", icon: Bus, perm: "transport.view" },
     { title: "Library", url: "/library", icon: Library, perm: "library.view" },
     { title: "Inventory", url: "/inventory", icon: Package, perm: "inventory.view" },
-    { title: "Discipline", url: "/discipline", icon: ShieldAlert, perm: "discipline.view" },
-    { title: "Health", url: "/health", icon: HeartPulse, perm: "health.view" },
-    { title: "Events", url: "/events", icon: CalendarIcon, perm: "events.view" },
-    { title: "Hostel", url: "/hostel", icon: BedDouble, perm: "hostel.view" },
   ]},
-  { label: "Insights", items: [
-    { title: "Reports", url: "/reports", icon: BarChart3, perm: "reports.view" },
-  ]},
-  { label: "System", items: [
+  { label: "Compliance", items: [
     { title: "NEMIS (KE)", url: "/integrations/nemis", icon: Database, perm: "settings.manage" },
     { title: "TSC (KE)", url: "/integrations/tsc", icon: GradCap, perm: "settings.manage" },
-    { title: "Statutory Filings (KE)", url: "/compliance/statutory", icon: ShieldCheck, perm: "payroll.manage" },
-    { title: "Audit Reports (PDF)", url: "/compliance/audit-reports", icon: ClipboardCheck, perm: "reports.view" },
-    { title: "Exam Bodies", url: "/compliance/exam-bodies", icon: GradCap, perm: "exams.view" },
-    { title: "EMIS / UNEB (UG)", url: "/integrations/uganda", icon: Database, perm: "settings.manage" },
-    { title: "PREMS / NECTA (TZ)", url: "/integrations/tanzania", icon: Database, perm: "settings.manage" },
-    { title: "REB (RW)", url: "/integrations/rwanda", icon: Database, perm: "settings.manage" },
-    { title: "MoE EMIS (ET)", url: "/integrations/ethiopia", icon: Database, perm: "settings.manage" },
+    { title: "Statutory Filings", url: "/compliance/statutory", icon: ShieldCheck, perm: "payroll.manage" },
+    { title: "Audit Reports", url: "/compliance/audit-reports", icon: ClipboardCheck, perm: "reports.view" },
     { title: "Data Protection", url: "/dpa", icon: Lock, perm: "settings.manage" },
-    { title: "Subject Requests (SAR)", url: "/dpa/requests", icon: FileSearch, perm: "settings.manage" },
-    { title: "Right to Erasure", url: "/dpa/erasure", icon: Trash2, perm: "settings.manage" },
-    { title: "Policies & Terms", url: "/dpa/policies", icon: FileTextIcon, perm: "settings.manage" },
-    { title: "Billing & Plan", url: "/billing", icon: CreditCard, perm: "settings.manage" },
-    { title: "Settings", url: "/settings", icon: Settings, perm: "settings.manage" },
   ]},
   { label: "Super Admin", superAdminOnly: true, items: [
     { title: "All Tenants", url: "/admin/tenants", icon: Crown, superAdminOnly: true },
     { title: "Audit Log", url: "/admin/audit", icon: ActivityIcon, superAdminOnly: true },
   ]},
+];
+
+// Top-pinned items, always visible above section list
+const pinnedTop: NavItem[] = [
+  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Copilot", url: "/copilot", icon: Bot },
+];
+
+// Bottom-pinned items (below divider)
+const pinnedBottom: NavItem[] = [
+  { title: "Reports", url: "/reports", icon: BarChart3, perm: "reports.view" },
+  { title: "Billing", url: "/billing", icon: CreditCard, perm: "settings.manage" },
+  { title: "Settings", url: "/settings", icon: Settings, perm: "settings.manage" },
 ];
 
 function filterSections(can: (perm: string) => boolean, showAll: boolean, isSuper: boolean): NavSection[] {
@@ -106,12 +91,51 @@ function filterSections(can: (perm: string) => boolean, showAll: boolean, isSupe
     .filter(s => s.items.length > 0);
 }
 
+const STORAGE_KEY = "somasphere.sidebar.groups";
+
+function getStoredOpen(): Record<string, boolean> {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
+}
+
+function PinnedItem({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton asChild tooltip={collapsed ? item.title : undefined}>
+        <NavLink
+          to={item.url}
+          end={item.url === "/"}
+          className={cn(
+            "group/navlink relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent/60",
+            collapsed && "justify-center px-2",
+          )}
+          activeClassName="bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-r before:bg-primary"
+        >
+          <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
+          {!collapsed && <span className="truncate">{item.title}</span>}
+        </NavLink>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+}
+
 function SidebarSection({ section, collapsed }: { section: NavSection; collapsed: boolean }) {
   const location = useLocation();
   const isActive = section.items.some((item) =>
-    item.url === "/" ? location.pathname === "/" : location.pathname.startsWith(item.url)
+    item.url === "/" ? location.pathname === "/" : location.pathname.startsWith(item.url.split("?")[0])
   );
-  const [open, setOpen] = useState(isActive);
+  const stored = getStoredOpen();
+  const [open, setOpen] = useState<boolean>(isActive || stored[section.label] === true);
+
+  useEffect(() => {
+    if (isActive) setOpen(true);
+  }, [isActive]);
+
+  const persist = (next: boolean) => {
+    setOpen(next);
+    const s = getStoredOpen();
+    s[section.label] = next;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch {}
+  };
 
   if (collapsed) {
     return (
@@ -120,10 +144,10 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
           <SidebarMenuItem key={item.url}>
             <SidebarMenuButton asChild tooltip={item.title}>
               <NavLink to={item.url} end={item.url === "/"}
-                className="flex items-center justify-center rounded-lg px-2 py-2 text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                className="flex items-center justify-center rounded-md px-2 py-2 text-sidebar-foreground transition-colors hover:bg-sidebar-accent/60"
                 activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
               >
-                <item.icon className="h-4 w-4 shrink-0" />
+                <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -132,40 +156,23 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
     );
   }
 
-  if (section.items.length === 1) {
-    const item = section.items[0];
-    return (
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <SidebarMenuButton asChild>
-            <NavLink to={item.url} end={item.url === "/"}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-            >
-              <item.icon className="h-4 w-4 shrink-0" /><span>{item.title}</span>
-            </NavLink>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </SidebarMenu>
-    );
-  }
-
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 hover:text-muted-foreground transition-colors">
-        {section.label}
+    <Collapsible open={open} onOpenChange={persist}>
+      <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors">
+        <span>{section.label}</span>
         <ChevronRight className={cn("h-3 w-3 transition-transform", open && "rotate-90")} />
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <SidebarMenu>
+        <SidebarMenu className="pl-3">
           {section.items.map((item) => (
             <SidebarMenuItem key={item.url}>
               <SidebarMenuButton asChild>
                 <NavLink to={item.url} end={item.url === "/"}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                  className="group/navlink relative flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent/60"
+                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-r before:bg-primary"
                 >
-                  <item.icon className="h-4 w-4 shrink-0" /><span>{item.title}</span>
+                  <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
+                  <span className="truncate">{item.title}</span>
                 </NavLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -197,19 +204,32 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-      <SidebarHeader className="p-4">
-        <div className="flex items-center gap-3">
+      <SidebarHeader className="px-3 py-3 border-b border-sidebar-border">
+        <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-sm">S</div>
           {!collapsed && (
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-foreground tracking-tight">SomaSphere</span>
-              <span className="text-[11px] text-muted-foreground">School ERP</span>
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-semibold text-foreground tracking-tight truncate">SomaSphere</span>
+              <span className="text-[11px] text-muted-foreground truncate">School OS</span>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 gap-1 overflow-y-auto">
+      <SidebarContent className="px-2 gap-1 overflow-y-auto pt-2">
+        {/* Pinned top */}
+        <SidebarGroup className="py-0">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {pinnedTop.map((it) => (
+                <PinnedItem key={it.url} item={it} collapsed={collapsed} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {!collapsed && <div className="mx-3 my-1 h-px bg-sidebar-border" />}
+
         {filterSections(can, showAll, role === "super_admin").map((section) => (
           <SidebarGroup key={section.label} className="py-0">
             <SidebarGroupContent>
@@ -217,20 +237,39 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
+
+        {!collapsed && <div className="mx-3 my-2 h-px bg-sidebar-border" />}
+
+        {/* Pinned bottom */}
+        <SidebarGroup className="py-0">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {pinnedBottom
+                .filter((it) => !it.perm || showAll || can(it.perm))
+                .map((it) => (
+                  <PinnedItem key={it.url} item={it} collapsed={collapsed} />
+                ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="p-3 border-t border-sidebar-border">
-        <div className="flex items-center gap-3">
+        <button className={cn(
+          "group flex items-center gap-3 w-full rounded-md px-2 py-1.5 transition-colors hover:bg-sidebar-accent/60",
+          collapsed && "justify-center"
+        )}>
           <div className="h-8 w-8 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
             {initials}
           </div>
           {!collapsed && (
-            <div className="flex flex-col flex-1 min-w-0">
-              <span className="text-xs font-medium text-foreground truncate">{profile?.full_name || "User"}</span>
+            <div className="flex flex-col flex-1 min-w-0 text-left">
+              <span className="text-sm font-medium text-foreground truncate leading-tight">{profile?.full_name || "User"}</span>
               <span className="text-[11px] text-muted-foreground truncate">{roleName}</span>
             </div>
           )}
-        </div>
+          {!collapsed && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />}
+        </button>
       </SidebarFooter>
     </Sidebar>
   );
