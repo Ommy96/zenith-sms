@@ -72,6 +72,9 @@ const ErasureRequests = lazy(() => import("./pages/dpa/ErasureRequests"));
 const Policies = lazy(() => import("./pages/dpa/Policies"));
 const AuditReports = lazy(() => import("./pages/compliance/AuditReports"));
 const ExamBodies = lazy(() => import("./pages/compliance/ExamBodies"));
+const Billing = lazy(() => import("./pages/Billing"));
+const SuperAdminTenants = lazy(() => import("./pages/admin/SuperAdminTenants"));
+const SuperAdminAudit = lazy(() => import("./pages/admin/SuperAdminAudit"));
 
 // Lazy-loaded parent portal pages
 const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
@@ -232,6 +235,9 @@ function AppRoutes() {
       <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/setup" element={<ProtectedRoute><DashboardLayout><SchoolSetup /></DashboardLayout></ProtectedRoute>} />
       <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+      <Route path="/billing" element={<ProtectedRoute><DashboardLayout><Billing /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/admin/tenants" element={<ProtectedRoute><DashboardLayout><SuperAdminTenants /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/admin/audit" element={<ProtectedRoute><DashboardLayout><SuperAdminAudit /></DashboardLayout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
     </Suspense>
