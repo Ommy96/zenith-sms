@@ -234,9 +234,6 @@ export default function Students() {
           <Button variant="outline" size="sm" className="gap-1.5 text-xs">
             <Download className="h-3.5 w-3.5" /> Export
           </Button>
-          <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={openAdd}>
-            <Plus className="h-3.5 w-3.5" /> Quick add
-          </Button>
           <Button size="sm" className="gap-1.5 text-xs" onClick={() => navigate("/admissions/new")}>
             <Plus className="h-3.5 w-3.5" /> New admission
           </Button>
@@ -344,7 +341,7 @@ export default function Students() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="text-sm gap-2" onClick={() => openEdit(student)}>
+                        <DropdownMenuItem className="text-sm gap-2" onClick={() => navigate(`/students/${student.id}?edit=1`)}>
                           <Edit className="h-3.5 w-3.5" /> Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-sm gap-2" onClick={() => navigate(`/students/${student.id}`)}>
