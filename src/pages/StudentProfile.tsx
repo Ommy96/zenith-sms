@@ -101,6 +101,13 @@ export default function StudentProfile() {
     })();
   }, [id, profile?.tenant_id, navigate]);
 
+  useEffect(() => {
+    if (student && searchParams.get("edit") === "1" && !editOpen) {
+      openEdit();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [student, searchParams]);
+
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!student) return null;
 
