@@ -120,17 +120,11 @@ export default function Examinations() {
 
   // Fetch AI usage for current user/month
   const fetchAiUsage = useCallback(async () => {
-    const { data: u } = await supabase.auth.getUser();
-    if (!u?.user) return;
-    const ym = new Date().toISOString().slice(0, 7);
-    const { data } = await supabase
-      .from("ai_comment_usage")
-      .select("count")
-      .eq("user_id", u.user.id)
-      .eq("year_month", ym)
-      .maybeSingle();
-    setAiUsage({ used: data?.count ?? 0, limit: 50 });
-  }, []);
+    if (!schoolId) return;
+    const { data } = await supabase.rpc("ai_check_quota", { _tenant: schoolId });
+    const q: any = data || {};
+    setAiUsage({ used: q.request_count ?? 0, limit: q.request_limit ?? 50 });
+  }, [schoolId]);
   useEffect(() => { fetchAiUsage(); }, [fetchAiUsage]);
 
   useEffect(() => {
