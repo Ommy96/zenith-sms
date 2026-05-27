@@ -197,7 +197,7 @@ export default function StudentProfile() {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="gap-1.5"><Edit className="h-3.5 w-3.5" /> Edit</Button>
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={openEdit}><Edit className="h-3.5 w-3.5" /> Edit</Button>
               <Button size="sm" variant="outline" className="gap-1.5"><Mail className="h-3.5 w-3.5" /> Message</Button>
             </div>
           </div>
