@@ -5760,6 +5760,7 @@ export type Database = {
           employment_type:
             | Database["public"]["Enums"]["employment_type_enum"]
             | null
+          ethiopia_employee_id: string | null
           first_name: string
           gender: Database["public"]["Enums"]["gender_enum"] | null
           gross_salary: number | null
@@ -5782,15 +5783,18 @@ export type Database = {
           professional_certifications: Json | null
           reports_to: string | null
           role: string | null
+          rwanda_rssb_number: string | null
           salary_scale: string | null
           staff_number: string | null
           status: string | null
           subjects_taught: Json | null
+          tanzania_payroll_number: string | null
           tenant_id: string
           tsc_job_group: string | null
           tsc_number: string | null
           tsc_registered_subjects: string[] | null
           tsc_registration_date: string | null
+          uganda_payroll_number: string | null
           updated_at: string | null
           user_id: string | null
           year_qualified: number | null
@@ -5810,6 +5814,7 @@ export type Database = {
           employment_type?:
             | Database["public"]["Enums"]["employment_type_enum"]
             | null
+          ethiopia_employee_id?: string | null
           first_name: string
           gender?: Database["public"]["Enums"]["gender_enum"] | null
           gross_salary?: number | null
@@ -5832,15 +5837,18 @@ export type Database = {
           professional_certifications?: Json | null
           reports_to?: string | null
           role?: string | null
+          rwanda_rssb_number?: string | null
           salary_scale?: string | null
           staff_number?: string | null
           status?: string | null
           subjects_taught?: Json | null
+          tanzania_payroll_number?: string | null
           tenant_id: string
           tsc_job_group?: string | null
           tsc_number?: string | null
           tsc_registered_subjects?: string[] | null
           tsc_registration_date?: string | null
+          uganda_payroll_number?: string | null
           updated_at?: string | null
           user_id?: string | null
           year_qualified?: number | null
@@ -5860,6 +5868,7 @@ export type Database = {
           employment_type?:
             | Database["public"]["Enums"]["employment_type_enum"]
             | null
+          ethiopia_employee_id?: string | null
           first_name?: string
           gender?: Database["public"]["Enums"]["gender_enum"] | null
           gross_salary?: number | null
@@ -5882,15 +5891,18 @@ export type Database = {
           professional_certifications?: Json | null
           reports_to?: string | null
           role?: string | null
+          rwanda_rssb_number?: string | null
           salary_scale?: string | null
           staff_number?: string | null
           status?: string | null
           subjects_taught?: Json | null
+          tanzania_payroll_number?: string | null
           tenant_id?: string
           tsc_job_group?: string | null
           tsc_number?: string | null
           tsc_registered_subjects?: string[] | null
           tsc_registration_date?: string | null
+          uganda_payroll_number?: string | null
           updated_at?: string | null
           user_id?: string | null
           year_qualified?: number | null
@@ -6886,6 +6898,8 @@ export type Database = {
           enrollment_status:
             | Database["public"]["Enums"]["enrollment_status_enum"]
             | null
+          ethiopia_moe_id: string | null
+          ethiopian_birth_date: string | null
           exit_date: string | null
           exit_reason: string | null
           expected_graduation_year: number | null
@@ -6932,14 +6946,19 @@ export type Database = {
           previous_school: string | null
           reb_student_id: string | null
           residential_address: string | null
+          rwanda_national_id: string | null
+          rwanda_reb_id: string | null
           sne_category: string | null
           special_needs_details: string | null
           status: string | null
           stream: string | null
+          tanzania_prems_id: string | null
           tenant_id: string
           transfer_in_date: string | null
           transfer_out_date: string | null
+          uganda_lin: string | null
           une_index_number: string | null
+          uneb_index_number: string | null
           updated_at: string | null
           user_id: string | null
         }
@@ -6970,6 +6989,8 @@ export type Database = {
           enrollment_status?:
             | Database["public"]["Enums"]["enrollment_status_enum"]
             | null
+          ethiopia_moe_id?: string | null
+          ethiopian_birth_date?: string | null
           exit_date?: string | null
           exit_reason?: string | null
           expected_graduation_year?: number | null
@@ -7016,14 +7037,19 @@ export type Database = {
           previous_school?: string | null
           reb_student_id?: string | null
           residential_address?: string | null
+          rwanda_national_id?: string | null
+          rwanda_reb_id?: string | null
           sne_category?: string | null
           special_needs_details?: string | null
           status?: string | null
           stream?: string | null
+          tanzania_prems_id?: string | null
           tenant_id: string
           transfer_in_date?: string | null
           transfer_out_date?: string | null
+          uganda_lin?: string | null
           une_index_number?: string | null
+          uneb_index_number?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -7054,6 +7080,8 @@ export type Database = {
           enrollment_status?:
             | Database["public"]["Enums"]["enrollment_status_enum"]
             | null
+          ethiopia_moe_id?: string | null
+          ethiopian_birth_date?: string | null
           exit_date?: string | null
           exit_reason?: string | null
           expected_graduation_year?: number | null
@@ -7100,14 +7128,19 @@ export type Database = {
           previous_school?: string | null
           reb_student_id?: string | null
           residential_address?: string | null
+          rwanda_national_id?: string | null
+          rwanda_reb_id?: string | null
           sne_category?: string | null
           special_needs_details?: string | null
           status?: string | null
           stream?: string | null
+          tanzania_prems_id?: string | null
           tenant_id?: string
           transfer_in_date?: string | null
           transfer_out_date?: string | null
+          uganda_lin?: string | null
           une_index_number?: string | null
+          uneb_index_number?: string | null
           updated_at?: string | null
           user_id?: string | null
         }

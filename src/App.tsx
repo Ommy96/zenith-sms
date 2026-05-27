@@ -46,6 +46,10 @@ import FaceAttendance from "./pages/FaceAttendance";
 import NemisPage from "./pages/integrations/Nemis";
 import TscPage from "./pages/integrations/Tsc";
 import StatutoryFilingsPage from "./pages/integrations/StatutoryFilings";
+import UgandaPage from "./pages/integrations/Uganda";
+import TanzaniaPage from "./pages/integrations/Tanzania";
+import RwandaPage from "./pages/integrations/Rwanda";
+import EthiopiaPage from "./pages/integrations/Ethiopia";
 import SettingsPage from "./pages/Settings";
 import SchoolSetup from "./pages/SchoolSetup";
 import Login from "./pages/Login";
@@ -182,6 +186,10 @@ function AppRoutes() {
       <Route path="/attendance/face" element={<ProtectedRoute><DashboardLayout><FaceAttendance /></DashboardLayout></ProtectedRoute>} />
       <Route path="/integrations/nemis" element={<ProtectedRoute><DashboardLayout><NemisPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/integrations/tsc" element={<ProtectedRoute><DashboardLayout><TscPage /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/integrations/uganda" element={<ProtectedRoute><DashboardLayout><UgandaPage /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/integrations/tanzania" element={<ProtectedRoute><DashboardLayout><TanzaniaPage /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/integrations/rwanda" element={<ProtectedRoute><DashboardLayout><RwandaPage /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/integrations/ethiopia" element={<ProtectedRoute><DashboardLayout><EthiopiaPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/compliance/statutory" element={<ProtectedRoute><DashboardLayout><StatutoryFilingsPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/setup" element={<ProtectedRoute><DashboardLayout><SchoolSetup /></DashboardLayout></ProtectedRoute>} />
