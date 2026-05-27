@@ -78,7 +78,7 @@ export default function SuperAdminTenants() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Super Admin · Tenants</h1>
-        <p className="text-sm text-muted-foreground">Manage every school on the SomaSphere platform</p>
+        <p className="text-sm text-muted-foreground">Manage every school on the Zenith platform</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">

@@ -31,7 +31,7 @@ void i18n
     detection: {
       order: ["localStorage", "navigator"],
       caches: ["localStorage"],
-      lookupLocalStorage: "somasphere.lang",
+      lookupLocalStorage: "zenith.lang",
     },
   });
 

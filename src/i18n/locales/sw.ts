@@ -1,6 +1,6 @@
 const sw = {
   common: {
-    appName: "SomaSphere",
+    appName: "Zenith",
     loading: "Inapakia...",
     save: "Hifadhi",
     cancel: "Ghairi",

@@ -1,6 +1,6 @@
 const am = {
   common: {
-    appName: "SomaSphere",
+    appName: "Zenith",
     loading: "በመጫን ላይ...",
     save: "አስቀምጥ",
     cancel: "ሰርዝ",

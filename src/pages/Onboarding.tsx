@@ -74,7 +74,7 @@ export default function Onboarding() {
   };
 
   const finish = async () => {
-    toast({ title: "Setup complete!", description: "Welcome to SomaSphere." });
+    toast({ title: "Setup complete!", description: "Welcome to Zenith." });
     navigate("/");
   };
 

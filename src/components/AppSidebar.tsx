@@ -91,7 +91,7 @@ function filterSections(can: (perm: string) => boolean, showAll: boolean, isSupe
     .filter(s => s.items.length > 0);
 }
 
-const STORAGE_KEY = "somasphere.sidebar.groups";
+const STORAGE_KEY = "zenith.sidebar.groups";
 
 function getStoredOpen(): Record<string, boolean> {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
@@ -209,7 +209,7 @@ export function AppSidebar() {
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-sm">S</div>
           {!collapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-semibold text-foreground tracking-tight truncate">SomaSphere</span>
+              <span className="text-sm font-semibold text-foreground tracking-tight truncate">Zenith</span>
               <span className="text-[11px] text-muted-foreground truncate">School OS</span>
             </div>
           )}
