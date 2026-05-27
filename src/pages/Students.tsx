@@ -341,7 +341,7 @@ export default function Students() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="text-sm gap-2" onClick={() => openEdit(student)}>
+                        <DropdownMenuItem className="text-sm gap-2" onClick={() => navigate(`/students/${student.id}?edit=1`)}>
                           <Edit className="h-3.5 w-3.5" /> Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-sm gap-2" onClick={() => navigate(`/students/${student.id}`)}>
