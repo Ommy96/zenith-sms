@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.ical-feed]
 verify_jwt = false
+
+[functions.ai-invoke]
+verify_jwt = false
