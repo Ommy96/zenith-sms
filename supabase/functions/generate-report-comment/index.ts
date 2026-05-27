@@ -1,160 +1,103 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+// Generates a single personalised report-card comment using the shared AI service
+// (Claude default, Lovable AI fallback) with tenant quota + caching + house style.
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { aiCall, authedUser, loadTemplate, renderTemplate } from "../_shared/ai-service.ts";
 
-const MONTHLY_LIMIT = 50;
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const user = await authedUser(req);
+    if (!user) return json({ error: "Unauthorized" }, 401);
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { persistSession: false } },
     );
-
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData?.user;
-    if (!user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const { data: profile } = await admin
-      .from("profiles").select("tenant_id").eq("id", user.id).maybeSingle();
-    const schoolId = profile?.tenant_id;
-    if (!schoolId) {
-      return new Response(JSON.stringify({ error: "No school associated" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+      .from("profiles").select("tenant_id").eq("id", user.userId).maybeSingle();
+    const tenantId = profile?.tenant_id;
+    if (!tenantId) return json({ error: "No school associated" }, 400);
 
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const {
-      studentName, subject, grade, score,
-      strengths, improvements, style = "Encouraging", length = "Medium",
+      studentName, gradeLevel, subject, grade, score,
+      strengths, improvements,
+      style, length = "Medium", language, cbcCompetencies,
     } = body ?? {};
-
     if (!studentName || !subject) {
-      return new Response(JSON.stringify({ error: "studentName and subject required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "studentName and subject required" }, 400);
     }
 
-    // Usage check
-    const ym = new Date().toISOString().slice(0, 7);
-    const { data: usageRow } = await admin
-      .from("ai_comment_usage")
-      .select("id, count")
-      .eq("user_id", user.id)
-      .eq("year_month", ym)
-      .maybeSingle();
-
-    const currentCount = usageRow?.count ?? 0;
-    if (currentCount >= MONTHLY_LIMIT) {
-      return new Response(JSON.stringify({
-        error: "Monthly AI generation limit reached",
-        used: currentCount, limit: MONTHLY_LIMIT,
-      }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    // Load house style defaults from tenant_settings.
+    const { data: settings } = await admin
+      .from("tenant_settings").select("key,value")
+      .eq("tenant_id", tenantId)
+      .in("key", ["ai.house_tone", "ai.default_language"]);
+    const sMap: Record<string, any> = {};
+    (settings ?? []).forEach((r: any) => { sMap[r.key] = r.value?.value ?? r.value; });
+    const tone = style || sMap["ai.house_tone"] || "Encouraging";
+    const lang = language || sMap["ai.default_language"] || "English";
 
     const lengthGuide: Record<string, string> = {
       Short: "exactly one concise sentence",
       Medium: "2 to 3 sentences",
       Long: "a full paragraph of 4 to 6 sentences",
     };
-    const styleGuide: Record<string, string> = {
-      Encouraging: "warm, positive and motivating tone",
-      Formal: "professional, neutral academic tone",
-      Direct: "concise, candid, straightforward tone",
+
+    const { version } = await loadTemplate("report_comment.v1", tenantId);
+    const vars = {
+      student_name: studentName,
+      grade_level: gradeLevel ?? "",
+      subject,
+      grade_or_level: grade ?? (score != null ? `score ${score}` : "N/A"),
+      whats_going_well: strengths || "—",
+      needs_work: improvements || "—",
+      tone,
+      length: lengthGuide[length] ?? lengthGuide.Medium,
+      language: lang,
+      cbc_competencies: cbcCompetencies || "",
     };
+    const systemPrompt = version.system_prompt
+      ? renderTemplate(version.system_prompt, vars)
+      : undefined;
+    const userPrompt = renderTemplate(version.user_prompt, vars);
 
-    const systemPrompt = `You write personalised school report card comments for teachers.
-Write in ${styleGuide[style] ?? styleGuide.Encouraging}.
-Length: ${lengthGuide[length] ?? lengthGuide.Medium}.
-Address the student by first name. Mention the subject. Reference the strengths and areas to improve naturally; do not list them as bullets. Do not invent facts beyond what's provided. Do not include the grade letter unless it adds value.`;
-
-    const userPrompt = `Student: ${studentName}
-Subject: ${subject}
-Grade: ${grade ?? "N/A"}${score != null ? ` (score ${score})` : ""}
-What's going well: ${strengths || "—"}
-What needs work: ${improvements || "—"}
-
-Write the report card comment.`;
-
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      }),
+    const result = await aiCall({
+      tenantId, userId: user.userId, feature: "report_comment",
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
+      model: version.model ? undefined : undefined, // honour provider defaults
+      temperature: version.temperature ?? 0.7,
+      maxTokens: 400,
+      cacheContext: `${studentName}|${subject}|${grade ?? ""}|${score ?? ""}`,
+      requestMeta: { templateSlug: "report_comment.v1", tone, length, language: lang },
     });
 
-    if (!resp.ok) {
-      const text = await resp.text();
-      console.error("AI gateway error", resp.status, text);
-      if (resp.status === 429) {
-        return new Response(JSON.stringify({ error: "AI rate limit, try again shortly." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (resp.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Add credits in workspace settings." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      return new Response(JSON.stringify({ error: "AI gateway error" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Pull current quota state so the client can show used/limit.
+    const { data: quota } = await admin.rpc("ai_check_quota", { _tenant: tenantId });
 
-    const data = await resp.json();
-    const comment: string = data.choices?.[0]?.message?.content?.trim() ?? "";
-
-    // Increment usage
-    if (usageRow) {
-      await admin.from("ai_comment_usage")
-        .update({ count: currentCount + 1 })
-        .eq("id", usageRow.id);
-    } else {
-      await admin.from("ai_comment_usage").insert({
-        user_id: user.id, tenant_id: schoolId, year_month: ym, count: 1,
-      });
-    }
-
-    return new Response(JSON.stringify({
-      comment,
-      used: currentCount + 1,
-      limit: MONTHLY_LIMIT,
-    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return json({
+      comment: result.text.trim(),
+      provider: result.provider, model: result.model,
+      cacheHit: result.cacheHit, costUsd: result.costUsd,
+      used: quota?.request_count ?? 0,
+      limit: quota?.request_limit ?? null,
+      quotaState: quota?.state ?? "ok",
+    });
   } catch (e) {
-    console.error("generate-report-comment error", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    const msg = e instanceof Error ? e.message : String(e);
+    const status = msg === "AI_QUOTA_EXCEEDED" ? 429 : 500;
+    console.error("generate-report-comment", msg);
+    return json({ error: msg }, status);
   }
 });
