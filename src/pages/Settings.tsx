@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Building, Palette, GraduationCap, Bell, Sparkles, RotateCcw, Trash2, Loader2, Brain } from "lucide-react";
+import { Building, Palette, GraduationCap, Bell, Sparkles, RotateCcw, Trash2, Loader2, Brain, Rocket } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,6 +71,11 @@ export default function SettingsPage() {
           <TabsTrigger value="notifications" className="text-sm gap-1.5"><Bell className="h-3.5 w-3.5" /> Notifications</TabsTrigger>
           <TabsTrigger value="ai" className="text-sm gap-1.5"><Brain className="h-3.5 w-3.5" /> AI</TabsTrigger>
         </TabsList>
+        <div className="flex justify-end -mt-2 mb-2">
+          <Button asChild variant="outline" size="sm" className="gap-1.5">
+            <Link to="/onboarding"><Rocket className="h-3.5 w-3.5" /> Open Setup Checklist</Link>
+          </Button>
+        </div>
 
         <TabsContent value="general" className="mt-6">
           <div className="rounded-xl border border-border bg-card p-6 space-y-6">

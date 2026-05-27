@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow } from "date-fns";
+import { ProgressiveHint } from "@/components/ProgressiveHint";
 
 type TileColor = "primary" | "success" | "warning" | "info" | "destructive";
 
@@ -216,6 +217,42 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Dashboard</h1>
         <p className="text-sm text-muted-foreground mt-1">Welcome back, {firstName}. Here's what needs your attention today.</p>
       </motion.div>
+
+      {/* Progressive onboarding hints */}
+      <div className="grid gap-3 md:grid-cols-2">
+        <ProgressiveHint
+          id="hint-first-sms"
+          showWhenTaskIncomplete="comms"
+          title="You haven't sent your first message"
+          body="Connect SMS or WhatsApp and send a test to yourself in under 2 minutes."
+          cta="Set up messaging"
+          route="/communication/whatsapp"
+        />
+        <ProgressiveHint
+          id="hint-mpesa"
+          showWhenTaskIncomplete="fees"
+          title="Connect M-Pesa to automate fee collection"
+          body="Payments auto-reconcile to invoices the moment parents pay."
+          cta="Connect M-Pesa"
+          route="/finance/mobile-money"
+        />
+        <ProgressiveHint
+          id="hint-students"
+          showWhenTaskIncomplete="students"
+          title="Add your real students"
+          body="Import from Excel with AI column mapping — demo data stays until you do."
+          cta="Import students"
+          route="/students/import"
+        />
+        <ProgressiveHint
+          id="hint-staff"
+          showWhenTaskIncomplete="staff"
+          title="Assign a class teacher"
+          body="Each class needs a teacher to mark attendance and post grades."
+          cta="Add staff"
+          route="/staff"
+        />
+      </div>
 
       {/* Row 1: Today's focus */}
       <div>
