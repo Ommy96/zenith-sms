@@ -1338,6 +1338,44 @@ export type Database = {
           },
         ]
       }
+      compliance_exports_log: {
+        Row: {
+          export_type: string
+          generated_at: string
+          generated_by: string | null
+          id: string
+          parameters: Json | null
+          row_count: number | null
+          tenant_id: string
+        }
+        Insert: {
+          export_type: string
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          parameters?: Json | null
+          row_count?: number | null
+          tenant_id: string
+        }
+        Update: {
+          export_type?: string
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          parameters?: Json | null
+          row_count?: number | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_exports_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       core_competencies: {
         Row: {
           created_at: string
@@ -4326,6 +4364,44 @@ export type Database = {
           },
         ]
       }
+      nemis_credentials: {
+        Row: {
+          created_at: string
+          last_synced_at: string | null
+          password_ciphertext: string
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          last_synced_at?: string | null
+          password_ciphertext: string
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          username: string
+        }
+        Update: {
+          created_at?: string
+          last_synced_at?: string | null
+          password_ciphertext?: string
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nemis_credentials_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           created_at: string
@@ -5711,7 +5787,10 @@ export type Database = {
           status: string | null
           subjects_taught: Json | null
           tenant_id: string
+          tsc_job_group: string | null
           tsc_number: string | null
+          tsc_registered_subjects: string[] | null
+          tsc_registration_date: string | null
           updated_at: string | null
           user_id: string | null
           year_qualified: number | null
@@ -5758,7 +5837,10 @@ export type Database = {
           status?: string | null
           subjects_taught?: Json | null
           tenant_id: string
+          tsc_job_group?: string | null
           tsc_number?: string | null
+          tsc_registered_subjects?: string[] | null
+          tsc_registration_date?: string | null
           updated_at?: string | null
           user_id?: string | null
           year_qualified?: number | null
@@ -5805,7 +5887,10 @@ export type Database = {
           status?: string | null
           subjects_taught?: Json | null
           tenant_id?: string
+          tsc_job_group?: string | null
           tsc_number?: string | null
+          tsc_registered_subjects?: string[] | null
+          tsc_registration_date?: string | null
           updated_at?: string | null
           user_id?: string | null
           year_qualified?: number | null
@@ -5888,6 +5973,65 @@ export type Database = {
           },
           {
             foreignKeyName: "staff_compensation_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      statutory_filings: {
+        Row: {
+          amount: number | null
+          created_at: string
+          file_url: string | null
+          filed_at: string | null
+          filed_by: string | null
+          filing_type: string
+          id: string
+          notes: string | null
+          period_end: string
+          period_start: string
+          reference: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          file_url?: string | null
+          filed_at?: string | null
+          filed_by?: string | null
+          filing_type: string
+          id?: string
+          notes?: string | null
+          period_end: string
+          period_start: string
+          reference?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          file_url?: string | null
+          filed_at?: string | null
+          filed_by?: string | null
+          filing_type?: string
+          id?: string
+          notes?: string | null
+          period_end?: string
+          period_start?: string
+          reference?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "statutory_filings_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -6742,6 +6886,8 @@ export type Database = {
           enrollment_status:
             | Database["public"]["Enums"]["enrollment_status_enum"]
             | null
+          exit_date: string | null
+          exit_reason: string | null
           expected_graduation_year: number | null
           first_name: string
           gender: string | null
@@ -6759,6 +6905,7 @@ export type Database = {
           immunization_status: Json | null
           insurance_policy_number: string | null
           insurance_provider: string | null
+          is_repeater: boolean | null
           kcpe_index_number: string | null
           kcse_index_number: string | null
           knec_assessment_number: string | null
@@ -6785,10 +6932,13 @@ export type Database = {
           previous_school: string | null
           reb_student_id: string | null
           residential_address: string | null
+          sne_category: string | null
           special_needs_details: string | null
           status: string | null
           stream: string | null
           tenant_id: string
+          transfer_in_date: string | null
+          transfer_out_date: string | null
           une_index_number: string | null
           updated_at: string | null
           user_id: string | null
@@ -6820,6 +6970,8 @@ export type Database = {
           enrollment_status?:
             | Database["public"]["Enums"]["enrollment_status_enum"]
             | null
+          exit_date?: string | null
+          exit_reason?: string | null
           expected_graduation_year?: number | null
           first_name: string
           gender?: string | null
@@ -6837,6 +6989,7 @@ export type Database = {
           immunization_status?: Json | null
           insurance_policy_number?: string | null
           insurance_provider?: string | null
+          is_repeater?: boolean | null
           kcpe_index_number?: string | null
           kcse_index_number?: string | null
           knec_assessment_number?: string | null
@@ -6863,10 +7016,13 @@ export type Database = {
           previous_school?: string | null
           reb_student_id?: string | null
           residential_address?: string | null
+          sne_category?: string | null
           special_needs_details?: string | null
           status?: string | null
           stream?: string | null
           tenant_id: string
+          transfer_in_date?: string | null
+          transfer_out_date?: string | null
           une_index_number?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -6898,6 +7054,8 @@ export type Database = {
           enrollment_status?:
             | Database["public"]["Enums"]["enrollment_status_enum"]
             | null
+          exit_date?: string | null
+          exit_reason?: string | null
           expected_graduation_year?: number | null
           first_name?: string
           gender?: string | null
@@ -6915,6 +7073,7 @@ export type Database = {
           immunization_status?: Json | null
           insurance_policy_number?: string | null
           insurance_provider?: string | null
+          is_repeater?: boolean | null
           kcpe_index_number?: string | null
           kcse_index_number?: string | null
           knec_assessment_number?: string | null
@@ -6941,10 +7100,13 @@ export type Database = {
           previous_school?: string | null
           reb_student_id?: string | null
           residential_address?: string | null
+          sne_category?: string | null
           special_needs_details?: string | null
           status?: string | null
           stream?: string | null
           tenant_id?: string
+          transfer_in_date?: string | null
+          transfer_out_date?: string | null
           une_index_number?: string | null
           updated_at?: string | null
           user_id?: string | null

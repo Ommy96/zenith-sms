@@ -1,55 +1,62 @@
-# SomaSphere Operations — Build Plan
+## Phase H: Compliance & Government Integrations
 
-This is a very large scope (8 modules, ~30 tables, multiple capture flows). To ship something usable instead of a half-broken everything, I'll deliver it in **5 phases**, each independently shippable. Confirm scope and I'll start with Phase 1.
+Massive scope (10 sub-areas across 5 countries + DPA + audit reports). I'll deliver in 4 sequential sub-phases so each ships working code rather than 60 half-built files. Confirm the breakdown before I start, or tell me to merge/skip.
 
-## Phase 1 — Attendance (core operations workhorse)
-- Tables: `attendance_records`, `attendance_sessions`, tenant setting for mode (daily / per-period / boarding)
-- Class register grid (rows=students, cols=status radios), "All present" one-tap, bulk select, late time entry
-- Mobile-first layout, offline cache via IndexedDB queue, auto-sync
-- Auto-notify guardians on absence (reuses messaging dispatcher + `attendance_absence` template, already seeded)
-- Pattern detection trigger: 3 consecutive absences flags class teacher
-- Reports: daily register, term summary per student, class trends, chronic absentees
-- Capture: manual (Phase 1), QR scan (Phase 1b stub), biometric/face (out of scope now)
+### H1 — Kenya statutory core (this turn)
+The highest-leverage chunk for current/likely tenants:
+- **NEMIS module** (`System → Integrations → NEMIS`)
+  - Settings page: encrypted NEMIS credentials (stored via edge function + pgsodium-style symmetric encryption using a project secret)
+  - UPI coverage widget: "X% of students have NEMIS UPI"
+  - **Export**: CSV in NEMIS column format (M/D/YYYY dates, birth-cert names, gender M/F, etc.)
+  - **Import**: parse returned progression CSV, update `students.nemis_upi` + any returned fields, show diff before commit
+  - NEMIS Reports: Enrolment by class & gender, SNE enrolment, repeats, dropouts, transfers in/out, capitation tracking (all date-range parameterised, exportable)
+- **TSC**: `staff.tsc_number`, `tsc_job_group`, `tsc_subjects[]`; teacher-returns CSV; subject-mismatch report (TSC-registered vs assigned)
+- **KRA / Statutory payroll exports** (extend existing payroll):
+  - P9A per employee (annual), P10 monthly, iTax CSV, SHIF, NSSF Tier I+II, AHL, HELB
+  - Compliance dashboard tile: PAYE/SHIF/NSSF/AHL filed ✓ with last filing date + reference (new `statutory_filings` table)
 
-## Phase 2 — Discipline + Health + Events
-- Discipline: `discipline_incidents`, `disciplinary_actions`, `merit_points`, severity 3+ auto-notify guardian
-- Health: `health_visits`, `medication_administration`, `immunization_records`, `accident_reports` — RLS gated to `health.view`
-- Events: `calendar_events` (month/week/agenda views), iCal subscription URL per user, resource booking on rooms
+### H2 — Other East African countries
+- Uganda: LIN, EMIS export, UNEB candidate CSV, URA payroll (PAYE UG + NSSF UG)
+- Tanzania: PREMS, NECTA (CSEE/ACSEE) export, TRA payroll
+- Rwanda: REB student ID, national-exam CSV, RRA payroll, FR/EN toggle
+- Ethiopia: MoE ID, Amharic strings, Ethiopian calendar option on date pickers
+- Country detection from `tenants.country` — only show relevant modules
 
-## Phase 3 — Library + Inventory/Procurement
-- Library: `library_items`, `library_loans`, barcode scan checkout/return, fines, overdue reminders, student catalog in portal
-- Inventory: `stores`, `stock_items`, `stock_movements`, suppliers, asset register with QR tags
-- Requisition → PO → GRN workflow with amount-band approval matrix
-- Auto-draft requisition when stock < reorder_level (trigger)
+### H3 — Data Protection & DPA compliance
+- `tenant_dpo` table (name, email, phone, registration #)
+- Subject Access Request workflow: parent/staff submits → admin reviews → packaged ZIP export (student record, attendance, fees, messages, exam results)
+- Right-to-erasure workflow with full audit trail (`erasure_requests`)
+- Cookie/consent banner on portal
+- Tenant-customisable privacy policy + ToS (markdown templates)
+- DPIA template (downloadable .docx)
+- "Data hosted in: [region]" surfaced in Settings (read from env)
 
-## Phase 4 — Transport
-- Tables: `vehicles`, `drivers`, `routes`, `route_stops`, `student_transport_subscriptions`, `vehicle_location_pings`, `boarding_scans`, `maintenance_logs`, `fuel_logs`
-- Route designer with stop sequence, ETA calc from last ping
-- Boarding/alighting QR scanner page, daily roster
-- Parent app: live bus tracking + geofenced arrival SMS
-- Reports: utilization, maintenance cost, driver mileage, transport-fee outstanding
+### H4 — Exam bodies + Audit-ready PDF packs
+- Generic exam-body export framework: KNEC, UNEB, NECTA, REB, Cambridge/IB formats
+- KNEC results import (CSV → `student_exam_results` by index #)
+- One-click PDF packs (server-rendered via edge function + react-pdf or puppeteer-deno):
+  - QASO visit pack
+  - Internal audit pack
+  - BoM report
+  - PTA report
+- All date-range parameterised, school letterhead, charts via QuickChart, reproducible
 
-## Phase 5 — Hostel / Boarding
-- Tables: `hostels`, `rooms`, `beds`, `hostel_allocations`, `roll_calls`, `visitor_log`, `out_passes`, `bedding_inventory`
-- Drag-drop bed allocation grid
-- Roll-call sessions (morning, lights-out, weekend)
-- Out-pass: student request → guardian approves in portal → matron logs out/in
+### Schema additions (H1 only, this turn)
+```
+ALTER students ADD nemis_upi, birth_cert_no, sne_category, is_repeater, exit_reason, exit_date
+ALTER staff   ADD tsc_number, tsc_job_group, tsc_subjects text[]
+CREATE statutory_filings (tenant, type, period, reference, filed_at, filed_by, file_url)
+CREATE nemis_credentials (tenant, username, password_encrypted) -- service_role only
+CREATE compliance_reports_log (audit trail of generated exports)
+```
 
-## Technical notes
-- Each phase = 1 migration + page(s) under `src/pages/operations/*` + tab components, registered in `App.tsx` and `AppSidebar.tsx`
-- All tables tenant-scoped with RLS using existing `is_tenant_member` / `has_perm`
-- All guardian notifications go through `messages` table → existing `dispatch-messages` edge function (no new providers)
-- New permissions added: `attendance.mark`, `attendance.view`, `discipline.manage`, `health.view`, `health.manage`, `library.manage`, `inventory.manage`, `procurement.approve`, `transport.manage`, `hostel.manage`, `events.manage`
-- Auto-notify and reorder-draft logic implemented as Postgres triggers + edge function calls
-- Offline attendance uses a small IndexedDB wrapper (`src/lib/offline/queue.ts`) flushed on `online` event
+### Tech notes
+- Encryption for NEMIS credentials: edge function uses `Deno.env.get('ENCRYPTION_KEY')` + AES-GCM; only service role reads ciphertext
+- All CSV generators in edge functions (server-side, avoids browser CSV quirks with UTF-8 BOM for Excel)
+- Country gating via `useTenantCountry()` hook reading `tenants.country`
 
-## What's intentionally out of Phase 1–5 (call out before building)
-- Biometric/fingerprint hardware integration (needs vendor SDK)
-- Face-recognition attendance (Phase 6 per spec — needs vision model)
-- Real GPS hardware integration for buses (Phase 4 will use driver-phone web geolocation as v1)
-- Google/Outlook OAuth calendar sync (Phase 2 ships read-only iCal feed; full 2-way sync later)
-
-## Proposed order
-Start with **Phase 1 (Attendance)** since it's the daily-use workhorse, gives immediate parent-comms value, and exercises the messaging pipeline you just built.
-
-Reply with: **"go phase 1"** (or pick a different starting phase, or adjust scope) and I'll ship it.
+**Reply with**:
+- `go` → I start H1 (Kenya statutory core) now
+- `merge X+Y` → combine sub-phases
+- `skip X` → drop sub-phase
+- Any scope edits
