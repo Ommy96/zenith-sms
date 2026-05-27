@@ -6,6 +6,7 @@ import {
   ShieldAlert, HeartPulse, Calendar as CalendarIcon,
   BedDouble,
   Bot,
+  TrendingDown,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -45,6 +46,7 @@ const sections: NavSection[] = [
     { title: "Fee Management", url: "/fees", icon: DollarSign, perm: "fees.view" },
     { title: "Invoices", url: "/invoices", icon: Receipt, perm: "fees.view" },
     { title: "Mobile Money", url: "/finance/mobile-money", icon: Smartphone, perm: "fees.configure" },
+    { title: "Fee Risk (AI)", url: "/fees/risk", icon: TrendingDown, perm: "fees.view" },
     { title: "Reports", url: "/finance-reports", icon: FileText, perm: "fees.view" },
   ]},
   { label: "Communication", items: [
