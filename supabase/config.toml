@@ -59,3 +59,12 @@ verify_jwt = false
 
 [functions.auto-timetable-optimize]
 verify_jwt = false
+
+[functions.ai-ocr-grader]
+verify_jwt = false
+
+[functions.ai-admission-screener]
+verify_jwt = false
+
+[functions.ai-face-attendance]
+verify_jwt = false

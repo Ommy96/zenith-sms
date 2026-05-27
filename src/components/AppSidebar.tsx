@@ -7,6 +7,9 @@ import {
   BedDouble,
   Bot,
   TrendingDown,
+  ScanLine,
+  UserCheck,
+  Camera,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -34,12 +37,15 @@ const sections: NavSection[] = [
   { label: "Academics", items: [
     { title: "Classes & Subjects", url: "/academics", icon: BookOpen, perm: "academics.view" },
     { title: "Attendance", url: "/attendance", icon: UserCog, perm: "attendance.view" },
+    { title: "Face Attendance (AI)", url: "/attendance/face", icon: Camera, perm: "attendance.view" },
     { title: "Examinations", url: "/examinations", icon: ClipboardList, perm: "exams.view" },
+    { title: "OCR Grader (AI)", url: "/examinations/ocr", icon: ScanLine, perm: "exams.view" },
     { title: "Timetable", url: "/timetable", icon: CalendarDays, perm: "academics.view" },
   ]},
   { label: "People", items: [
     { title: "Students", url: "/students", icon: Users, perm: "students.view" },
     { title: "Admissions", url: "/admissions", icon: UserPlus, perm: "admissions.view" },
+    { title: "Admission Screener (AI)", url: "/admissions/screener", icon: UserCheck, perm: "admissions.view" },
     { title: "Staff & HR", url: "/staff", icon: Briefcase, perm: "staff.view" },
   ]},
   { label: "Finance", items: [

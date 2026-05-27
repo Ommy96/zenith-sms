@@ -148,6 +148,63 @@ export type Database = {
           },
         ]
       }
+      admission_screenings: {
+        Row: {
+          applicant_name: string | null
+          application_id: string | null
+          created_at: string
+          created_by: string | null
+          criteria: Json | null
+          grade_level: string | null
+          id: string
+          input_data: Json | null
+          interview_questions: Json | null
+          rationale: string | null
+          recommendation: string | null
+          red_flags: Json | null
+          score: number | null
+          strengths: Json | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          applicant_name?: string | null
+          application_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          criteria?: Json | null
+          grade_level?: string | null
+          id?: string
+          input_data?: Json | null
+          interview_questions?: Json | null
+          rationale?: string | null
+          recommendation?: string | null
+          red_flags?: Json | null
+          score?: number | null
+          strengths?: Json | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          applicant_name?: string | null
+          application_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          criteria?: Json | null
+          grade_level?: string | null
+          id?: string
+          input_data?: Json | null
+          interview_questions?: Json | null
+          rationale?: string | null
+          recommendation?: string | null
+          red_flags?: Json | null
+          score?: number | null
+          strengths?: Json | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ai_cache: {
         Row: {
           cache_key: string
@@ -1928,6 +1985,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      face_attendance_sessions: {
+        Row: {
+          ai_notes: string | null
+          capture_date: string
+          class_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          marked_attendance: boolean | null
+          matched_students: Json | null
+          photo_path: string
+          status: string
+          tenant_id: string
+          unmatched_faces: number | null
+          updated_at: string
+        }
+        Insert: {
+          ai_notes?: string | null
+          capture_date?: string
+          class_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          marked_attendance?: boolean | null
+          matched_students?: Json | null
+          photo_path: string
+          status?: string
+          tenant_id: string
+          unmatched_faces?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ai_notes?: string | null
+          capture_date?: string
+          class_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          marked_attendance?: boolean | null
+          matched_students?: Json | null
+          photo_path?: string
+          status?: string
+          tenant_id?: string
+          unmatched_faces?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      face_enrollments: {
+        Row: {
+          created_at: string
+          enrolled_by: string | null
+          id: string
+          image_path: string
+          is_primary: boolean | null
+          student_id: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          enrolled_by?: string | null
+          id?: string
+          image_path: string
+          is_primary?: boolean | null
+          student_id: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          enrolled_by?: string | null
+          id?: string
+          image_path?: string
+          is_primary?: boolean | null
+          student_id?: string
+          tenant_id?: string
+        }
+        Relationships: []
       }
       fee_categories: {
         Row: {
@@ -4287,6 +4422,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ocr_grading_jobs: {
+        Row: {
+          ai_notes: string | null
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          exam_id: string | null
+          id: string
+          image_path: string
+          max_marks: number | null
+          per_question: Json | null
+          posted_to_gradebook: boolean | null
+          status: string
+          student_id: string | null
+          subject_id: string | null
+          tenant_id: string
+          total_marks: number | null
+          updated_at: string
+        }
+        Insert: {
+          ai_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          exam_id?: string | null
+          id?: string
+          image_path: string
+          max_marks?: number | null
+          per_question?: Json | null
+          posted_to_gradebook?: boolean | null
+          status?: string
+          student_id?: string | null
+          subject_id?: string | null
+          tenant_id: string
+          total_marks?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ai_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          exam_id?: string | null
+          id?: string
+          image_path?: string
+          max_marks?: number | null
+          per_question?: Json | null
+          posted_to_gradebook?: boolean | null
+          status?: string
+          student_id?: string | null
+          subject_id?: string | null
+          tenant_id?: string
+          total_marks?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       payment_allocations: {
         Row: {

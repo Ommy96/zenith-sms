@@ -40,6 +40,9 @@ import Reports from "./pages/Reports";
 import Documents from "./pages/Documents";
 import Copilot from "./pages/Copilot";
 import FeeRisk from "./pages/FeeRisk";
+import OcrGrader from "./pages/OcrGrader";
+import AdmissionScreener from "./pages/AdmissionScreener";
+import FaceAttendance from "./pages/FaceAttendance";
 import SettingsPage from "./pages/Settings";
 import SchoolSetup from "./pages/SchoolSetup";
 import Login from "./pages/Login";
@@ -171,6 +174,9 @@ function AppRoutes() {
       <Route path="/documents" element={<ProtectedRoute><DashboardLayout><Documents /></DashboardLayout></ProtectedRoute>} />
       <Route path="/copilot" element={<ProtectedRoute><DashboardLayout><Copilot /></DashboardLayout></ProtectedRoute>} />
       <Route path="/fees/risk" element={<ProtectedRoute><DashboardLayout><FeeRisk /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/examinations/ocr" element={<ProtectedRoute><DashboardLayout><OcrGrader /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/admissions/screener" element={<ProtectedRoute><DashboardLayout><AdmissionScreener /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/attendance/face" element={<ProtectedRoute><DashboardLayout><FaceAttendance /></DashboardLayout></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/setup" element={<ProtectedRoute><DashboardLayout><SchoolSetup /></DashboardLayout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
