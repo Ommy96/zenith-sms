@@ -7569,6 +7569,86 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          code: Database["public"]["Enums"]["subscription_plan"]
+          created_at: string
+          description: string | null
+          features: Json
+          id: string
+          is_active: boolean
+          max_staff: number | null
+          max_students: number | null
+          name: string
+          price_annual_usd: number
+          price_monthly_usd: number
+          sort_order: number
+        }
+        Insert: {
+          code: Database["public"]["Enums"]["subscription_plan"]
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          max_staff?: number | null
+          max_students?: number | null
+          name: string
+          price_annual_usd?: number
+          price_monthly_usd?: number
+          sort_order?: number
+        }
+        Update: {
+          code?: Database["public"]["Enums"]["subscription_plan"]
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          max_staff?: number | null
+          max_students?: number | null
+          name?: string
+          price_annual_usd?: number
+          price_monthly_usd?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      super_admin_audit_log: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          id: string
+          meta: Json
+          tenant_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          id?: string
+          meta?: Json
+          tenant_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          id?: string
+          meta?: Json
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "super_admin_audit_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           address: string | null
@@ -7666,6 +7746,59 @@ export type Database = {
             columns: ["teacher_id"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_billing_invoices: {
+        Row: {
+          amount_usd: number
+          created_at: string
+          currency: string
+          hosted_invoice_url: string | null
+          id: string
+          invoice_number: string
+          paid_at: string | null
+          period_end: string
+          period_start: string
+          plan_code: Database["public"]["Enums"]["subscription_plan"]
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          amount_usd: number
+          created_at?: string
+          currency?: string
+          hosted_invoice_url?: string | null
+          id?: string
+          invoice_number: string
+          paid_at?: string | null
+          period_end: string
+          period_start: string
+          plan_code: Database["public"]["Enums"]["subscription_plan"]
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          amount_usd?: number
+          created_at?: string
+          currency?: string
+          hosted_invoice_url?: string | null
+          id?: string
+          invoice_number?: string
+          paid_at?: string | null
+          period_end?: string
+          period_start?: string
+          plan_code?: Database["public"]["Enums"]["subscription_plan"]
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_billing_invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
