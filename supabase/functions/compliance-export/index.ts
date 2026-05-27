@@ -710,8 +710,8 @@ async function countryPaye(svc: any, tenantId: string, p: any, currency: string,
   for (const ps of rowsData) {
     const s = ps.staff ?? {};
     rows.push([
-      s.employee_number ?? "",
-      s.national_id_number ?? s.tin_number ?? "",
+      s.tsc_number ?? "",
+      s.national_id_number ?? s.kra_pin ?? "",
       `${s.last_name ?? ""} ${s.first_name ?? ""}`.trim(),
       n(ps.gross_pay), n(ps.taxable_pay), n(ps.paye), n(ps.net_pay),
     ]);
