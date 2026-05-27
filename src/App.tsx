@@ -6,60 +6,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { DashboardLayout } from "./components/DashboardLayout";
-import Dashboard from "./pages/Dashboard";
-import Students from "./pages/Students";
-import StudentsImport from "./pages/StudentsImport";
-import StudentProfile from "./pages/StudentProfile";
-import AdmissionWizard from "./pages/AdmissionWizard";
-import Finance from "./pages/Finance";
-import MobileMoney from "./pages/MobileMoney";
-import WhatsApp from "./pages/WhatsApp";
-import Academics from "./pages/Academics";
-import Examinations from "./pages/Examinations";
-import ExamGradeEntry from "./pages/ExamGradeEntry";
-import CbcAssessment from "./pages/CbcAssessment";
-import ReportCards from "./pages/ReportCards";
-import Timetable from "./pages/Timetable";
-import SchemesOfWork from "./pages/SchemesOfWork";
-import LessonPlans from "./pages/LessonPlans";
-import Attendance from "./pages/Attendance";
-import Staff from "./pages/Staff";
-import StaffProfile from "./pages/StaffProfile";
-import Communication from "./pages/Communication";
-import Messaging from "./pages/Messaging";
-import Admissions from "./pages/Admissions";
-import Operations from "./pages/Operations";
-import Transport from "./pages/Transport";
-import Discipline from "./pages/Discipline";
-import Health from "./pages/Health";
-import Events from "./pages/Events";
-import Library from "./pages/Library";
-import Inventory from "./pages/Inventory";
-import Hostel from "./pages/Hostel";
-import Reports from "./pages/Reports";
-import Documents from "./pages/Documents";
-import Copilot from "./pages/Copilot";
-import FeeRisk from "./pages/FeeRisk";
-import OcrGrader from "./pages/OcrGrader";
-import AdmissionScreener from "./pages/AdmissionScreener";
-import FaceAttendance from "./pages/FaceAttendance";
-import NemisPage from "./pages/integrations/Nemis";
-import TscPage from "./pages/integrations/Tsc";
-import StatutoryFilingsPage from "./pages/integrations/StatutoryFilings";
-import UgandaPage from "./pages/integrations/Uganda";
-import TanzaniaPage from "./pages/integrations/Tanzania";
-import RwandaPage from "./pages/integrations/Rwanda";
-import EthiopiaPage from "./pages/integrations/Ethiopia";
-import SettingsPage from "./pages/Settings";
-import SchoolSetup from "./pages/SchoolSetup";
-import Onboarding from "./pages/Onboarding";
-import DataProtection from "./pages/dpa/DataProtection";
-import SubjectRequests from "./pages/dpa/SubjectRequests";
-import ErasureRequests from "./pages/dpa/ErasureRequests";
-import Policies from "./pages/dpa/Policies";
-import AuditReports from "./pages/compliance/AuditReports";
-import ExamBodies from "./pages/compliance/ExamBodies";
+import { lazy, Suspense } from "react";
 import { ConsentBanner } from "@/components/ConsentBanner";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -69,17 +18,91 @@ import { Loader2 } from "lucide-react";
 import { PortalProvider } from "@/contexts/PortalContext";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import PortalLogin from "./pages/portal/PortalLogin";
-import PortalDashboard from "./pages/portal/PortalDashboard";
-import PortalFees from "./pages/portal/PortalFees";
-import PortalAcademics from "./pages/portal/PortalAcademics";
-import PortalMessages from "./pages/portal/PortalMessages";
-import PortalProfile from "./pages/portal/PortalProfile";
-import PortalCalendar from "./pages/portal/PortalCalendar";
-import PortalAnnouncements from "./pages/portal/PortalAnnouncements";
-import PortalNotifications from "./pages/portal/PortalNotifications";
-import PortalStudyBuddy from "./pages/portal/PortalStudyBuddy";
 
-const queryClient = new QueryClient();
+// Lazy-loaded admin pages (code splitting)
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Students = lazy(() => import("./pages/Students"));
+const StudentsImport = lazy(() => import("./pages/StudentsImport"));
+const StudentProfile = lazy(() => import("./pages/StudentProfile"));
+const AdmissionWizard = lazy(() => import("./pages/AdmissionWizard"));
+const Finance = lazy(() => import("./pages/Finance"));
+const MobileMoney = lazy(() => import("./pages/MobileMoney"));
+const WhatsApp = lazy(() => import("./pages/WhatsApp"));
+const Academics = lazy(() => import("./pages/Academics"));
+const Examinations = lazy(() => import("./pages/Examinations"));
+const ExamGradeEntry = lazy(() => import("./pages/ExamGradeEntry"));
+const CbcAssessment = lazy(() => import("./pages/CbcAssessment"));
+const ReportCards = lazy(() => import("./pages/ReportCards"));
+const Timetable = lazy(() => import("./pages/Timetable"));
+const SchemesOfWork = lazy(() => import("./pages/SchemesOfWork"));
+const LessonPlans = lazy(() => import("./pages/LessonPlans"));
+const Attendance = lazy(() => import("./pages/Attendance"));
+const Staff = lazy(() => import("./pages/Staff"));
+const StaffProfile = lazy(() => import("./pages/StaffProfile"));
+const Communication = lazy(() => import("./pages/Communication"));
+const Messaging = lazy(() => import("./pages/Messaging"));
+const Admissions = lazy(() => import("./pages/Admissions"));
+const Transport = lazy(() => import("./pages/Transport"));
+const Discipline = lazy(() => import("./pages/Discipline"));
+const Health = lazy(() => import("./pages/Health"));
+const Events = lazy(() => import("./pages/Events"));
+const Library = lazy(() => import("./pages/Library"));
+const Inventory = lazy(() => import("./pages/Inventory"));
+const Hostel = lazy(() => import("./pages/Hostel"));
+const Reports = lazy(() => import("./pages/Reports"));
+const Documents = lazy(() => import("./pages/Documents"));
+const Copilot = lazy(() => import("./pages/Copilot"));
+const FeeRisk = lazy(() => import("./pages/FeeRisk"));
+const OcrGrader = lazy(() => import("./pages/OcrGrader"));
+const AdmissionScreener = lazy(() => import("./pages/AdmissionScreener"));
+const FaceAttendance = lazy(() => import("./pages/FaceAttendance"));
+const NemisPage = lazy(() => import("./pages/integrations/Nemis"));
+const TscPage = lazy(() => import("./pages/integrations/Tsc"));
+const StatutoryFilingsPage = lazy(() => import("./pages/integrations/StatutoryFilings"));
+const UgandaPage = lazy(() => import("./pages/integrations/Uganda"));
+const TanzaniaPage = lazy(() => import("./pages/integrations/Tanzania"));
+const RwandaPage = lazy(() => import("./pages/integrations/Rwanda"));
+const EthiopiaPage = lazy(() => import("./pages/integrations/Ethiopia"));
+const SettingsPage = lazy(() => import("./pages/Settings"));
+const SchoolSetup = lazy(() => import("./pages/SchoolSetup"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const DataProtection = lazy(() => import("./pages/dpa/DataProtection"));
+const SubjectRequests = lazy(() => import("./pages/dpa/SubjectRequests"));
+const ErasureRequests = lazy(() => import("./pages/dpa/ErasureRequests"));
+const Policies = lazy(() => import("./pages/dpa/Policies"));
+const AuditReports = lazy(() => import("./pages/compliance/AuditReports"));
+const ExamBodies = lazy(() => import("./pages/compliance/ExamBodies"));
+
+// Lazy-loaded parent portal pages
+const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
+const PortalFees = lazy(() => import("./pages/portal/PortalFees"));
+const PortalAcademics = lazy(() => import("./pages/portal/PortalAcademics"));
+const PortalMessages = lazy(() => import("./pages/portal/PortalMessages"));
+const PortalProfile = lazy(() => import("./pages/portal/PortalProfile"));
+const PortalCalendar = lazy(() => import("./pages/portal/PortalCalendar"));
+const PortalAnnouncements = lazy(() => import("./pages/portal/PortalAnnouncements"));
+const PortalNotifications = lazy(() => import("./pages/portal/PortalNotifications"));
+const PortalStudyBuddy = lazy(() => import("./pages/portal/PortalStudyBuddy"));
+
+// Tuned cache defaults — fewer redundant refetches on focus/navigation.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
+function RouteFallback() {
+  return (
+    <div className="min-h-[50vh] flex items-center justify-center">
+      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+    </div>
+  );
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -130,6 +153,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   return (
+    <Suspense fallback={<RouteFallback />}>
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
@@ -210,6 +234,7 @@ function AppRoutes() {
       <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </Suspense>
   );
 }
 
@@ -223,6 +248,7 @@ const App = () => (
           <TenantProvider>
             <AppRoutes />
             <ConsentBanner />
+            <OfflineIndicator />
           </TenantProvider>
         </AuthProvider>
       </BrowserRouter>
