@@ -11,6 +11,7 @@ import {
   UserCheck,
   Camera,
   Database, ShieldCheck, GraduationCap as GradCap,
+  Lock, FileSearch, Trash2, FileText as FileTextIcon,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -82,6 +83,10 @@ const sections: NavSection[] = [
     { title: "PREMS / NECTA (TZ)", url: "/integrations/tanzania", icon: Database, perm: "settings.manage" },
     { title: "REB (RW)", url: "/integrations/rwanda", icon: Database, perm: "settings.manage" },
     { title: "MoE EMIS (ET)", url: "/integrations/ethiopia", icon: Database, perm: "settings.manage" },
+    { title: "Data Protection", url: "/dpa", icon: Lock, perm: "settings.manage" },
+    { title: "Subject Requests (SAR)", url: "/dpa/requests", icon: FileSearch, perm: "settings.manage" },
+    { title: "Right to Erasure", url: "/dpa/erasure", icon: Trash2, perm: "settings.manage" },
+    { title: "Policies & Terms", url: "/dpa/policies", icon: FileTextIcon, perm: "settings.manage" },
     { title: "Settings", url: "/settings", icon: Settings, perm: "settings.manage" },
   ]},
 ];

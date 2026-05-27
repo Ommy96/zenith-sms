@@ -1376,6 +1376,53 @@ export type Database = {
           },
         ]
       }
+      consent_records: {
+        Row: {
+          consent_type: string
+          created_at: string
+          granted: boolean
+          id: string
+          ip_hash: string | null
+          policy_version: string | null
+          tenant_id: string | null
+          user_agent: string | null
+          user_id: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          consent_type: string
+          created_at?: string
+          granted: boolean
+          id?: string
+          ip_hash?: string | null
+          policy_version?: string | null
+          tenant_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          consent_type?: string
+          created_at?: string
+          granted?: boolean
+          id?: string
+          ip_hash?: string | null
+          policy_version?: string | null
+          tenant_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consent_records_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       core_competencies: {
         Row: {
           created_at: string
@@ -1558,6 +1605,68 @@ export type Database = {
         }
         Relationships: []
       }
+      dpia_assessments: {
+        Row: {
+          assessor_name: string | null
+          created_at: string
+          data_categories: string[] | null
+          id: string
+          lawful_basis: string | null
+          mitigations: Json | null
+          next_review_at: string | null
+          processing_activity: string
+          residual_risk: string | null
+          reviewed_at: string | null
+          risks: Json | null
+          status: string
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assessor_name?: string | null
+          created_at?: string
+          data_categories?: string[] | null
+          id?: string
+          lawful_basis?: string | null
+          mitigations?: Json | null
+          next_review_at?: string | null
+          processing_activity: string
+          residual_risk?: string | null
+          reviewed_at?: string | null
+          risks?: Json | null
+          status?: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assessor_name?: string | null
+          created_at?: string
+          data_categories?: string[] | null
+          id?: string
+          lawful_basis?: string | null
+          mitigations?: Json | null
+          next_review_at?: string | null
+          processing_activity?: string
+          residual_risk?: string | null
+          reviewed_at?: string | null
+          risks?: Json | null
+          status?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dpia_assessments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drivers: {
         Row: {
           created_at: string
@@ -1611,6 +1720,91 @@ export type Database = {
           },
           {
             foreignKeyName: "drivers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      erasure_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          completed_at: string | null
+          created_at: string
+          erased_records_summary: Json | null
+          id: string
+          legal_basis_retention: string | null
+          reason: string | null
+          rejection_reason: string | null
+          related_staff_id: string | null
+          related_student_id: string | null
+          requested_at: string
+          status: Database["public"]["Enums"]["erasure_status_enum"]
+          subject_email: string | null
+          subject_name: string
+          subject_type: Database["public"]["Enums"]["sar_subject_type_enum"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          erased_records_summary?: Json | null
+          id?: string
+          legal_basis_retention?: string | null
+          reason?: string | null
+          rejection_reason?: string | null
+          related_staff_id?: string | null
+          related_student_id?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["erasure_status_enum"]
+          subject_email?: string | null
+          subject_name: string
+          subject_type: Database["public"]["Enums"]["sar_subject_type_enum"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          erased_records_summary?: Json | null
+          id?: string
+          legal_basis_retention?: string | null
+          reason?: string | null
+          rejection_reason?: string | null
+          related_staff_id?: string | null
+          related_student_id?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["erasure_status_enum"]
+          subject_email?: string | null
+          subject_name?: string
+          subject_type?: Database["public"]["Enums"]["sar_subject_type_enum"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "erasure_requests_related_staff_id_fkey"
+            columns: ["related_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "erasure_requests_related_student_id_fkey"
+            columns: ["related_student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "erasure_requests_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -4932,6 +5126,56 @@ export type Database = {
         }
         Relationships: []
       }
+      privacy_policies: {
+        Row: {
+          body_markdown: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_published: boolean
+          kind: Database["public"]["Enums"]["policy_kind_enum"]
+          published_at: string | null
+          tenant_id: string
+          title: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          body_markdown: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_published?: boolean
+          kind: Database["public"]["Enums"]["policy_kind_enum"]
+          published_at?: string | null
+          tenant_id: string
+          title: string
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          body_markdown?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_published?: boolean
+          kind?: Database["public"]["Enums"]["policy_kind_enum"]
+          published_at?: string | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "privacy_policies_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -7189,6 +7433,97 @@ export type Database = {
           },
         ]
       }
+      subject_access_requests: {
+        Row: {
+          created_at: string
+          due_date: string
+          fulfilled_at: string | null
+          fulfilled_by: string | null
+          id: string
+          notes: string | null
+          package_url: string | null
+          rejection_reason: string | null
+          related_staff_id: string | null
+          related_student_id: string | null
+          request_details: string | null
+          requested_at: string
+          status: Database["public"]["Enums"]["sar_status_enum"]
+          subject_email: string | null
+          subject_id_number: string | null
+          subject_name: string
+          subject_phone: string | null
+          subject_type: Database["public"]["Enums"]["sar_subject_type_enum"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          due_date?: string
+          fulfilled_at?: string | null
+          fulfilled_by?: string | null
+          id?: string
+          notes?: string | null
+          package_url?: string | null
+          rejection_reason?: string | null
+          related_staff_id?: string | null
+          related_student_id?: string | null
+          request_details?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["sar_status_enum"]
+          subject_email?: string | null
+          subject_id_number?: string | null
+          subject_name: string
+          subject_phone?: string | null
+          subject_type: Database["public"]["Enums"]["sar_subject_type_enum"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string
+          fulfilled_at?: string | null
+          fulfilled_by?: string | null
+          id?: string
+          notes?: string | null
+          package_url?: string | null
+          rejection_reason?: string | null
+          related_staff_id?: string | null
+          related_student_id?: string | null
+          request_details?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["sar_status_enum"]
+          subject_email?: string | null
+          subject_id_number?: string | null
+          subject_name?: string
+          subject_phone?: string | null
+          subject_type?: Database["public"]["Enums"]["sar_subject_type_enum"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subject_access_requests_related_staff_id_fkey"
+            columns: ["related_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subject_access_requests_related_student_id_fkey"
+            columns: ["related_student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subject_access_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subjects: {
         Row: {
           assessment_type: Database["public"]["Enums"]["subject_assessment_enum"]
@@ -7331,6 +7666,53 @@ export type Database = {
             columns: ["teacher_id"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_dpo: {
+        Row: {
+          appointed_at: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          notes: string | null
+          phone: string | null
+          registration_number: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          appointed_at?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          registration_number?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          appointed_at?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          registration_number?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_dpo_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -7497,6 +7879,8 @@ export type Database = {
           created_at: string | null
           currency_code: string
           curriculum: Database["public"]["Enums"]["curriculum_type"] | null
+          data_hosting_region: string | null
+          data_retention_years: number | null
           email: string | null
           grading_system: Json | null
           id: string
@@ -7534,6 +7918,8 @@ export type Database = {
           created_at?: string | null
           currency_code?: string
           curriculum?: Database["public"]["Enums"]["curriculum_type"] | null
+          data_hosting_region?: string | null
+          data_retention_years?: number | null
           email?: string | null
           grading_system?: Json | null
           id?: string
@@ -7571,6 +7957,8 @@ export type Database = {
           created_at?: string | null
           currency_code?: string
           curriculum?: Database["public"]["Enums"]["curriculum_type"] | null
+          data_hosting_region?: string | null
+          data_retention_years?: number | null
           email?: string | null
           grading_system?: Json | null
           id?: string
@@ -8713,6 +9101,7 @@ export type Database = {
         | "suspended"
         | "deceased"
         | "on_leave"
+      erasure_status_enum: "pending" | "approved" | "rejected" | "completed"
       exam_status_enum:
         | "planned"
         | "in_progress"
@@ -8852,6 +9241,11 @@ export type Database = {
         | "received"
         | "closed"
         | "cancelled"
+      policy_kind_enum:
+        | "privacy_policy"
+        | "terms_of_service"
+        | "cookie_policy"
+        | "dpia"
       reminder_channel_enum: "sms" | "whatsapp" | "email"
       report_run_status_enum: "queued" | "running" | "ready" | "failed"
       requisition_status_enum:
@@ -8880,6 +9274,13 @@ export type Database = {
         | "sports"
         | "library"
         | "other"
+      sar_status_enum:
+        | "pending"
+        | "in_progress"
+        | "fulfilled"
+        | "rejected"
+        | "cancelled"
+      sar_subject_type_enum: "parent" | "student" | "staff" | "other"
       scheme_status_enum: "draft" | "pending_review" | "approved" | "rejected"
       school_type:
         | "primary"
@@ -9118,6 +9519,7 @@ export const Constants = {
         "deceased",
         "on_leave",
       ],
+      erasure_status_enum: ["pending", "approved", "rejected", "completed"],
       exam_status_enum: [
         "planned",
         "in_progress",
@@ -9274,6 +9676,12 @@ export const Constants = {
         "closed",
         "cancelled",
       ],
+      policy_kind_enum: [
+        "privacy_policy",
+        "terms_of_service",
+        "cookie_policy",
+        "dpia",
+      ],
       reminder_channel_enum: ["sms", "whatsapp", "email"],
       report_run_status_enum: ["queued", "running", "ready", "failed"],
       requisition_status_enum: [
@@ -9306,6 +9714,14 @@ export const Constants = {
         "library",
         "other",
       ],
+      sar_status_enum: [
+        "pending",
+        "in_progress",
+        "fulfilled",
+        "rejected",
+        "cancelled",
+      ],
+      sar_subject_type_enum: ["parent", "student", "staff", "other"],
       scheme_status_enum: ["draft", "pending_review", "approved", "rejected"],
       school_type: [
         "primary",

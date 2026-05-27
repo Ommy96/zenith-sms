@@ -77,3 +77,6 @@ verify_jwt = false
 
 [functions.nemis-import]
 verify_jwt = false
+
+[functions.sar-export]
+verify_jwt = false

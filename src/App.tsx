@@ -52,6 +52,11 @@ import RwandaPage from "./pages/integrations/Rwanda";
 import EthiopiaPage from "./pages/integrations/Ethiopia";
 import SettingsPage from "./pages/Settings";
 import SchoolSetup from "./pages/SchoolSetup";
+import DataProtection from "./pages/dpa/DataProtection";
+import SubjectRequests from "./pages/dpa/SubjectRequests";
+import ErasureRequests from "./pages/dpa/ErasureRequests";
+import Policies from "./pages/dpa/Policies";
+import { ConsentBanner } from "@/components/ConsentBanner";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -191,6 +196,10 @@ function AppRoutes() {
       <Route path="/integrations/rwanda" element={<ProtectedRoute><DashboardLayout><RwandaPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/integrations/ethiopia" element={<ProtectedRoute><DashboardLayout><EthiopiaPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/compliance/statutory" element={<ProtectedRoute><DashboardLayout><StatutoryFilingsPage /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/dpa" element={<ProtectedRoute><DashboardLayout><DataProtection /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/dpa/requests" element={<ProtectedRoute><DashboardLayout><SubjectRequests /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/dpa/erasure" element={<ProtectedRoute><DashboardLayout><ErasureRequests /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/dpa/policies" element={<ProtectedRoute><DashboardLayout><Policies /></DashboardLayout></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/setup" element={<ProtectedRoute><DashboardLayout><SchoolSetup /></DashboardLayout></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
@@ -207,6 +216,7 @@ const App = () => (
         <AuthProvider>
           <TenantProvider>
             <AppRoutes />
+            <ConsentBanner />
           </TenantProvider>
         </AuthProvider>
       </BrowserRouter>
