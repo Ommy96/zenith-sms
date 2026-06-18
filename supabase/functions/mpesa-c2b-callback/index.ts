@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { createLogger } from "../_shared/log.ts";
+import { captureEdgeException } from "../_shared/sentry.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,6 +9,8 @@ const corsHeaders = {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
+  const log = createLogger({ fn: "mpesa-c2b-callback", requestId });
   try {
     const url = new URL(req.url);
     // Accepts ?tenant=<uuid|slug> (preferred) or legacy ?school=<uuid>
@@ -38,7 +42,7 @@ Deno.serve(async (req) => {
       tenantId = data?.tenant_id ?? null;
     }
     if (!tenantId) {
-      console.warn("[mpesa-c2b] no tenant resolved", { tenantHint, shortcode });
+      log.warn("no_tenant_resolved", { tenantHint, shortcode });
       return new Response(JSON.stringify({ ResultCode: 0, ResultDesc: "Accepted (no school)" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -53,7 +57,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (existing) {
-      console.log(`[mpesa-c2b] duplicate receipt ignored ${receipt} (tenant ${tenantId})`);
+      log.info("duplicate_receipt_ignored", { receipt, tenantId });
       return new Response(JSON.stringify({ ResultCode: 0, ResultDesc: "Accepted (duplicate)" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -88,16 +92,17 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      console.error("[mpesa-c2b] insert error", insertErr);
+      log.error("insert_error", { code: insertErr.code, message: insertErr.message, tenantId });
     }
 
-    console.log(`[mpesa-c2b] receipt=${receipt} amount=${amount} ref=${accountRef} tenant=${tenantId}`);
+    log.info("receipt_accepted", { receipt, amount, accountRef, tenantId });
 
     return new Response(JSON.stringify({ ResultCode: 0, ResultDesc: "Accepted" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("mpesa-c2b error", e);
+    log.error("unhandled_error", { err: e instanceof Error ? e.message : String(e) });
+    await captureEdgeException(e, { fn: "mpesa-c2b-callback", requestId });
     return new Response(JSON.stringify({ ResultCode: 0, ResultDesc: "Accepted with error" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
