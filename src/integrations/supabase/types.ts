@@ -5346,6 +5346,50 @@ export type Database = {
           },
         ]
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          tenant_id: string | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          tenant_id?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          tenant_id?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reminder_log: {
         Row: {
           channel: Database["public"]["Enums"]["reminder_channel_enum"]
@@ -9104,6 +9148,10 @@ export type Database = {
       generate_expense_number: { Args: { _tenant: string }; Returns: string }
       generate_invoice_number: { Args: { _tenant: string }; Returns: string }
       generate_receipt_number: { Args: { _tenant: string }; Returns: string }
+      global_search: {
+        Args: { _limit?: number; _q: string; _tenant: string }
+        Returns: Json
+      }
       has_perm: {
         Args: { _perm: string; _tenant: string; _user?: string }
         Returns: boolean
