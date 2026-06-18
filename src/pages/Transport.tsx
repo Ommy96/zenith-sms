@@ -13,6 +13,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/contexts/TenantContext";
 import { toast } from "sonner";
+import {
+  useEntityList,
+  EntityListSection,
+  EntityFormDialog,
+} from "@/components/scaffolding";
 
 export default function Transport() {
   const { tenant } = useTenant();
@@ -169,20 +174,24 @@ function RoutesTab({ tenantId }: { tenantId: string }) {
 }
 
 function VehiclesTab({ tenantId }: { tenantId: string }) {
-  const [rows, setRows] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ registration_number: "", nickname: "", make: "", model: "", year: "", capacity: "30", fuel_type: "diesel", status: "active", insurance_expiry: "", inspection_expiry: "" });
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const { data } = await supabase.from("vehicles").select("*").eq("tenant_id", tenantId).order("registration_number");
-    setRows(data || []); setLoading(false);
+  const { rows, loading, refresh } = useEntityList(async () => {
+    const { data, error } = await supabase
+      .from("vehicles")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .order("registration_number");
+    if (error) throw error;
+    return data ?? [];
   }, [tenantId]);
-  useEffect(() => { load(); }, [load]);
 
   const save = async () => {
-    if (!form.registration_number.trim()) return toast.error("Registration required");
+    if (!form.registration_number.trim()) {
+      toast.error("Registration required");
+      return false;
+    }
     const { error } = await supabase.from("vehicles").insert({
       tenant_id: tenantId, registration_number: form.registration_number.trim().toUpperCase(),
       nickname: form.nickname || null, make: form.make || null, model: form.model || null,
@@ -190,26 +199,27 @@ function VehiclesTab({ tenantId }: { tenantId: string }) {
       fuel_type: form.fuel_type, status: form.status as any,
       insurance_expiry: form.insurance_expiry || null, inspection_expiry: form.inspection_expiry || null,
     });
-    if (error) return toast.error(error.message);
-    toast.success("Vehicle added"); setOpen(false);
+    if (error) throw error;
+    toast.success("Vehicle added");
     setForm({ registration_number: "", nickname: "", make: "", model: "", year: "", capacity: "30", fuel_type: "diesel", status: "active", insurance_expiry: "", inspection_expiry: "" });
-    load();
+    await refresh();
   };
 
   const today = new Date(); const soon = new Date(); soon.setDate(today.getDate() + 30);
   const isExpiring = (d: string | null) => d && new Date(d) <= soon;
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold">Vehicles</h3>
-        <Button size="sm" onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />New Vehicle</Button>
-      </div>
-      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No vehicles yet.</p>
-      ) : (
-        <div className="grid md:grid-cols-2 gap-3">
-          {rows.map(v => (
+    <>
+      <EntityListSection
+        wrapInCard
+        title="Vehicles"
+        loading={loading}
+        rows={rows}
+        emptyMessage="No vehicles yet."
+        action={{ label: "New Vehicle", onClick: () => setOpen(true) }}
+        renderList={(items) => (
+          <div className="grid md:grid-cols-2 gap-3">
+            {items.map((v: any) => (
             <div key={v.id} className="border rounded-lg p-3">
               <div className="flex items-start justify-between">
                 <div>
@@ -224,13 +234,18 @@ function VehiclesTab({ tenantId }: { tenantId: string }) {
                 {v.inspection_expiry && <Badge variant={isExpiring(v.inspection_expiry) ? "destructive" : "outline"}>Insp: {v.inspection_expiry}</Badge>}
               </div>
             </div>
-          ))}
-        </div>
-      )}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>New Vehicle</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-3">
+            ))}
+          </div>
+        )}
+      />
+      <EntityFormDialog
+        open={open}
+        onOpenChange={setOpen}
+        title="New Vehicle"
+        onSubmit={save}
+        size="md"
+      >
+        <div className="grid grid-cols-2 gap-3">
             <div><Label>Registration *</Label><Input value={form.registration_number} onChange={e => setForm({ ...form, registration_number: e.target.value })} placeholder="KCA 123A" /></div>
             <div><Label>Nickname</Label><Input value={form.nickname} onChange={e => setForm({ ...form, nickname: e.target.value })} /></div>
             <div><Label>Make</Label><Input value={form.make} onChange={e => setForm({ ...form, make: e.target.value })} /></div>
@@ -251,51 +266,54 @@ function VehiclesTab({ tenantId }: { tenantId: string }) {
             </div>
             <div><Label>Insurance expiry</Label><Input type="date" value={form.insurance_expiry} onChange={e => setForm({ ...form, insurance_expiry: e.target.value })} /></div>
             <div><Label>Inspection expiry</Label><Input type="date" value={form.inspection_expiry} onChange={e => setForm({ ...form, inspection_expiry: e.target.value })} /></div>
-          </div>
-          <DialogFooter><Button onClick={save}>Save</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
+        </div>
+      </EntityFormDialog>
+    </>
   );
 }
 
 function DriversTab({ tenantId }: { tenantId: string }) {
-  const [rows, setRows] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ full_name: "", phone: "", license_number: "", license_class: "B,C,E", license_expiry: "" });
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const { data } = await supabase.from("drivers").select("*").eq("tenant_id", tenantId).order("full_name");
-    setRows(data || []); setLoading(false);
+  const { rows, loading, refresh } = useEntityList(async () => {
+    const { data, error } = await supabase
+      .from("drivers")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .order("full_name");
+    if (error) throw error;
+    return data ?? [];
   }, [tenantId]);
-  useEffect(() => { load(); }, [load]);
 
   const save = async () => {
-    if (!form.full_name.trim()) return toast.error("Name required");
+    if (!form.full_name.trim()) {
+      toast.error("Name required");
+      return false;
+    }
     const { error } = await supabase.from("drivers").insert({
       tenant_id: tenantId, full_name: form.full_name.trim(), phone: form.phone || null,
       license_number: form.license_number || null, license_class: form.license_class || null,
       license_expiry: form.license_expiry || null,
     });
-    if (error) return toast.error(error.message);
-    toast.success("Driver added"); setOpen(false);
+    if (error) throw error;
+    toast.success("Driver added");
     setForm({ full_name: "", phone: "", license_number: "", license_class: "B,C,E", license_expiry: "" });
-    load();
+    await refresh();
   };
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold">Drivers</h3>
-        <Button size="sm" onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />New Driver</Button>
-      </div>
-      {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No drivers yet.</p>
-      ) : (
-        <div className="space-y-2">
-          {rows.map(d => (
+    <>
+      <EntityListSection
+        wrapInCard
+        title="Drivers"
+        loading={loading}
+        rows={rows}
+        emptyMessage="No drivers yet."
+        action={{ label: "New Driver", onClick: () => setOpen(true) }}
+        renderList={(items) => (
+          <div className="space-y-2">
+            {items.map((d: any) => (
             <div key={d.id} className="border rounded p-3 flex items-center justify-between">
               <div>
                 <div className="font-medium">{d.full_name}</div>
@@ -303,23 +321,20 @@ function DriversTab({ tenantId }: { tenantId: string }) {
               </div>
               {d.license_expiry && <Badge variant={new Date(d.license_expiry) < new Date() ? "destructive" : "outline"}>Exp {d.license_expiry}</Badge>}
             </div>
-          ))}
-        </div>
-      )}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>New Driver</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-3">
+            ))}
+          </div>
+        )}
+      />
+      <EntityFormDialog open={open} onOpenChange={setOpen} title="New Driver" onSubmit={save}>
+        <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2"><Label>Full name *</Label><Input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} /></div>
             <div><Label>Phone</Label><Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
             <div><Label>License no.</Label><Input value={form.license_number} onChange={e => setForm({ ...form, license_number: e.target.value })} /></div>
             <div><Label>Class</Label><Input value={form.license_class} onChange={e => setForm({ ...form, license_class: e.target.value })} /></div>
             <div><Label>Expiry</Label><Input type="date" value={form.license_expiry} onChange={e => setForm({ ...form, license_expiry: e.target.value })} /></div>
-          </div>
-          <DialogFooter><Button onClick={save}>Save</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
+        </div>
+      </EntityFormDialog>
+    </>
   );
 }
 

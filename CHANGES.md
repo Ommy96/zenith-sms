@@ -187,3 +187,29 @@ Finally, dumped the live trigger inventory to
 audit-flagged triggers — `tg_mpesa_auto_match`,
 `trg_attendance_notify_absence`, `tg_discipline_notify` — are present and
 wired to their `_tg_*` functions; no orphan `_tg_*` functions were found.
+## Section 8 — Duplicated Logic Extraction
+
+- **Scaffolding primitives shipped** in
+  `src/components/scaffolding/`:
+  - `useEntityList<T>(fetcher, deps)` — owns rows / loading / error /
+    refresh; routes thrown errors to `toast.error` so call sites lose the
+    `try/catch + setLoading` boilerplate.
+  - `EntityListSection<T>` — title, summary, primary action button,
+    loading spinner, empty-state card, render-prop body. Optional
+    `wrapInCard` for tab-inside-card layouts.
+  - `EntityFormDialog` — owns submit lifecycle: disables button while
+    in-flight, auto-toasts thrown errors, closes on success (return
+    `false` from `onSubmit` to cancel close, e.g. validation failure).
+  - `EntityDetailPage` — back link + header card (avatar / title /
+    subtitle / badges / actions) + tabbed body for profile pages.
+- **Proof-of-concept migrations** (this turn): `Transport.VehiclesTab`,
+  `Transport.DriversTab`, `Inventory.SuppliersTab`. Net LOC is roughly
+  flat for these three because the saved boilerplate is offset by the
+  abstraction's wrappers — the win compounds at module #4 onward.
+- **Bulk migration deferred** to follow-up turns. See
+  `scaffolding-migration-debt.md` for the full list (~15 remaining
+  list-shaped tabs + 2 profile pages, est. ~900 LOC removed once done).
+- **Honest scope correction**: the audit's 1500–2000 LOC estimate
+  assumed every tab is migratable. About a third (hostel bed grid,
+  routes-with-stops, live trip view, low-stock banner, roll-call entry
+  sheet) is genuinely bespoke UI and stays as-is.
