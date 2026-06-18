@@ -213,3 +213,40 @@ wired to their `_tg_*` functions; no orphan `_tg_*` functions were found.
   assumed every tab is migratable. About a third (hostel bed grid,
   routes-with-stops, live trip view, low-stock banner, roll-call entry
   sheet) is genuinely bespoke UI and stays as-is.
+
+## Section 9 — Delivery Gaps (in progress)
+
+- **9.4 UNEB / NECTA result imports → SHIPPED.** Added thin alias edge
+  functions `uneb-results-import` and `necta-results-import` that target
+  `students.uneb_index_number` / `students.necta_index_number`
+  respectively, with the same CSV contract as `knec-results-import`
+  (`index_number, subject_code, grade, points`). All three log to
+  `compliance_exports_log` with kind `<body>_results_import`. The
+  `ExamBodies` UI was already passing `body_code` to the generic
+  importer, so no UI changes were needed.
+- **9.5 KRA statutory exports → ALREADY DONE (audit was wrong).** The
+  existing `compliance-export` edge function already implements P10
+  PAYE, SHIF, NSSF (Tier I + II), AHL, HELB, P9A and an iTax-ready CSV
+  variant — wired through `/compliance/statutory`. No new generator
+  needed. (Briefly added a duplicate `statutory-exports` function; then
+  deleted to avoid confusion.)
+- **9.6 Audit-log triggers → SHIPPED.** New `public._tg_write_audit_log()`
+  SECURITY DEFINER trigger captures every INSERT / UPDATE / DELETE on
+  `students`, `student_invoices`, `student_payments`, `staff`,
+  `payslips`, and `student_exam_results` and writes a row to
+  `public.audit_logs` with `actor_user_id = auth.uid()`, `tenant_id`
+  resolved from the row, `entity_type = table name`, and before/after
+  jsonb snapshots. Triggers are attached idempotently
+  (`DROP IF EXISTS` then `CREATE`) so the migration is safe to rerun.
+  Also added missing `staff.national_id` and `staff.shif_number` columns
+  so statutory CSVs can include them.
+
+### Deferred to follow-up turns
+- **9.1 Report card delivery wire-up** — needs surgery inside the
+  existing `generate-report-cards` edge function plus signed-URL
+  generation; standalone turn.
+- **9.2 Timetable conflict detection UI** — requires extending the
+  drag-drop interaction layer; standalone turn.
+- **9.3 Transport GPS / driver PWA / live map** — driver-app
+  registration + service worker + Leaflet map are a whole feature;
+  standalone turn.
