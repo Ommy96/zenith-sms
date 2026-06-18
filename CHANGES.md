@@ -50,3 +50,54 @@ implementation — other functions can adopt it incrementally. Added a
 public `supabase/functions/health` endpoint that checks DB and auth
 reachability and returns 200 / 503 with per-check latency, suitable for
 Better Stack or Pingdom; README documents the URL and wiring steps.
+
+## Hardening Sprint — Section 3 (Security)
+
+Closed the audit's RLS, edge-auth, and 2FA gaps. New migration
+`secure_sensitive_backend_tables` adds explicit RESTRICTIVE deny-all
+policies on `nemis_credentials` and `portal_otps` (so the intent — service-
+role only — is recorded in policy SQL, not just implied by the absence of a
+policy), revokes all anon/authenticated grants on those tables, and grants
+SELECT on `subscription_plans` to anon + authenticated so the existing
+public-readable policy is actually reachable through PostgREST. Each table
+now carries a `COMMENT ON TABLE` documenting which callers may touch it.
+The same migration re-asserts the `mpesa_transactions (tenant_id,
+mpesa_receipt)` UNIQUE constraint and attaches a `COMMENT ON CONSTRAINT`
+spelling out the Safaricom-retry idempotency strategy (insert → 23505 →
+treat as Accepted-duplicate, which `mpesa-c2b-callback` already does).
+
+For edge functions, added `supabase/functions/_shared/auth.ts` exposing
+`requireAuth(req)` → `{ userId, tenantId, tenantIds, roles, permissions,
+isSuperAdmin }`, plus `requireTenant`, `requirePerm`, and
+`authErrorResponse` helpers — JWT verified via `getClaims()` with a
+`getUser()` fallback, tenants and role-permission keys loaded in two
+service-role queries. Authored `supabase/functions/README.md` cataloguing
+all 41 functions in three buckets (Public / User / Service) with the
+rationale and current status for each — eight are ✅ verified public
+(callbacks, webhooks, OTP, iCal, health, education-system), eleven are
+🔴 sensitive and must be retrofitted with `requireAuth` before the next
+release (`audit-report-pdf`, `compliance-export`, `sar-export`,
+`accounting-export`, `nemis-credentials`, `nemis-import`,
+`knec-results-import`, `generate-report-cards`, `generate-statement-pdf`,
+`process-fee-reminders`, `dispatch-messages`), and the rest are tagged
+⚠️ pending retrofit. The helper, the table, and the snippet at the bottom
+of the README give the next pass everything it needs to land each fix.
+
+For 2FA, added a `/settings/security/2fa` page (`src/pages/settings/
+TwoFactor.tsx`) that wraps `supabase.auth.mfa.enroll/challenge/verify/
+unenroll` with a QR + manual-entry secret, a 6-digit code box, and a
+remove-factor flow. The TOTP secret is displayed once at enrollment as the
+documented backup path (Supabase Auth's TOTP factor does not issue
+separate recovery codes; users are instructed to save the secret in a
+password manager). A new `<TwoFactorGate>` is folded into `ProtectedRoute`
+so any signed-in user holding `super_admin`, `school_admin`, `principal`,
+or `bursar` is redirected to the enrollment page until they have a
+verified factor; users whose AAL is `aal1` while `nextLevel` is `aal2`
+are bounced to `/login?step_up=1` for re-challenge. Non-sensitive roles
+pass through unaffected.
+
+Finally, dumped the live trigger inventory to
+`supabase/triggers-inventory.md` (89 rows across 65 tables). All three
+audit-flagged triggers — `tg_mpesa_auto_match`,
+`trg_attendance_notify_absence`, `tg_discipline_notify` — are present and
+wired to their `_tg_*` functions; no orphan `_tg_*` functions were found.
