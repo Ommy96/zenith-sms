@@ -1,3 +1,51 @@
+## Section 6 — Decision Points
+
+- **6.1 Offline-first → DEFERRED.** The `OfflineIndicator` was misleading
+  (it only watched `navigator.onLine` with no write queue). Removed the
+  component and its `App.tsx` mount so we don't claim what we can't
+  deliver. A future Workbox + IndexedDB attendance queue can land
+  through `vite-plugin-pwa`'s guarded path (see `pwa` skill).
+- **6.2 PWA install → SHIPPED for parent portal.** `public/manifest.json`
+  now ships proper 192×192 and 512×512 PNG icons plus an Apple touch
+  icon, scoped to `/portal`. `useInstallPrompt` captures
+  `beforeinstallprompt`; the new `InstallAndNotifyCard` on the portal
+  dashboard shows an "Install app" CTA (and hides itself once installed).
+- **6.3 i18n → SHIPPED Swahili for sidebar + portal.** Deleted unused
+  `fr.ts` and `am.ts` locale files and trimmed `SUPPORTED_LANGUAGES`.
+  Extended `en.ts` / `sw.ts` with `nav.*`, `nav.section.*`, `search.*`,
+  `pwa.*`, `push.*` keys. `AppSidebar` items + section headers now
+  render through `t()` with English fallbacks. Portal already used
+  `t()`; no churn there.
+- **6.4 Notifications → SHIPPED scaffolding.** New
+  `public.push_subscriptions` table (RLS: users manage their own rows;
+  service role can fan out). `public/sw-push.js` handles `push` and
+  `notificationclick` (scoped to push only — no app-shell caching, per
+  Lovable preview safety rules). `usePushSubscribe` hook owns the
+  permission flow, SW registration, VAPID-key fetch, and Supabase
+  upsert. Edge function `push-vapid-key` exposes the public key;
+  `push-send` dispatches and prunes 404/410 endpoints via `web-push`.
+  **Action required from operator**: generate VAPID keys
+  (`npx web-push generate-vapid-keys`) and add `VAPID_PUBLIC_KEY`,
+  `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` secrets — the functions return
+  503 with a clear message until then.
+- **6.5 Global search → SHIPPED.** New `public.global_search(_tenant, _q, _limit)`
+  RPC returns top-5 students / staff / invoices / classes scoped to
+  the caller's tenant (uses `is_tenant_member` for authz). The
+  CommandPalette debounces against it, groups results above the
+  static page navigation, and links each hit to its detail page.
+
+## Section 7 — Cleanup
+
+- Deleted `src/pages/Index.tsx`, `src/pages/ModulePage.tsx`,
+  `src/pages/Operations.tsx`, and `src/components/OfflineIndicator.tsx`
+  (unused / misleading).
+- Replaced the Lovable boilerplate `README.md` with a real Zenith
+  README covering what it is, the stack, local dev, env vars,
+  deployment, architecture, testing, push setup, contributing.
+- Added `.env.example` documenting every frontend and edge-function
+  key the project uses.
+- `package.json`: `name` → `zenith`, `version` → `0.2.0`, plus
+  `description`, `license`, `author`, `repository` fields.
 ## Section 4 — Type Safety
 
 - `tsconfig.app.json` flipped to `strict: true`, `strictNullChecks: true`,
