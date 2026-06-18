@@ -18,6 +18,7 @@ import { Loader2 } from "lucide-react";
 import { PortalProvider } from "@/contexts/PortalContext";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import PortalLogin from "./pages/portal/PortalLogin";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Lazy-loaded admin pages (code splitting)
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -245,6 +246,7 @@ function AppRoutes() {
 }
 
 const App = () => (
+  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -260,6 +262,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
