@@ -1,103 +1,128 @@
-# Welcome to your Lovable project
+# Zenith — School Management Platform
 
-## Project info
+Zenith is a modern, multi-tenant school management system for African schools.
+It unifies academics, finance, communication, compliance, and parent
+engagement into a single SaaS-grade product, with built-in support for
+Kenyan curricula (CBC & 8-4-4), M-Pesa reconciliation, NEMIS/TSC filings,
+and Kenyan PAYE/SHIF/NSSF/Housing Levy payroll.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## What is Zenith
 
-## How can I edit this code?
+- **Multi-tenant by design** — every school is a fully isolated tenant
+  with its own data, branding, and configuration. Cross-tenant access is
+  impossible at the database (RLS) and policy layers.
+- **Action-oriented dashboard** with dynamic financial metrics, attendance
+  trends, and AI assistants for fee-risk, admissions screening, and
+  grading.
+- **Parent Portal** — installable PWA with push notifications, in-app
+  M-Pesa STK pay, report cards, attendance, and messaging.
+- **Localised** — UI in English and Swahili out of the box; more
+  languages on demand.
 
-There are several ways of editing your application.
+## Tech stack
 
-**Use Lovable**
+| Layer       | Choice |
+| ----------- | ------ |
+| Frontend    | React 18, Vite 5, TypeScript 5 (strict), Tailwind v3, shadcn/ui |
+| State / data| TanStack Query, react-hook-form + zod |
+| Backend     | Lovable Cloud (Supabase): Postgres, Auth, Storage, Edge Functions |
+| AI          | Lovable AI Gateway (chat, embeddings, OCR) |
+| Observability | Sentry (errors), PostHog (analytics) |
+| Tests       | Vitest, Playwright, pg-tap |
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Local development
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+git clone <repo-url>
+cd zenith
+bun install            # or: npm install
+cp .env.example .env   # fill in the Supabase keys (auto in Lovable preview)
+bun dev                # vite on http://localhost:8080
 ```
 
-**Edit a file directly in GitHub**
+## Environment variables
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+See `.env.example` for the canonical list. Frontend keys are
+publishable (`anon`) and safe to ship. Edge function secrets
+(`VAPID_PRIVATE_KEY`, M-Pesa credentials, etc.) live in Lovable Cloud
+secrets storage — never in `.env`.
 
-**Use GitHub Codespaces**
+## Deployment
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- **Lovable Cloud (default)**: every commit deploys preview at
+  `https://id-preview--<id>.lovable.app`. Publish via the Lovable UI
+  to promote to the production domain (`https://zenith-sms.lovable.app`).
+- **Self-host**: standard Vite SPA, deploy `dist/` to any static host.
+  Configure the Supabase project URLs and run the migrations from
+  `supabase/migrations/` in order.
 
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
-
-## Observability
-
-### Sentry & PostHog (frontend)
-
-Set in your environment (Lovable Project Settings → Environment):
-
-- `VITE_SENTRY_DSN` — browser DSN. Leave unset to disable.
-- `VITE_POSTHOG_KEY` — PostHog project key. Leave unset to disable.
-- `VITE_POSTHOG_HOST` — optional, defaults to `https://us.i.posthog.com`.
-
-Edge functions read a separate `EDGE_SENTRY_DSN` runtime secret. No-op if unset.
-
-### Health check / uptime monitoring
-
-Public endpoint:
+## Architecture overview
 
 ```
-https://<project-ref>.functions.supabase.co/health
+src/
+  pages/             # Route components (admin + parent portal)
+  components/        # Reusable UI; forms/ holds the canonical zod scaffolding
+  contexts/          # AuthContext, TenantContext, PortalContext
+  lib/
+    schemas/         # Zod schemas shared between UI & edge functions
+    finance/         # Invoice totals, fee logic
+    payroll/         # Kenya PAYE / SHIF / NSSF / Housing Levy
+    mpesa/           # Account-ref normaliser + matchers
+    push/            # Web push enrolment
+    pwa/             # Install-prompt hook
+    observability/   # Sentry + PostHog wiring
+  integrations/
+    supabase/        # Auto-generated client and types (DO NOT EDIT)
+supabase/
+  migrations/        # All schema changes
+  functions/         # Edge functions (auth in _shared/, see README inside)
+  tests/             # pg-tap SQL tests
+tests/
+  e2e/               # Playwright tenant-isolation regression
 ```
 
-Returns `200 {"status":"ok",...}` when Supabase auth + DB are reachable,
-`503 {"status":"degraded",...}` otherwise. Each check includes latency in ms.
+## Testing
 
-To wire **Better Stack** or **Pingdom**:
+| Command           | What it runs |
+| ----------------- | ------------ |
+| `bun test`        | Vitest unit + component tests |
+| `bun run test:db` | pg-tap SQL tests against the Supabase project |
+| `bun run test:edge` | Deno tests for edge function contracts |
+| `bun run test:e2e`  | Playwright tenant-isolation suite |
+| `bun run test:all`  | Vitest + pg-tap |
+| `bun run typecheck` | `tsc --noEmit` with strict mode |
 
-1. Create a new HTTP(S) monitor pointing at the URL above.
-2. Method: `GET`. Expected status: `200`. Interval: 1–3 min.
-3. Optional: assert response body contains `"status":"ok"`.
-4. Add an on-call escalation policy and you're done.
+Pre-commit (`husky`) runs ESLint on staged files + `typecheck`.
+Pre-push runs `vitest run`. Both block on failure.
+
+## Uptime & observability
+
+- **Health check**: `GET https://<project>.functions.supabase.co/health`
+  returns 200 when DB + Auth are reachable. Wire it into Better Stack /
+  Pingdom / UptimeRobot.
+- **Errors**: Sentry (`VITE_SENTRY_DSN` for the SPA, `EDGE_SENTRY_DSN`
+  for edge functions).
+- **Product analytics**: PostHog (`VITE_POSTHOG_KEY`).
+
+## Push notifications
+
+The parent portal opts in to web push from the dashboard
+("Stay in the loop" card). Server-side dispatch lives in the
+`push-send` edge function and requires `VAPID_PUBLIC_KEY`,
+`VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` secrets. Generate the pair
+with `npx web-push generate-vapid-keys`, then store them via the
+Lovable Cloud secrets UI.
+
+## Contributing
+
+1. Create a feature branch.
+2. Make your change. Strict TS is enforced — no `any`, no
+   `// @ts-ignore` (see `ts-strict-debt.md` for legacy cleanup).
+3. Forms must use `useZodForm` + a schema in `src/lib/schemas/`.
+4. Database changes go through `supabase/migrations/` with `GRANT`s
+   and RLS in the same file (see `.lovable` agent rules).
+5. Push — husky will block if `vitest` or `tsc` fails.
+
+## License
+
+Proprietary. © Zenith. All rights reserved.
