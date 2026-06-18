@@ -6060,6 +6060,7 @@ export type Database = {
           kra_pin: string | null
           last_name: string
           middle_name: string | null
+          national_id: string | null
           national_id_number: string | null
           next_of_kin_name: string | null
           next_of_kin_phone: string | null
@@ -6073,6 +6074,7 @@ export type Database = {
           role: string | null
           rwanda_rssb_number: string | null
           salary_scale: string | null
+          shif_number: string | null
           staff_number: string | null
           status: string | null
           subjects_taught: Json | null
@@ -6114,6 +6116,7 @@ export type Database = {
           kra_pin?: string | null
           last_name: string
           middle_name?: string | null
+          national_id?: string | null
           national_id_number?: string | null
           next_of_kin_name?: string | null
           next_of_kin_phone?: string | null
@@ -6127,6 +6130,7 @@ export type Database = {
           role?: string | null
           rwanda_rssb_number?: string | null
           salary_scale?: string | null
+          shif_number?: string | null
           staff_number?: string | null
           status?: string | null
           subjects_taught?: Json | null
@@ -6168,6 +6172,7 @@ export type Database = {
           kra_pin?: string | null
           last_name?: string
           middle_name?: string | null
+          national_id?: string | null
           national_id_number?: string | null
           next_of_kin_name?: string | null
           next_of_kin_phone?: string | null
@@ -6181,6 +6186,7 @@ export type Database = {
           role?: string | null
           rwanda_rssb_number?: string | null
           salary_scale?: string | null
+          shif_number?: string | null
           staff_number?: string | null
           status?: string | null
           subjects_taught?: Json | null
