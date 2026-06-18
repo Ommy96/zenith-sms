@@ -75,7 +75,7 @@ export default function Students() {
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<Student | null>(null);
+  const [editing] = useState<Student | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
