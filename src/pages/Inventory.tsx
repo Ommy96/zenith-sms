@@ -13,6 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/contexts/TenantContext";
 import { toast } from "sonner";
+import {
+  useEntityList,
+  EntityListSection,
+  EntityFormDialog,
+} from "@/components/scaffolding";
 
 export default function Inventory() {
   const { tenant } = useTenant();
@@ -221,39 +226,42 @@ function StockTab({ tenantId }: { tenantId: string }) {
 }
 
 function SuppliersTab({ tenantId }: { tenantId: string }) {
-  const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: "", contact_person: "", phone: "", email: "", payment_terms: "", tax_pin: "" });
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const { data } = await supabase.from("suppliers").select("*").eq("tenant_id", tenantId).order("name");
-    setItems(data || []); setLoading(false);
+  const { rows: items, loading, refresh } = useEntityList(async () => {
+    const { data, error } = await supabase
+      .from("suppliers")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .order("name");
+    if (error) throw error;
+    return data ?? [];
   }, [tenantId]);
-  useEffect(() => { load(); }, [load]);
 
   const save = async () => {
-    if (!form.name.trim()) return toast.error("Name required");
-    setSaving(true);
+    if (!form.name.trim()) {
+      toast.error("Name required");
+      return false;
+    }
     const { error } = await supabase.from("suppliers").insert({ tenant_id: tenantId, ...form, name: form.name.trim() });
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("Supplier added"); setOpen(false);
-    setForm({ name: "", contact_person: "", phone: "", email: "", payment_terms: "", tax_pin: "" }); load();
+    if (error) throw error;
+    toast.success("Supplier added");
+    setForm({ name: "", contact_person: "", phone: "", email: "", payment_terms: "", tax_pin: "" });
+    await refresh();
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="text-sm text-muted-foreground">{items.length} suppliers</div>
-        <Button size="sm" onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" />Add Supplier</Button>
-      </div>
-      {loading ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /> :
-        items.length === 0 ? <Card className="p-12 text-center text-muted-foreground">No suppliers yet.</Card> :
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {items.map(s => (
+    <>
+      <EntityListSection
+        loading={loading}
+        rows={items}
+        summary={`${items.length} suppliers`}
+        emptyMessage="No suppliers yet."
+        action={{ label: "Add Supplier", onClick: () => setOpen(true) }}
+        renderList={(rows) => (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {rows.map((s: any) => (
             <Card key={s.id} className="p-4">
               <div className="font-medium">{s.name}</div>
               {s.contact_person && <div className="text-sm text-muted-foreground">{s.contact_person}</div>}
@@ -263,13 +271,18 @@ function SuppliersTab({ tenantId }: { tenantId: string }) {
                 {s.payment_terms && <div>💳 {s.payment_terms}</div>}
               </div>
             </Card>
-          ))}
-        </div>
-      }
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Add Supplier</DialogTitle></DialogHeader>
-          <div className="grid gap-3 py-2">
+            ))}
+          </div>
+        )}
+      />
+      <EntityFormDialog
+        open={open}
+        onOpenChange={setOpen}
+        title="Add Supplier"
+        submitLabel="Add"
+        onSubmit={save}
+        size="sm"
+      >
             <div><Label className="text-xs">Name *</Label>
               <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></div>
             <div><Label className="text-xs">Contact person</Label>
@@ -286,14 +299,8 @@ function SuppliersTab({ tenantId }: { tenantId: string }) {
               <div><Label className="text-xs">Payment terms</Label>
                 <Input value={form.payment_terms} onChange={e => setForm({ ...form, payment_terms: e.target.value })} placeholder="Net 30" /></div>
             </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild><Button variant="outline" size="sm">Cancel</Button></DialogClose>
-            <Button size="sm" onClick={save} disabled={saving}>{saving ? "Saving…" : "Add"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+      </EntityFormDialog>
+    </>
   );
 }
 
