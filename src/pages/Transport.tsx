@@ -13,6 +13,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/contexts/TenantContext";
 import { toast } from "sonner";
+import {
+  useEntityList,
+  EntityListSection,
+  EntityFormDialog,
+} from "@/components/scaffolding";
 
 export default function Transport() {
   const { tenant } = useTenant();
