@@ -92,9 +92,11 @@ function getStoredOpen(): Record<string, boolean> {
 }
 
 function PinnedItem({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
+  const { t } = useTranslation();
+  const label = item.tKey ? t(item.tKey, item.title) : item.title;
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton asChild tooltip={collapsed ? item.title : undefined}>
+      <SidebarMenuButton asChild tooltip={collapsed ? label : undefined}>
         <NavLink
           to={item.url}
           end={item.url === "/"}
@@ -105,7 +107,7 @@ function PinnedItem({ item, collapsed }: { item: NavItem; collapsed: boolean }) 
           activeClassName="bg-sidebar-accent text-sidebar-accent-foreground before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-r before:bg-primary"
         >
           <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
-          {!collapsed && <span className="truncate">{item.title}</span>}
+          {!collapsed && <span className="truncate">{label}</span>}
         </NavLink>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -114,6 +116,8 @@ function PinnedItem({ item, collapsed }: { item: NavItem; collapsed: boolean }) 
 
 function SidebarSection({ section, collapsed }: { section: NavSection; collapsed: boolean }) {
   const location = useLocation();
+  const { t } = useTranslation();
+  const sectionLabel = section.tKey ? t(section.tKey, section.label) : section.label;
   const isActive = section.items.some((item) =>
     item.url === "/" ? location.pathname === "/" : location.pathname.startsWith(item.url.split("?")[0])
   );
@@ -136,7 +140,7 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
       <SidebarMenu>
         {section.items.map((item) => (
           <SidebarMenuItem key={item.url}>
-            <SidebarMenuButton asChild tooltip={item.title}>
+            <SidebarMenuButton asChild tooltip={item.tKey ? t(item.tKey, item.title) : item.title}>
               <NavLink to={item.url} end={item.url === "/"}
                 className="flex items-center justify-center rounded-md px-2 py-2 text-sidebar-foreground transition-colors hover:bg-sidebar-accent/60"
                 activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
@@ -153,7 +157,7 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
   return (
     <Collapsible open={open} onOpenChange={persist}>
       <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground hover:text-foreground transition-colors">
-        <span>{section.label}</span>
+        <span>{sectionLabel}</span>
         <ChevronRight className={cn("h-3 w-3 transition-transform", open && "rotate-90")} />
       </CollapsibleTrigger>
       <CollapsibleContent>
@@ -166,7 +170,7 @@ function SidebarSection({ section, collapsed }: { section: NavSection; collapsed
                   activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-r before:bg-primary"
                 >
                   <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
-                  <span className="truncate">{item.title}</span>
+                  <span className="truncate">{item.tKey ? t(item.tKey, item.title) : item.title}</span>
                 </NavLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
