@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { FileText, Loader2, Play, Download, RefreshCw } from "lucide-react";
+import { FileText, Loader2, Play, Download, RefreshCw, Send, CheckCircle2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 
 export default function ReportCards() {
@@ -20,6 +21,8 @@ export default function ReportCards() {
   const [classId, setClassId] = useState("");
   const [termId, setTermId] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [autoDeliver, setAutoDeliver] = useState(true);
+  const [deliveringId, setDeliveringId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -45,10 +48,20 @@ export default function ReportCards() {
   const generate = async () => {
     if (!classId || !termId) return toast({ title: "Pick a class and term", variant: "destructive" });
     setGenerating(true);
-    const { error } = await supabase.functions.invoke("generate-report-cards", { body: { tenantId, classId, termId } });
+    const { error } = await supabase.functions.invoke("generate-report-cards", { body: { tenantId, classId, termId, autoDeliver } });
     setGenerating(false);
     if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
-    toast({ title: "Report generation queued" });
+    toast({ title: autoDeliver ? "Reports queued — will be sent to parents on completion" : "Report generation queued" });
+    load();
+  };
+
+  const deliverRun = async (runId: string) => {
+    setDeliveringId(runId);
+    const { data, error } = await supabase.functions.invoke("deliver-report-cards", { body: { runId } });
+    setDeliveringId(null);
+    if (error) return toast({ title: "Delivery failed", description: error.message, variant: "destructive" });
+    const d = (data as any) || {};
+    toast({ title: "Reports sent", description: `${d.delivered ?? 0}/${d.total ?? 0} delivered to parents` });
     load();
   };
 
@@ -84,6 +97,10 @@ export default function ReportCards() {
             {generating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
             Generate
           </Button>
+          <label className="flex items-center gap-2 text-sm ml-2 cursor-pointer">
+            <Checkbox checked={autoDeliver} onCheckedChange={(v) => setAutoDeliver(!!v)} />
+            Send to parents automatically (WhatsApp + SMS)
+          </label>
         </CardContent>
       </Card>
 
@@ -105,6 +122,22 @@ export default function ReportCards() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={r.status === "ready" ? "default" : r.status === "failed" ? "destructive" : "secondary"}>{r.status}</Badge>
+                    {r.status === "ready" && (
+                      r.delivered_at ? (
+                        <Badge variant="outline" className="gap-1">
+                          <CheckCircle2 className="h-3 w-3" /> {r.delivered_count || 0} sent
+                        </Badge>
+                      ) : (
+                        <Button size="sm" variant="outline"
+                          disabled={deliveringId === r.id || !can("reports.generate")}
+                          onClick={() => deliverRun(r.id)}>
+                          {deliveringId === r.id
+                            ? <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            : <Send className="h-3 w-3 mr-1" />}
+                          Send to parents
+                        </Button>
+                      )
+                    )}
                     {r.zip_url && (
                       <a href={r.zip_url} target="_blank" rel="noreferrer">
                         <Button size="sm" variant="outline"><Download className="h-3 w-3 mr-1" />ZIP</Button>
