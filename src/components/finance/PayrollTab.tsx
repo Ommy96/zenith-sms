@@ -121,7 +121,7 @@ function PeriodsView({ tenantId, canManage }: { tenantId: string; canManage: boo
 }
 
 /* ============== PAYSLIPS for a period ============== */
-function PayslipsView({ period, tenantId, canManage, onProcess }: { period: Row; tenantId: string; canManage: boolean; onProcess: () => void }) {
+function PayslipsView({ period, canManage, onProcess }: { period: Row; tenantId: string; canManage: boolean; onProcess: () => void }) {
   const [slips, setSlips] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<Row | null>(null);

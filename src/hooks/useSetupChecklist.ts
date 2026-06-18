@@ -22,7 +22,7 @@ export function useSetupChecklist() {
     setLoading(true);
     const tid = tenant.id;
 
-    const [terms, classes, subjects, staff, students, fees, sms, dismissedRow] = await Promise.all([
+    const [terms, classes, subjects, staff, students, fees, sms] = await Promise.all([
       supabase.from("terms").select("id", { count: "exact", head: true }).eq("tenant_id", tid).eq("is_current", true),
       supabase.from("classes").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
       supabase.from("subjects").select("id", { count: "exact", head: true }).eq("tenant_id", tid),

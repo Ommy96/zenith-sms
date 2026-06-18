@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
@@ -36,7 +35,7 @@ interface UsageRow {
 
 export function AiSettingsTab() {
   const { profile, role } = useAuth();
-  const { tenant, can } = useTenant();
+  const { can } = useTenant();
   const { toast } = useToast();
   const tenantId = profile?.tenant_id;
   const isAdmin = role === "school_admin" || role === "super_admin" || can("ai.admin");
