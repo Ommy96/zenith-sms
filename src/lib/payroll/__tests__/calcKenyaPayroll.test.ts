@@ -35,19 +35,21 @@ describe("calcKenyaPayroll — statutory rates", () => {
 describe("calcKenyaPayroll — PAYE bands", () => {
   // Pre-computed reference values (taxable = basic - shif - nssf - housing).
   // We assert PAYE within ±1 KES for rounding tolerance.
-  const cases: Array<{ income: number; expectedPayeApprox: number }> = [
-    { income: 20000,  expectedPayeApprox: 0 },        // taxable ~17.7k, paye_gross ~1770 - 2400 relief -> 0
-    { income: 50000,  expectedPayeApprox: 7173 },
-    { income: 100000, expectedPayeApprox: 21055 },
-    { income: 250000, expectedPayeApprox: 65725 },
-    { income: 500000, expectedPayeApprox: 142225 },
+  // Reference values computed from the same formulas this file ports
+  // from Postgres. They pin behaviour — any drift fails the suite.
+  const cases: Array<{ income: number; expectedPaye: number }> = [
+    { income: 20000,  expectedPaye: 0 },
+    { income: 50000,  expectedPaye: 5845.85 },
+    { income: 100000, expectedPaye: 19812.35 },
+    { income: 250000, expectedPaye: 62899.85 },
+    { income: 500000, expectedPaye: 134712.35 },
   ];
 
   for (const c of cases) {
-    it(`income ${c.income} produces PAYE near ${c.expectedPayeApprox}`, () => {
+    it(`income ${c.income} produces PAYE ≈ ${c.expectedPaye}`, () => {
       const r = calcKenyaPayroll({ ...base, basic: c.income });
-      // Allow ±50 KES tolerance — SQL and TS rounding paths diverge slightly.
-      expect(Math.abs(r.paye - c.expectedPayeApprox)).toBeLessThan(50);
+      // Allow ±2 KES tolerance for the SQL/TS rounding boundary.
+      expect(Math.abs(r.paye - c.expectedPaye)).toBeLessThan(2);
     });
   }
 
