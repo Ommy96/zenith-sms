@@ -19,6 +19,7 @@ import { PortalProvider } from "@/contexts/PortalContext";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import PortalLogin from "./pages/portal/PortalLogin";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { TwoFactorGate } from "@/components/auth/TwoFactorGate";
 
 // Lazy-loaded admin pages (code splitting)
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -76,6 +77,7 @@ const ExamBodies = lazy(() => import("./pages/compliance/ExamBodies"));
 const Billing = lazy(() => import("./pages/Billing"));
 const SuperAdminTenants = lazy(() => import("./pages/admin/SuperAdminTenants"));
 const SuperAdminAudit = lazy(() => import("./pages/admin/SuperAdminAudit"));
+const TwoFactorPage = lazy(() => import("./pages/settings/TwoFactor"));
 
 // Lazy-loaded parent portal pages
 const PortalDashboard = lazy(() => import("./pages/portal/PortalDashboard"));
@@ -120,7 +122,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  return <>{children}</>;
+  return <TwoFactorGate>{children}</TwoFactorGate>;
 }
 
 function PortalProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -234,6 +236,7 @@ function AppRoutes() {
       <Route path="/compliance/audit-reports" element={<ProtectedRoute><DashboardLayout><AuditReports /></DashboardLayout></ProtectedRoute>} />
       <Route path="/compliance/exam-bodies" element={<ProtectedRoute><DashboardLayout><ExamBodies /></DashboardLayout></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/settings/security/2fa" element={<ProtectedRoute><DashboardLayout><TwoFactorPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/setup" element={<ProtectedRoute><DashboardLayout><SchoolSetup /></DashboardLayout></ProtectedRoute>} />
       <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
       <Route path="/billing" element={<ProtectedRoute><DashboardLayout><Billing /></DashboardLayout></ProtectedRoute>} />
