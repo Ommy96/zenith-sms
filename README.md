@@ -71,3 +71,33 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Observability
+
+### Sentry & PostHog (frontend)
+
+Set in your environment (Lovable Project Settings → Environment):
+
+- `VITE_SENTRY_DSN` — browser DSN. Leave unset to disable.
+- `VITE_POSTHOG_KEY` — PostHog project key. Leave unset to disable.
+- `VITE_POSTHOG_HOST` — optional, defaults to `https://us.i.posthog.com`.
+
+Edge functions read a separate `EDGE_SENTRY_DSN` runtime secret. No-op if unset.
+
+### Health check / uptime monitoring
+
+Public endpoint:
+
+```
+https://<project-ref>.functions.supabase.co/health
+```
+
+Returns `200 {"status":"ok",...}` when Supabase auth + DB are reachable,
+`503 {"status":"degraded",...}` otherwise. Each check includes latency in ms.
+
+To wire **Better Stack** or **Pingdom**:
+
+1. Create a new HTTP(S) monitor pointing at the URL above.
+2. Method: `GET`. Expected status: `200`. Interval: 1–3 min.
+3. Optional: assert response body contains `"status":"ok"`.
+4. Add an on-call escalation policy and you're done.

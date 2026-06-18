@@ -24,3 +24,29 @@ that walks Students, Finance, Attendance, Messaging, and Audit pages as
 each of two tenants and asserts the other tenant's identifiers never
 appear. Wired `test`, `test:db`, `test:edge`, `test:e2e`, and `test:all`
 scripts into `package.json`.
+
+## Hardening Sprint — Section 2 (Observability)
+
+Brought the project from zero observability to a baseline that covers the
+browser, edge functions, and uptime. Added `@sentry/react` and `posthog-js`,
+initialised both in `src/main.tsx` from `VITE_SENTRY_DSN` / `VITE_POSTHOG_KEY`
+(no-op when unset, so local dev is unaffected) with
+`tracesSampleRate: 0.1` to keep Sentry cost low. Hooked
+`AuthContext.fetchProfile` to identify each signed-in user to both
+platforms with their `userId`, email, and `tenant_id`, and to clear the
+identity on sign-out. Added a typed `track()` helper exposing the seven
+product events called out in the audit (`tenant_signed_up`,
+`student_added`, `fee_paid`, `invoice_generated`, `message_sent`,
+`ai_feature_used`, `payment_failed`; page views are auto-captured), and a
+`useFeatureFlag(key)` hook that safely waits for PostHog flags before
+flipping. Wrapped the whole app in a new `<ErrorBoundary>` (Reload +
+Contact support fallback) that reports caught errors to Sentry. On the
+server side, added `supabase/functions/_shared/log.ts` for structured
+JSON logs carrying `fn`, `requestId`, and `tenantId`, plus
+`supabase/functions/_shared/sentry.ts` exposing `withSentry()` and
+`captureEdgeException()` (DSN-driven, no-op when `EDGE_SENTRY_DSN` is
+unset). Migrated `mpesa-c2b-callback` to the new logger as a reference
+implementation — other functions can adopt it incrementally. Added a
+public `supabase/functions/health` endpoint that checks DB and auth
+reachability and returns 200 / 503 with per-check latency, suitable for
+Better Stack or Pingdom; README documents the URL and wiring steps.

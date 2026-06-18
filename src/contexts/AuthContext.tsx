@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { identifySentryUser } from "@/lib/observability/sentry";
+import { identifyPostHogUser } from "@/lib/observability/posthog";
 
 interface AuthContextType {
   session: Session | null;
@@ -42,6 +44,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         tenant_id: tenantId,
       });
     }
+
+    identifySentryUser({ id: userId, email: (profileData as any)?.email }, tenantId);
+    identifyPostHogUser({ id: userId, email: (profileData as any)?.email }, tenantId);
 
     const { data: roleData } = await supabase
       .from("user_roles")
@@ -100,6 +105,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfile(null);
     setRole(null);
+    identifySentryUser(null);
+    identifyPostHogUser(null);
   };
 
   return (
