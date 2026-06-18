@@ -10,7 +10,11 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:db": "supabase test db",
+    "test:edge": "deno test --allow-net --allow-env supabase/functions",
+    "test:e2e": "playwright test",
+    "test:all": "vitest run && supabase test db"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
