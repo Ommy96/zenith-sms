@@ -5449,6 +5449,9 @@ export type Database = {
           class_id: string | null
           completed: number
           created_at: string
+          delivered_at: string | null
+          delivered_count: number
+          delivery_status: string | null
           error: string | null
           id: string
           requested_by: string | null
@@ -5464,6 +5467,9 @@ export type Database = {
           class_id?: string | null
           completed?: number
           created_at?: string
+          delivered_at?: string | null
+          delivered_count?: number
+          delivery_status?: string | null
           error?: string | null
           id?: string
           requested_by?: string | null
@@ -5479,6 +5485,9 @@ export type Database = {
           class_id?: string | null
           completed?: number
           created_at?: string
+          delivered_at?: string | null
+          delivered_count?: number
+          delivery_status?: string | null
           error?: string | null
           id?: string
           requested_by?: string | null
@@ -5547,8 +5556,12 @@ export type Database = {
       report_cards: {
         Row: {
           created_at: string
+          delivered_at: string | null
+          delivery_error: string | null
+          delivery_status: string
           error: string | null
           id: string
+          message_ids: Json
           pdf_url: string | null
           run_id: string
           status: string
@@ -5557,8 +5570,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          delivered_at?: string | null
+          delivery_error?: string | null
+          delivery_status?: string
           error?: string | null
           id?: string
+          message_ids?: Json
           pdf_url?: string | null
           run_id: string
           status?: string
@@ -5567,8 +5584,12 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          delivered_at?: string | null
+          delivery_error?: string | null
+          delivery_status?: string
           error?: string | null
           id?: string
+          message_ids?: Json
           pdf_url?: string | null
           run_id?: string
           status?: string
