@@ -55,6 +55,7 @@ export default function Events() {
 
   const save = async () => {
     if (!f.title.trim() || !f.starts_at || !f.ends_at) return toast.error("Title, start, end required");
+    if (!tenantId) return toast.error("No tenant");
     setSaving(true);
     const { error } = await supabase.from("calendar_events").insert({
       tenant_id: tenantId,

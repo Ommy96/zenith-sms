@@ -94,6 +94,7 @@ export default function ExamGradeEntry() {
 
   const toggleLock = async () => {
     if (!can("exams.lock")) return toast({ title: "No permission", variant: "destructive" });
+    if (!examId) return;
     const newStatus = exam.status === "published" ? "marking" : "published";
     const locked = newStatus === "published";
     await supabase.from("exams").update({ status: newStatus }).eq("id", examId);

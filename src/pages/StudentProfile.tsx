@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Edit, Loader2, Mail, Phone, Calendar, MapPin, Shield, FileText, Activity, Heart, GraduationCap, DollarSign, Smartphone, Download } from "lucide-react";
+import { ArrowLeft, Edit, Loader2, Mail, Phone, MapPin, Shield, FileText, Heart, GraduationCap, DollarSign, Smartphone, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -138,7 +138,7 @@ export default function StudentProfile() {
     if (!amt || amt <= 0) return toast({ title: "Enter a valid amount", variant: "destructive" });
     if (!stkForm.phone) return toast({ title: "Phone required", variant: "destructive" });
     setStkBusy(true);
-    const { data, error } = await supabase.functions.invoke("mpesa-stk-push", {
+    const { error } = await supabase.functions.invoke("mpesa-stk-push", {
       body: {
         student_id: student.id,
         amount: amt,

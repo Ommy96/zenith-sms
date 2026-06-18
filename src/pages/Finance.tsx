@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Money } from "@/components/Money";
 import {
   Loader2, Plus, Wallet, Receipt, FileText, TrendingUp, AlertCircle,
-  Layers, Trash2, Sparkles, Banknote, Bell,
+  Layers, Trash2, Banknote, Bell,
   Users, ReceiptText,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -511,7 +511,7 @@ function PaymentsTab({ tenantId, userId, payments, students, invoices, canRecord
 
 /* ===================== STRUCTURES ===================== */
 
-function StructuresTab({ tenantId, userId, structures, years, terms, grades, canConfigure, onChange }:
+function StructuresTab({ tenantId, userId, structures, years, terms, canConfigure, onChange }:
   { tenantId: string; userId?: string; structures: Row[]; years: Row[]; terms: Row[]; grades: Row[]; canConfigure: boolean; onChange: () => void }) {
 
   const [open, setOpen] = useState(false);
