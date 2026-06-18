@@ -250,3 +250,9 @@ wired to their `_tg_*` functions; no orphan `_tg_*` functions were found.
 - **9.3 Transport GPS / driver PWA / live map** — driver-app
   registration + service worker + Leaflet map are a whole feature;
   standalone turn.
+
+## Section 9.1 — Report card auto-delivery
+- New edge function `deliver-report-cards` queues WhatsApp + SMS messages to each student's guardians using the `exam_result_ready` template, with the signed PDF link as `{{link}}`. Per-permission gated via `has_perm(... 'reports.generate')`.
+- `generate-report-cards` now accepts `autoDeliver: true` to fire delivery automatically when a run completes.
+- `report_cards` tracks `delivery_status`, `delivered_at`, `delivery_error`, `message_ids`; `report_card_runs` tracks `delivered_count`, `delivered_at`, `delivery_status`.
+- Report Cards page: "Send to parents automatically" checkbox on generation, per-run "Send to parents" button, and a "N sent" badge once delivered.
