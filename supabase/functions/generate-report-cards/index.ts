@@ -9,7 +9,7 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const { tenantId, classId, termId, templateId } = await req.json();
+  const { tenantId, classId, termId, templateId, autoDeliver } = await req.json();
   if (!tenantId || !classId || !termId) {
     return new Response(JSON.stringify({ error: "tenantId, classId, termId required" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -135,6 +135,19 @@ Deno.serve(async (req) => {
       }
 
       await supabase.from("report_card_runs").update({ status: "ready" }).eq("id", run.id);
+
+      if (autoDeliver) {
+        try {
+          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/deliver-report-cards`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: auth,
+            },
+            body: JSON.stringify({ runId: run.id }),
+          });
+        } catch (_e) { /* swallow; UI can re-trigger */ }
+      }
     } catch (err) {
       await supabase.from("report_card_runs").update({ status: "failed", error: (err as Error).message }).eq("id", run.id);
     }
