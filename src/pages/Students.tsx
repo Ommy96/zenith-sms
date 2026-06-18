@@ -129,33 +129,6 @@ export default function Students() {
     fetchStudents();
   }, [fetchStudents]);
 
-  const openAdd = () => {
-    setEditing(null);
-    setForm(emptyForm);
-    setDialogOpen(true);
-  };
-
-  const openEdit = (student: Student) => {
-    setEditing(student);
-    setForm({
-      first_name: student.first_name,
-      last_name: student.last_name,
-      email: student.email || "",
-      grade: student.grade || "",
-      gender: student.gender || "",
-      date_of_birth: student.date_of_birth || "",
-      admission_number: student.admission_number || "",
-      phone: student.phone || "",
-      address: student.address || "",
-      guardian_name: student.guardian_name || "",
-      guardian_phone: student.guardian_phone || "",
-      guardian_email: student.guardian_email || "",
-      guardian_relationship: student.guardian_relationship || "",
-      status: student.status || "active",
-    });
-    setDialogOpen(true);
-  };
-
   const handleSave = async () => {
     if (!schoolId) return;
     if (!form.first_name.trim() || !form.last_name.trim()) {
