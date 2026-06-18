@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Wallet, ClipboardCheck, GraduationCap, CalendarDays, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { InstallAndNotifyCard } from "@/components/portal/InstallAndNotifyCard";
 
 export default function PortalDashboard() {
   const { activeChild, loading } = usePortal();
@@ -57,6 +58,8 @@ export default function PortalDashboard() {
         <h1 className="text-2xl font-bold tracking-tight">Hi 👋</h1>
         <p className="text-sm text-muted-foreground">Here's the latest for {activeChild.first_name}.</p>
       </div>
+
+      <InstallAndNotifyCard />
 
       {/* Fee balance hero */}
       <Link to="/portal/fees">
