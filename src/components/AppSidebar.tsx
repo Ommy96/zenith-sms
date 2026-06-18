@@ -22,34 +22,35 @@ import {
 import {
   Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useTranslation } from "react-i18next";
 
-interface NavItem { title: string; url: string; icon: any; perm?: string; superAdminOnly?: boolean; }
-interface NavSection { label: string; items: NavItem[]; superAdminOnly?: boolean; }
+interface NavItem { title: string; url: string; icon: any; perm?: string; superAdminOnly?: boolean; tKey?: string; }
+interface NavSection { label: string; items: NavItem[]; superAdminOnly?: boolean; tKey?: string; }
 
 const sections: NavSection[] = [
-  { label: "Academics", items: [
-    { title: "Students", url: "/students", icon: Users, perm: "students.view" },
-    { title: "Classes & Subjects", url: "/academics", icon: BookOpen, perm: "academics.view" },
-    { title: "Timetable", url: "/timetable", icon: CalendarDays, perm: "academics.view" },
-    { title: "Examinations", url: "/examinations", icon: ClipboardList, perm: "exams.view" },
-    { title: "Attendance", url: "/attendance", icon: UserCog, perm: "attendance.view" },
+  { label: "Academics", tKey: "nav.section.academics", items: [
+    { title: "Students", tKey: "nav.students", url: "/students", icon: Users, perm: "students.view" },
+    { title: "Classes & Subjects", tKey: "nav.classesSubjects", url: "/academics", icon: BookOpen, perm: "academics.view" },
+    { title: "Timetable", tKey: "nav.timetable", url: "/timetable", icon: CalendarDays, perm: "academics.view" },
+    { title: "Examinations", tKey: "nav.examinations", url: "/examinations", icon: ClipboardList, perm: "exams.view" },
+    { title: "Attendance", tKey: "nav.attendance", url: "/attendance", icon: UserCog, perm: "attendance.view" },
   ]},
-  { label: "Finance", items: [
-    { title: "Fees & Invoices", url: "/fees", icon: Receipt, perm: "fees.view" },
-    { title: "Payments", url: "/finance/mobile-money", icon: Smartphone, perm: "fees.configure" },
-    { title: "Payroll", url: "/finance?tab=payroll", icon: DollarSign, perm: "payroll.manage" },
+  { label: "Finance", tKey: "nav.section.finance", items: [
+    { title: "Fees & Invoices", tKey: "nav.feesInvoices", url: "/fees", icon: Receipt, perm: "fees.view" },
+    { title: "Payments", tKey: "nav.payments", url: "/finance/mobile-money", icon: Smartphone, perm: "fees.configure" },
+    { title: "Payroll", tKey: "nav.payroll", url: "/finance?tab=payroll", icon: DollarSign, perm: "payroll.manage" },
   ]},
-  { label: "Communication", items: [
-    { title: "Announcements", url: "/announcements", icon: Megaphone, perm: "communication.send" },
-    { title: "Messages", url: "/messaging", icon: Mail, perm: "communication.send" },
-    { title: "WhatsApp", url: "/communication/whatsapp", icon: MessageCircle, perm: "communication.send" },
+  { label: "Communication", tKey: "nav.section.communication", items: [
+    { title: "Announcements", tKey: "nav.announcements", url: "/announcements", icon: Megaphone, perm: "communication.send" },
+    { title: "Messages", tKey: "nav.messages", url: "/messaging", icon: Mail, perm: "communication.send" },
+    { title: "WhatsApp", tKey: "nav.whatsapp", url: "/communication/whatsapp", icon: MessageCircle, perm: "communication.send" },
   ]},
-  { label: "Operations", items: [
-    { title: "Admissions", url: "/admissions", icon: UserPlus, perm: "admissions.view" },
-    { title: "Staff & HR", url: "/staff", icon: Briefcase, perm: "staff.view" },
-    { title: "Transport", url: "/transport", icon: Bus, perm: "transport.view" },
-    { title: "Library", url: "/library", icon: Library, perm: "library.view" },
-    { title: "Inventory", url: "/inventory", icon: Package, perm: "inventory.view" },
+  { label: "Operations", tKey: "nav.section.operations", items: [
+    { title: "Admissions", tKey: "nav.admissions", url: "/admissions", icon: UserPlus, perm: "admissions.view" },
+    { title: "Staff & HR", tKey: "nav.staffHr", url: "/staff", icon: Briefcase, perm: "staff.view" },
+    { title: "Transport", tKey: "nav.transport", url: "/transport", icon: Bus, perm: "transport.view" },
+    { title: "Library", tKey: "nav.library", url: "/library", icon: Library, perm: "library.view" },
+    { title: "Inventory", tKey: "nav.inventory", url: "/inventory", icon: Package, perm: "inventory.view" },
   ]},
   { label: "Compliance", items: [
     { title: "NEMIS (KE)", url: "/integrations/nemis", icon: Database, perm: "settings.manage" },
@@ -66,15 +67,15 @@ const sections: NavSection[] = [
 
 // Top-pinned items, always visible above section list
 const pinnedTop: NavItem[] = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Dashboard", tKey: "nav.dashboard", url: "/", icon: LayoutDashboard },
   { title: "Copilot", url: "/copilot", icon: Bot },
 ];
 
 // Bottom-pinned items (below divider)
 const pinnedBottom: NavItem[] = [
-  { title: "Reports", url: "/reports", icon: BarChart3, perm: "reports.view" },
+  { title: "Reports", tKey: "nav.reports", url: "/reports", icon: BarChart3, perm: "reports.view" },
   { title: "Billing", url: "/billing", icon: CreditCard, perm: "settings.manage" },
-  { title: "Settings", url: "/settings", icon: Settings, perm: "settings.manage" },
+  { title: "Settings", tKey: "nav.settings", url: "/settings", icon: Settings, perm: "settings.manage" },
 ];
 
 function filterSections(can: (perm: string) => boolean, showAll: boolean, isSuper: boolean): NavSection[] {
