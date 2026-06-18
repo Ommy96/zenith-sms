@@ -1,3 +1,41 @@
+## Section 4 — Type Safety
+
+- `tsconfig.app.json` flipped to `strict: true`, `strictNullChecks: true`,
+  `noImplicitAny: true`, `noUnusedLocals: true`, `noUnusedParameters: true`,
+  `noFallthroughCasesInSwitch: true`. `npx tsc --noEmit` runs clean.
+- Fixed ~65 resulting errors across pages and components without using
+  `any` or `// @ts-ignore`: pruned dead imports/state, added null-guards
+  on tenant/exam IDs, normalised `profile.tenant_id` to `string | undefined`
+  for child props, removed unused params (`PayslipsView.tenantId`,
+  `StructuresTab.grades`, etc.).
+- New `ts-strict-debt.md` lists the ~35 files still carrying `any` so the
+  team can burn them down incrementally; pre-commit now blocks any new
+  `tsc` regression.
+- Added `husky` + `lint-staged`. `pre-commit` runs ESLint on staged
+  files and `tsc --noEmit`. `pre-push` runs `vitest run`. Added
+  `typecheck` and `prepare` scripts to `package.json`.
+
+## Section 5 — Forms Standardisation
+
+- New shared scaffolding at `src/components/forms/Form.tsx`:
+  `useZodForm()` and `<ZodForm>` wire react-hook-form + zodResolver in
+  one call and re-export the shadcn `FormField` / `FormItem` / etc.
+- Canonical zod schemas live in `src/lib/schemas/` so the same shape is
+  enforced by the UI and the matching edge function:
+  - `student.ts` (`studentSchema`, `studentQuickAddSchema`)
+  - `feeStructure.ts` (`feeStructureSchema`)
+  - `invoice.ts` (`invoiceSchema`)
+  - `payrollPeriod.ts` (`payrollPeriodSchema` with date-order refinements)
+  - `mpesaConfig.ts` (`mpesaConfigSchema`, HTTPS-only callback)
+- Reference migration: `StudentQuickAddForm` rebuilt on the new pattern,
+  with a Vitest spec that fills the form, submits, and asserts the
+  mutation handler receives the parsed payload — plus a failure case
+  that asserts validation blocks submission.
+- Remaining high-stakes forms (full admission, fee structure builder,
+  invoice creation, payroll period setup, M-Pesa configuration) now
+  share the schemas — UI migration to `useZodForm` continues in
+  subsequent passes.
+- All 44 vitest specs pass (`npx vitest run`).
 # CHANGES
 
 ## Hardening Sprint — Section 1 (Correctness & Tests)

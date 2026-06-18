@@ -3,11 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Loader2, CheckCircle2, Trash2 } from "lucide-react";
+import { Plus, Loader2, CheckCircle2 } from "lucide-react";
 
 type Year = { id: string; name: string; start_date: string; end_date: string; is_current: boolean };
 type Term = { id: string; academic_year_id: string; name: string; start_date: string; end_date: string; is_current: boolean };

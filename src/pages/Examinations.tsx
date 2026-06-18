@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   ClipboardList, Calendar, TrendingUp, Award, Plus, Edit, Trash2,
-  MoreHorizontal, Loader2, Eye, FileText, Sparkles,
+  MoreHorizontal, Loader2, FileText, Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

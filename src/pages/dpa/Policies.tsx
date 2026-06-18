@@ -28,7 +28,7 @@ const TEMPLATES: Record<string, string> = {
 
 export default function Policies() {
   const { tenant } = useTenant();
-  const [policies, setPolicies] = useState<any[]>([]);
+  const [, setPolicies] = useState<any[]>([]);
   const [active, setActive] = useState("privacy_policy");
   const [draft, setDraft] = useState<any>({ title: "", version: "1.0", body_markdown: "", is_published: false });
 

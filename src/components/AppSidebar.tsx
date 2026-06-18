@@ -1,19 +1,12 @@
 import {
-  LayoutDashboard, Users, GraduationCap, CreditCard, ClipboardList,
-  BookOpen, MessageSquare, UserCog, Bus, Library, BarChart3, Settings,
-  ChevronRight, Briefcase, FileText, CalendarDays, UserPlus,
+  LayoutDashboard, Users, CreditCard, ClipboardList,
+  BookOpen, UserCog, Bus, Library, BarChart3, Settings,
+  ChevronRight, Briefcase, CalendarDays, UserPlus,
   Megaphone, Mail, DollarSign, Receipt, Package, Smartphone, MessageCircle,
-  ShieldAlert, HeartPulse, Calendar as CalendarIcon,
-  BedDouble,
   Bot,
-  TrendingDown,
-  ScanLine,
-  UserCheck,
-  Camera,
   Database, ShieldCheck, GraduationCap as GradCap,
-  Lock, FileSearch, Trash2, FileText as FileTextIcon,
+  Lock,
   ClipboardCheck, Crown, Activity as ActivityIcon,
-  Search as SearchIcon,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";

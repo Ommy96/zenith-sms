@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Calendar, Loader2, Plus, Trash2, Sparkles } from "lucide-react";
+import { Calendar, Loader2, Plus, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { OptimizerPanel } from "@/components/timetable/OptimizerPanel";
 import { TeacherUnavailabilityPanel } from "@/components/timetable/TeacherUnavailabilityPanel";
@@ -19,7 +19,7 @@ export default function Timetable() {
   const [classes, setClasses] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
-  const [rooms, setRooms] = useState<any[]>([]);
+  const [, setRooms] = useState<any[]>([]);
   const [slots, setSlots] = useState<any[]>([]);
   const [classId, setClassId] = useState("");
   const [termId, setTermId] = useState<string | null>(null);

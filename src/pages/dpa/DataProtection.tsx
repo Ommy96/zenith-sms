@@ -16,7 +16,7 @@ export default function DataProtection() {
   const [dpo, setDpo] = useState<any>({ full_name: "", email: "", phone: "", registration_number: "" });
   const [region, setRegion] = useState(tenant?.["data_hosting_region" as keyof typeof tenant] as string || "EU (Frankfurt)");
   const [retention, setRetention] = useState<number>((tenant as any)?.data_retention_years ?? 7);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     if (!tenant) return;

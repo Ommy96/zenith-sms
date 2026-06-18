@@ -95,7 +95,6 @@ function HostelsTab({ tenantId }: { tenantId: string }) {
   };
   const saveRoom = async () => {
     if (!roomDialog || !roomForm.room_number.trim()) return toast.error("Room number required");
-    const h = hostels.find(x => x.id === roomDialog);
     const { error } = await supabase.from("hostel_rooms").insert({
       tenant_id: tenantId, hostel_id: roomDialog,
       room_number: roomForm.room_number.trim(), floor: roomForm.floor || null,

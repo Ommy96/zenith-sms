@@ -15,7 +15,7 @@ export default function PortalLogin() {
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [maskedPhone, setMaskedPhone] = useState("");
-  const [emailForVerify, setEmailForVerify] = useState("");
+  const [, setEmailForVerify] = useState("");
   const navigate = useNavigate();
 
   const sendCode = async () => {

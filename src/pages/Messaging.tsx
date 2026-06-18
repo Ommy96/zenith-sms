@@ -10,7 +10,7 @@ import { MessageSquare } from "lucide-react";
 
 export default function Messaging() {
   const { profile } = useAuth();
-  const tenantId = profile?.tenant_id;
+  const tenantId = profile?.tenant_id ?? undefined;
 
   return (
     <div className="space-y-6 max-w-7xl">

@@ -5,7 +5,7 @@ import {
   CommandItem, CommandList, CommandSeparator,
 } from "@/components/ui/command";
 import {
-  LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardList,
+  LayoutDashboard, Users, BookOpen, ClipboardList,
   CalendarDays, UserPlus, Briefcase, DollarSign, Receipt, Smartphone,
   FileText, Megaphone, Mail, MessageCircle, Bus, Library, Package,
   BarChart3, Settings, UserCog,

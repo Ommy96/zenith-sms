@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, GraduationCap, Wallet, MessageSquare, User, ChevronDown, LogOut, Megaphone, Sparkles } from "lucide-react";
+import { Home, GraduationCap, Wallet, MessageSquare, ChevronDown, LogOut, Megaphone, Sparkles } from "lucide-react";
 import { usePortal } from "@/contexts/PortalContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 
 export function PortalLayout({ children }: { children: ReactNode }) {
   const { activeChild, children: kids, setActiveChildId } = usePortal();
-  const { signOut, user } = useAuth();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();

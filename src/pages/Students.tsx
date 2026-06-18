@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Search, Plus, Download, Upload, MoreHorizontal, Mail, Eye, Edit, Trash2,
+  Search, Plus, Download, Upload, MoreHorizontal, Eye, Edit, Trash2,
   ChevronLeft, ChevronRight, Users, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -75,7 +75,7 @@ export default function Students() {
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<Student | null>(null);
+  const [editing] = useState<Student | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
@@ -128,33 +128,6 @@ export default function Students() {
   useEffect(() => {
     fetchStudents();
   }, [fetchStudents]);
-
-  const openAdd = () => {
-    setEditing(null);
-    setForm(emptyForm);
-    setDialogOpen(true);
-  };
-
-  const openEdit = (student: Student) => {
-    setEditing(student);
-    setForm({
-      first_name: student.first_name,
-      last_name: student.last_name,
-      email: student.email || "",
-      grade: student.grade || "",
-      gender: student.gender || "",
-      date_of_birth: student.date_of_birth || "",
-      admission_number: student.admission_number || "",
-      phone: student.phone || "",
-      address: student.address || "",
-      guardian_name: student.guardian_name || "",
-      guardian_phone: student.guardian_phone || "",
-      guardian_email: student.guardian_email || "",
-      guardian_relationship: student.guardian_relationship || "",
-      status: student.status || "active",
-    });
-    setDialogOpen(true);
-  };
 
   const handleSave = async () => {
     if (!schoolId) return;

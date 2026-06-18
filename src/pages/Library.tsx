@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Library as LibIcon, Plus, BookOpen, ScanLine, Loader2, Search, AlertTriangle } from "lucide-react";
+import { Plus, BookOpen, ScanLine, Loader2, Search, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

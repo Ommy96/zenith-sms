@@ -5,8 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
-import { Sparkles, Loader2, CheckSquare } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const LEVELS = [
