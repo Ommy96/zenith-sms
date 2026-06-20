@@ -26,6 +26,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Students = lazy(() => import("./pages/Students"));
 const StudentsImport = lazy(() => import("./pages/StudentsImport"));
 const StudentProfile = lazy(() => import("./pages/StudentProfile"));
+const StudentEdit = lazy(() => import("./pages/StudentEdit"));
 const AdmissionWizard = lazy(() => import("./pages/AdmissionWizard"));
 const Finance = lazy(() => import("./pages/Finance"));
 const MobileMoney = lazy(() => import("./pages/MobileMoney"));
@@ -191,6 +192,7 @@ function AppRoutes() {
       <Route path="/students" element={<ProtectedRoute><DashboardLayout><Students /></DashboardLayout></ProtectedRoute>} />
       <Route path="/students/import" element={<ProtectedRoute><DashboardLayout><StudentsImport /></DashboardLayout></ProtectedRoute>} />
       <Route path="/students/:id" element={<ProtectedRoute><DashboardLayout><StudentProfile /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/students/:id/edit" element={<ProtectedRoute><DashboardLayout><StudentEdit /></DashboardLayout></ProtectedRoute>} />
       <Route path="/admissions/new" element={<ProtectedRoute><DashboardLayout><AdmissionWizard /></DashboardLayout></ProtectedRoute>} />
       <Route path="/admissions" element={<ProtectedRoute><DashboardLayout><Admissions /></DashboardLayout></ProtectedRoute>} />
       <Route path="/academics" element={<ProtectedRoute><DashboardLayout><Academics /></DashboardLayout></ProtectedRoute>} />
