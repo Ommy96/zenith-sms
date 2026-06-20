@@ -1,3 +1,33 @@
+
+## Design System — Token foundation (this pass)
+
+Locked the visual token layer to spec so every component inherits correct values.
+
+- `src/index.css` — full rewrite of `:root` and `.dark` to match spec exactly:
+  surfaces (background/surface/elevated/sunken), 5-stop text scale
+  (primary/secondary/tertiary/muted/disabled), single indigo accent with
+  hover/active/soft variants, semantic success/warning/danger/info with
+  paired *-soft + *-foreground tokens, dedicated `--border`/`--border-strong`,
+  radius scale (sm/md/lg/xl/2xl/full), elevation shadow scale, dark mode
+  shadows replaced with border emphasis.
+- Body font: Inter with `cv11 ss01 ss03 cv02` + `opsz 16`. JetBrains Mono
+  loaded for ID/code surfaces. 14px base.
+- Global `:focus-visible` ring on every focusable element; `prefers-reduced-motion`
+  honored at the base layer.
+- New utilities: `.bg-surface`, `.bg-surface-elevated`, `.bg-surface-sunken`,
+  `.bg-accent-soft`, `.text-accent`, `.label-section`, `.font-mono-id`,
+  `.shadow-popover`.
+- Removed legacy `.glass-card` and `.stat-gradient` utilities (no glassmorphism
+  or decorative gradients per spec §12).
+- `tailwind.config.ts` — pinned radius (sm/md/lg/xl/2xl/full), spec font-size
+  scale (xs 11 / sm 13 / base 14 / md 15 / lg 18 / xl 22 / 2xl 28 / 3xl 36 / 4xl 48),
+  shadow scale, `ease-out-soft` / `ease-in-soft` timing.
+- `src/lib/design-tokens.ts` (new) — TS mirror of the scale for chart/motion
+  configs.
+- `src/components/StatCard.tsx` — rebuilt to §6.7: accent-soft icon tile,
+  uppercase section label, 28px tabular-nums value, soft trend pill.
+- `src/components/DashboardLayout.tsx` — page container with 1440px max-width,
+  32px desktop / 16px mobile gutters, 24px top padding, `min-h-dvh`.
 ## Section 6 — Decision Points
 
 - **6.1 Offline-first → DEFERRED.** The `OfflineIndicator` was misleading
