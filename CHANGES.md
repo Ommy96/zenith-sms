@@ -258,3 +258,4 @@ wired to their `_tg_*` functions; no orphan `_tg_*` functions were found.
 - Report Cards page: "Send to parents automatically" checkbox on generation, per-run "Send to parents" button, and a "N sent" badge once delivered.
 - Section 9.2: Real-time timetable conflict detection (teacher double-booking, room clash, unavailability) with visual badges + pre-save toast warnings.
 - Section 9.3: Transport GPS — vehicle_locations table (RLS + realtime), /driver PWA that streams geolocation pings every ~10s, /transport/live Leaflet map with real-time bus markers.
+- Section 10.1: Public landing page live at `/` (SomaSphere brand). Hero, three pillars, KES-first pricing (Free/Starter/Standard/Pro/Enterprise), honest comparison vs Zeraki/Shulesoft, testimonial placeholders, floating WhatsApp CTA, and footer with Privacy/Terms/Status/Contact. Dashboard moved to `/app`; all post-auth redirects updated. Sitewide head meta refreshed (title, description, OG, canonical).
