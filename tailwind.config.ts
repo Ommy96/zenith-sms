@@ -74,9 +74,34 @@ export default {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+        xl: "var(--radius-xl)",
+        "2xl": "var(--radius-2xl)",
+        full: "var(--radius-full)",
+      },
+      fontSize: {
+        xs:   ["11px", { lineHeight: "14px" }],
+        sm:   ["13px", { lineHeight: "18px" }],
+        base: ["14px", { lineHeight: "20px" }],
+        md:   ["15px", { lineHeight: "22px" }],
+        lg:   ["18px", { lineHeight: "26px" }],
+        xl:   ["22px", { lineHeight: "28px" }],
+        "2xl":["28px", { lineHeight: "34px" }],
+        "3xl":["36px", { lineHeight: "40px" }],
+        "4xl":["48px", { lineHeight: "52px" }],
+      },
+      boxShadow: {
+        xs: "var(--shadow-xs)",
+        sm: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
+        popover: "var(--shadow-popover)",
+      },
+      transitionTimingFunction: {
+        "out-soft": "cubic-bezier(0.2, 0, 0, 1)",
+        "in-soft": "cubic-bezier(0.4, 0, 1, 1)",
       },
       keyframes: {
         "accordion-down": {
@@ -99,6 +124,7 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-soft": "pulse-soft 1.5s ease-in-out infinite",
       },
     },
   },
