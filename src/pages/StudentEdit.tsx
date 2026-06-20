@@ -302,7 +302,7 @@ export default function StudentEdit() {
       } else {
         const { data: ng, error: gErr } = await supabase
           .from("guardians")
-          .insert({ tenant_id: student.tenant_id, ...guardianPayload })
+          .insert({ tenant_id: student.tenant_id, full_name: g.full_name, ...guardianPayload })
           .select().single();
         if (gErr) { toast.error("Guardian add failed", { description: gErr.message }); continue; }
         guardianId = ng.id;
