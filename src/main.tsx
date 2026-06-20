@@ -1,26 +1,53 @@
-import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
-import "./index.css";
-import "./i18n";
-import { initSentry } from "./lib/observability/sentry";
-import { initPostHog } from "./lib/observability/posthog";
+const APP_SHELL_WORKERS = new Set(["/sw.js", "/service-worker.js"]);
+const PUSH_WORKER = "/sw-push.js";
 
-initSentry();
-initPostHog();
-
-// Force a fresh check on any already-installed service workers (e.g. /sw-push.js
-// for web push) so a stale worker can never strand a returning visitor on a
-// cached shell. We do NOT register any new worker here — registration is opt-in
-// from usePushSubscribe(). See the `pwa` skill for rationale.
-if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-  navigator.serviceWorker
-    .getRegistrations()
-    .then((regs) => {
-      regs.forEach((reg) => {
-        reg.update().catch(() => {});
-      });
-    })
-    .catch(() => {});
+function getRegistrationScript(reg: ServiceWorkerRegistration) {
+  return reg.active?.scriptURL || reg.waiting?.scriptURL || reg.installing?.scriptURL || "";
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+async function cleanStaleServiceWorkers() {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+
+  const expectedScope = window.location.origin + "/";
+  const regs = await navigator.serviceWorker.getRegistrations();
+
+  await Promise.allSettled(
+    regs.map(async (reg) => {
+      const scriptURL = getRegistrationScript(reg);
+      if (!scriptURL) {
+        await reg.update().catch(() => reg.unregister());
+        return;
+      }
+
+      const url = new URL(scriptURL);
+      const isSameOrigin = url.origin === window.location.origin;
+      const isPushWorker = isSameOrigin && url.pathname === PUSH_WORKER;
+      const isAppShellWorker = isSameOrigin && APP_SHELL_WORKERS.has(url.pathname);
+      const ownsRootScope = reg.scope === expectedScope;
+
+      if (isAppShellWorker || (ownsRootScope && !isPushWorker)) {
+        await reg.unregister();
+        return;
+      }
+
+      await reg.update().catch(async () => {
+        if (!isPushWorker) await reg.unregister();
+      });
+    }),
+  );
+}
+
+function boot() {
+  void import("./bootstrap");
+}
+
+if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+  Promise.race([
+    cleanStaleServiceWorkers(),
+    new Promise((resolve) => window.setTimeout(resolve, 1500)),
+  ])
+    .catch((err) => console.warn("[SW] cleanup failed", err))
+    .finally(boot);
+} else {
+  boot();
+}
