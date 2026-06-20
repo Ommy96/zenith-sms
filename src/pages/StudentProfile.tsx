@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Edit, Loader2, Mail, Phone, MapPin, Shield, FileText, Heart, GraduationCap, DollarSign, Smartphone, Download } from "lucide-react";
+import { ArrowLeft, Edit, Loader2, Mail, Phone, MapPin, Shield, FileText, Heart, GraduationCap, DollarSign, Smartphone, Download, MoreHorizontal, Printer, UserMinus, ArrowRightLeft, KeyRound, MessageSquare, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
@@ -37,6 +39,7 @@ export default function StudentProfile() {
 
   const canViewMedical = can("students.view_medical");
   const canEditStudent = can("students.edit");
+  const canViewDiscipline = can("discipline.view");
 
   useEffect(() => {
     (async () => {
@@ -84,6 +87,15 @@ export default function StudentProfile() {
   const totalBilled = invoices.filter((i: any) => i.status !== "void" && i.status !== "draft").reduce((a, i) => a + Number(i.total || 0), 0);
   const totalPaid = invoices.reduce((a, i) => a + Number(i.paid_total || 0), 0);
   const outstandingInvoices = invoices.filter((i: any) => Number(i.balance) > 0 && i.status !== "void");
+
+  const fullName = [student.first_name, student.middle_name, student.last_name].filter(Boolean).join(" ");
+  const statusKey = (student.enrollment_status || student.status || "").toLowerCase();
+  const statusTone: "success" | "warning" | "danger" | "muted" =
+    statusKey === "active" ? "success" :
+    statusKey === "suspended" || statusKey === "expelled" ? "danger" :
+    statusKey === "graduated" || statusKey === "transferred" || statusKey === "withdrawn" ? "muted" :
+    "warning";
+  const lastUpdatedAt = student.updated_at || student.created_at;
 
   const openPay = (invoiceId?: string, amount?: number) => {
     const primaryGuardianPhone = guardians.find((g: any) => g.is_primary_contact)?.guardians?.phone_primary
@@ -142,53 +154,105 @@ export default function StudentProfile() {
       >
         <ArrowLeft className="h-3.5 w-3.5" /> Students
         <span className="text-muted-foreground/60 mx-1">›</span>
-        <span className="text-foreground font-medium">{student.first_name} {student.last_name}</span>
+        <span className="text-foreground font-medium">{fullName}</span>
       </button>
 
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
         <Card className="p-6">
           <div className="flex flex-col md:flex-row md:items-start gap-6">
-            <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-3xl font-bold text-primary shrink-0">
-              {student.photo_url ? <img src={student.photo_url} alt="" className="h-full w-full object-cover rounded-2xl" /> : initials}
-            </div>
+            <Avatar className="h-24 w-24 rounded-2xl shrink-0">
+              {student.photo_url && <AvatarImage src={student.photo_url} alt={fullName} className="object-cover" />}
+              <AvatarFallback className="rounded-2xl bg-accent-soft text-accent text-2xl font-semibold tracking-tight">
+                {initials || "—"}
+              </AvatarFallback>
+            </Avatar>
             <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h1 className="text-2xl font-bold">{student.first_name} {student.middle_name} {student.last_name}</h1>
-                <Badge variant="outline" className="capitalize">{student.enrollment_status || student.status}</Badge>
-                {student.learner_category && <Badge variant="secondary" className="capitalize">{student.learner_category.replace("_", " ")}</Badge>}
-              </div>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                {student.admission_number && <span>#{student.admission_number}</span>}
-                {classRow && <span>{classRow.name}</span>}
-                {student.stream && <span>Stream: {student.stream}</span>}
-                {age != null && <span>{age} years</span>}
-                <span className="capitalize">{student.gender}</span>
+              <h1 className="text-2xl font-semibold tracking-tight truncate">{fullName}</h1>
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                <StatusDot tone={statusTone} />
+                <span className="capitalize text-foreground/80">{statusKey || "unknown"}</span>
+                {student.admission_number && (<><Sep />#{student.admission_number}</>)}
+                {classRow?.name && (<><Sep />{classRow.name}</>)}
+                {student.stream && (<><Sep />Stream {student.stream}</>)}
+                {age != null && (<><Sep />{age} yrs</>)}
+                {student.gender && (<><Sep /><span className="capitalize">{student.gender}</span></>)}
+                {student.learner_category && (<><Sep /><span className="capitalize">{student.learner_category.replace(/_/g, " ")}</span></>)}
+                {balance > 0 && (
+                  <>
+                    <Sep />
+                    <span className="inline-flex items-center gap-1 text-danger">
+                      <StatusDot tone="danger" />
+                      Balance <Money amount={balance} />
+                    </span>
+                  </>
+                )}
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {canEditStudent && (
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => navigate(`/students/${student.id}/edit`)}>
+                <Button size="sm" className="gap-1.5" onClick={() => navigate(`/students/${student.id}/edit`)}>
                   <Edit className="h-3.5 w-3.5" /> Edit profile
                 </Button>
               )}
-              <Button size="sm" variant="outline" className="gap-1.5"><Mail className="h-3.5 w-3.5" /> Message</Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" className="gap-1.5">
+                    <MoreHorizontal className="h-3.5 w-3.5" /> More
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem><MessageSquare className="h-3.5 w-3.5 mr-2" /> Message guardians</DropdownMenuItem>
+                  <DropdownMenuItem onClick={downloadStatement}><Printer className="h-3.5 w-3.5 mr-2" /> Print statement</DropdownMenuItem>
+                  <DropdownMenuItem><KeyRound className="h-3.5 w-3.5 mr-2" /> Reset portal access</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem><ArrowRightLeft className="h-3.5 w-3.5 mr-2" /> Transfer class</DropdownMenuItem>
+                  <DropdownMenuItem className="text-danger focus:text-danger"><UserMinus className="h-3.5 w-3.5 mr-2" /> Withdraw student</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
+
+          {/* 6-stat strip */}
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-px rounded-xl bg-border/60 overflow-hidden border">
+            <HeaderStat label="Balance" value={<Money amount={balance} />} tone={balance > 0 ? "danger" : "success"} />
+            <HeaderStat label="Attendance" value="—" hint="this term" />
+            <HeaderStat label="Avg score" value="—" hint="last exam" />
+            <HeaderStat label="Discipline" value="—" hint="merits / incidents" />
+            <HeaderStat label="Guardians" value={String(guardians.length)} />
+            <HeaderStat label="Documents" value={String(docs.length)} />
+          </div>
+
+          {lastUpdatedAt && (
+            <p className="mt-4 text-[11px] text-muted-foreground">
+              Last updated <DateTime value={lastUpdatedAt} mode="datetime" />
+            </p>
+          )}
         </Card>
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Tabs defaultValue="overview">
-            <TabsList className="grid w-full grid-cols-4 md:grid-cols-7">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="academics">Academics</TabsTrigger>
-              <TabsTrigger value="attendance">Attendance</TabsTrigger>
-              <TabsTrigger value="fees">Fees</TabsTrigger>
-              {canViewMedical && <TabsTrigger value="health">Health</TabsTrigger>}
-              <TabsTrigger value="documents">Docs</TabsTrigger>
-              <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsList className="h-auto w-full justify-start gap-1 rounded-none border-b border-border bg-transparent p-0 overflow-x-auto">
+              {[
+                { v: "overview", label: "Overview" },
+                { v: "academics", label: "Academics" },
+                { v: "attendance", label: "Attendance" },
+                { v: "fees", label: "Fees" },
+                ...(canViewMedical ? [{ v: "health", label: "Health" }] : []),
+                ...(canViewDiscipline ? [{ v: "discipline", label: "Discipline" }] : []),
+                { v: "documents", label: "Documents" },
+                { v: "activity", label: "Activity" },
+              ].map((t) => (
+                <TabsTrigger
+                  key={t.v}
+                  value={t.v}
+                  className="relative h-10 rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 text-sm font-medium text-muted-foreground shadow-none data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                >
+                  {t.label}
+                </TabsTrigger>
+              ))}
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4 mt-4">
@@ -241,7 +305,7 @@ export default function StudentProfile() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" onClick={() => openPay()} disabled={balance <= 0} className="gap-1.5">
+                  <Button size="sm" onClick={() => openPay()} disabled={balance <= 0} className="gap-1.5 bg-accent text-accent-foreground hover:bg-accent/90">
                     <Smartphone className="h-3.5 w-3.5" /> Pay via M-Pesa
                   </Button>
                   <Button size="sm" variant="outline" onClick={downloadStatement} disabled={stmtBusy} className="gap-1.5">
@@ -354,6 +418,15 @@ export default function StudentProfile() {
               </TabsContent>
             )}
 
+            {canViewDiscipline && (
+              <TabsContent value="discipline" className="mt-4">
+                <Card className="p-5">
+                  <h3 className="text-sm font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Discipline</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">No incidents or merits recorded yet.</p>
+                </Card>
+              </TabsContent>
+            )}
+
             <TabsContent value="documents" className="mt-4">
               <Card className="p-5">
                 {docs.length === 0 ? <p className="text-sm text-muted-foreground">No documents uploaded.</p> :
@@ -432,6 +505,33 @@ function Row({ label, value }: { label: string; value: any }) {
     <div className="flex justify-between text-sm gap-3">
       <span className="text-muted-foreground shrink-0">{label}</span>
       <span className="text-right truncate">{value}</span>
+    </div>
+  );
+}
+
+function Sep() {
+  return <span className="text-muted-foreground/40">·</span>;
+}
+
+function StatusDot({ tone }: { tone: "success" | "warning" | "danger" | "muted" }) {
+  const cls =
+    tone === "success" ? "bg-success" :
+    tone === "danger" ? "bg-danger" :
+    tone === "warning" ? "bg-warning" :
+    "bg-muted-foreground/50";
+  return <span className={`inline-block h-1.5 w-1.5 rounded-full ${cls}`} />;
+}
+
+function HeaderStat({ label, value, hint, tone }: { label: string; value: React.ReactNode; hint?: string; tone?: "success" | "danger" }) {
+  const valueCls =
+    tone === "danger" ? "text-danger" :
+    tone === "success" ? "text-foreground" :
+    "text-foreground";
+  return (
+    <div className="bg-card px-4 py-3">
+      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-lg font-semibold tabular-nums ${valueCls}`}>{value}</p>
+      {hint && <p className="text-[10px] text-muted-foreground mt-0.5">{hint}</p>}
     </div>
   );
 }
