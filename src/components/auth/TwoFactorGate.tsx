@@ -25,20 +25,31 @@ export function TwoFactorGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
+    // Safety: never strand the UI on a spinner if the MFA endpoints fail.
+    const safety = setTimeout(() => {
+      if (active) setChecking(false);
+    }, 6000);
     (async () => {
-      if (!user) { setChecking(false); return; }
-      const isSensitive = role ? SENSITIVE_ROLES.has(role) : false;
-      if (!isSensitive) { setChecking(false); setNeed(null); return; }
-      const { data: factors } = await supabase.auth.mfa.listFactors();
-      const verified = (factors?.totp ?? []).some((f: any) => f.status === "verified");
-      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-      if (!active) return;
-      if (!verified) setNeed("enroll");
-      else if (aal?.nextLevel === "aal2" && aal?.currentLevel !== "aal2") setNeed("step_up");
-      else setNeed(null);
-      setChecking(false);
+      try {
+        if (!user) { setChecking(false); return; }
+        const isSensitive = role ? SENSITIVE_ROLES.has(role) : false;
+        if (!isSensitive) { setChecking(false); setNeed(null); return; }
+        const { data: factors } = await supabase.auth.mfa.listFactors();
+        const verified = (factors?.totp ?? []).some((f: any) => f.status === "verified");
+        const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (!active) return;
+        if (!verified) setNeed("enroll");
+        else if (aal?.nextLevel === "aal2" && aal?.currentLevel !== "aal2") setNeed("step_up");
+        else setNeed(null);
+      } catch (err) {
+        console.error("[2fa] gate check failed:", err);
+        if (active) setNeed(null);
+      } finally {
+        if (active) setChecking(false);
+        clearTimeout(safety);
+      }
     })();
-    return () => { active = false; };
+    return () => { active = false; clearTimeout(safety); };
   }, [user, role]);
 
   if (loading || checking) {
