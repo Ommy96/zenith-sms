@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { TenantProvider } from "@/contexts/TenantContext";
+import { TenantProvider, useTenant } from "@/contexts/TenantContext";
 import { DashboardLayout } from "./components/DashboardLayout";
 import { lazy, Suspense } from "react";
 import { ConsentBanner } from "@/components/ConsentBanner";
@@ -113,30 +113,60 @@ function RouteFallback() {
   );
 }
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+function FullPageSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+}
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+function TenantErrorScreen({ error }: { error: string }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-6">
+      <div className="max-w-md w-full rounded-lg border border-destructive/30 bg-card p-6 text-center shadow-sm">
+        <h1 className="text-lg font-semibold text-foreground mb-2">We couldn't load your workspace</h1>
+        <p className="text-sm text-muted-foreground mb-4">{error}</p>
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() => window.location.reload()}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Retry
+          </button>
+          <a
+            href="/login"
+            onClick={async (e) => { e.preventDefault(); const { supabase } = await import("@/integrations/supabase/client"); await supabase.auth.signOut(); window.location.href = "/login"; }}
+            className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
+          >
+            Sign out
+          </a>
+        </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
+function RequireAuth({ children, requireTenant = true }: { children: React.ReactNode; requireTenant?: boolean }) {
+  const { user, loading: authLoading } = useAuth();
+  const { tenant, loading: tenantLoading, error: tenantError } = useTenant();
+
+  if (authLoading) return <FullPageSpinner />;
   if (!user) return <Navigate to="/login" replace />;
+  if (!requireTenant) return <TwoFactorGate>{children}</TwoFactorGate>;
+  if (tenantLoading) return <FullPageSpinner />;
+  if (tenantError) return <TenantErrorScreen error={tenantError} />;
+  if (!tenant) return <Navigate to="/onboarding" replace />;
   return <TwoFactorGate>{children}</TwoFactorGate>;
+}
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  return <RequireAuth>{children}</RequireAuth>;
 }
 
 function PortalProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (loading) return <FullPageSpinner />;
   if (!user) return <Navigate to="/portal/login" replace />;
   return (
     <PortalProvider>
@@ -147,23 +177,27 @@ function PortalProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function PublicAuthRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (loading) return <FullPageSpinner />;
   if (user) return <Navigate to="/app" replace />;
   return <>{children}</>;
+}
+
+function RootRoute() {
+  const { user, loading: authLoading } = useAuth();
+  const { tenant, loading: tenantLoading } = useTenant();
+  if (authLoading) return <FullPageSpinner />;
+  if (!user) return <Landing />;
+  if (tenantLoading) return <FullPageSpinner />;
+  if (!tenant) return <Navigate to="/onboarding" replace />;
+  return <Navigate to="/app" replace />;
 }
 
 function AppRoutes() {
   return (
     <Suspense fallback={<RouteFallback />}>
     <Routes>
-      {/* Public landing */}
-      <Route path="/" element={<Landing />} />
+      {/* Root — landing for guests, /app for authed-with-tenant, /onboarding otherwise */}
+      <Route path="/" element={<RootRoute />} />
 
       {/* Public routes */}
       <Route path="/login" element={<PublicAuthRoute><Login /></PublicAuthRoute>} />
@@ -245,7 +279,7 @@ function AppRoutes() {
       <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/settings/security/2fa" element={<ProtectedRoute><DashboardLayout><TwoFactorPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/setup" element={<ProtectedRoute><DashboardLayout><SchoolSetup /></DashboardLayout></ProtectedRoute>} />
-      <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+      <Route path="/onboarding" element={<RequireAuth requireTenant={false}><Onboarding /></RequireAuth>} />
       <Route path="/billing" element={<ProtectedRoute><DashboardLayout><Billing /></DashboardLayout></ProtectedRoute>} />
       <Route path="/admin/tenants" element={<ProtectedRoute><DashboardLayout><SuperAdminTenants /></DashboardLayout></ProtectedRoute>} />
       <Route path="/admin/audit" element={<ProtectedRoute><DashboardLayout><SuperAdminAudit /></DashboardLayout></ProtectedRoute>} />
