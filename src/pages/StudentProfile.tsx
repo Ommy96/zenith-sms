@@ -19,7 +19,7 @@ import { getStudentGovIdFields } from "@/lib/sis/countryFields";
 export default function StudentProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const { profile } = useAuth();
   const { tenant, can } = useTenant();
   const [student, setStudent] = useState<any>(null);
