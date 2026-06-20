@@ -144,21 +144,6 @@ function PortalProtectedRoute({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (user) return <Navigate to="/" replace />;
-  return <>{children}</>;
-}
-
 function PublicAuthRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) {
