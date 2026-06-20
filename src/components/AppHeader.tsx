@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import {
   Search, Plus, ChevronDown, LogOut, Settings,
   Command as CommandIcon, UserPlus, Wallet, ClipboardCheck,
@@ -25,6 +26,34 @@ export function AppHeader() {
   const { open, setOpen } = useCommandPalette();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const logoClicks = useRef<{ count: number; timer: number | null }>({ count: 0, timer: null });
+
+  // Escape hatch: 5 quick clicks on the tenant logo unregisters every service
+  // worker and clears caches, then hard-reloads. Real recovery tool for users
+  // stuck on a stale shell.
+  const handleLogoClick = async () => {
+    logoClicks.current.count += 1;
+    if (logoClicks.current.timer) window.clearTimeout(logoClicks.current.timer);
+    logoClicks.current.timer = window.setTimeout(() => {
+      logoClicks.current.count = 0;
+    }, 2000);
+    if (logoClicks.current.count >= 5) {
+      logoClicks.current.count = 0;
+      try {
+        if ("serviceWorker" in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.allSettled(regs.map((r) => r.unregister()));
+        }
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.allSettled(keys.map((k) => caches.delete(k)));
+        }
+      } catch (err) {
+        console.warn("[Recovery] cleanup failed", err);
+      }
+      window.location.reload();
+    }
+  };
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -42,7 +71,12 @@ export function AppHeader() {
       <SidebarTrigger className="h-8 w-8" />
 
       {tenant && (
-        <div className="hidden md:flex items-center gap-2 pr-3 border-r border-border h-8">
+        <button
+          type="button"
+          onClick={handleLogoClick}
+          title="Tap 5× to force-refresh"
+          className="hidden md:flex items-center gap-2 pr-3 border-r border-border h-8 hover:opacity-80 transition-opacity"
+        >
           {tenant.logo_url ? (
             <img src={tenant.logo_url} alt="" className="h-6 w-6 rounded" />
           ) : (
@@ -51,7 +85,7 @@ export function AppHeader() {
             </div>
           )}
           <span className="text-sm font-semibold text-foreground truncate max-w-[180px]">{tenant.name}</span>
-        </div>
+        </button>
       )}
 
       <div className="flex-1 max-w-xl hidden md:block">
