@@ -20,6 +20,7 @@ import PortalLogin from "./pages/portal/PortalLogin";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { TwoFactorGate } from "@/components/auth/TwoFactorGate";
 
+const Landing = lazy(() => import("./pages/Landing"));
 // Lazy-loaded admin pages (code splitting)
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Students = lazy(() => import("./pages/Students"));
@@ -158,13 +159,29 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function PublicAuthRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  if (user) return <Navigate to="/app" replace />;
+  return <>{children}</>;
+}
+
 function AppRoutes() {
   return (
     <Suspense fallback={<RouteFallback />}>
     <Routes>
+      {/* Public landing */}
+      <Route path="/" element={<Landing />} />
+
       {/* Public routes */}
-      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+      <Route path="/login" element={<PublicAuthRoute><Login /></PublicAuthRoute>} />
+      <Route path="/signup" element={<PublicAuthRoute><Signup /></PublicAuthRoute>} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
@@ -181,7 +198,7 @@ function AppRoutes() {
       <Route path="/portal/study-buddy" element={<PortalProtectedRoute><PortalStudyBuddy /></PortalProtectedRoute>} />
 
       {/* Protected routes */}
-      <Route path="/" element={
+      <Route path="/app" element={
         <ProtectedRoute>
           <DashboardLayout><Dashboard /></DashboardLayout>
         </ProtectedRoute>
