@@ -9,6 +9,8 @@ import { Calendar, Loader2, Plus, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { OptimizerPanel } from "@/components/timetable/OptimizerPanel";
 import { TeacherUnavailabilityPanel } from "@/components/timetable/TeacherUnavailabilityPanel";
+import { AlertTriangle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
@@ -21,6 +23,8 @@ export default function Timetable() {
   const [teachers, setTeachers] = useState<any[]>([]);
   const [, setRooms] = useState<any[]>([]);
   const [slots, setSlots] = useState<any[]>([]);
+  const [allSlots, setAllSlots] = useState<any[]>([]); // term-wide for conflict detection
+  const [unavailability, setUnavailability] = useState<any[]>([]);
   const [classId, setClassId] = useState("");
   const [termId, setTermId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +52,40 @@ export default function Timetable() {
     supabase.from("timetable_slots").select("*").eq("class_id", classId).eq("term_id", termId).then(({ data }) => setSlots(data || []));
   }, [classId, termId]);
 
+  // Load term-wide slots + unavailability for conflict detection
+  useEffect(() => {
+    if (!tenantId || !termId) { setAllSlots([]); setUnavailability([]); return; }
+    supabase.from("timetable_slots").select("id,class_id,period_id,teacher_id,room_id,subject_id")
+      .eq("tenant_id", tenantId).eq("term_id", termId)
+      .then(({ data }) => setAllSlots(data || []));
+    supabase.from("teacher_unavailability").select("teacher_id,period_id,day_of_week,reason")
+      .eq("tenant_id", tenantId)
+      .then(({ data }) => setUnavailability(data || []));
+  }, [tenantId, termId, slots]);
+
+  // Detect conflicts for a given slot in this class
+  const conflictsFor = (periodId: string, teacherId?: string | null, roomId?: string | null): string[] => {
+    const issues: string[] = [];
+    if (!teacherId && !roomId) return issues;
+    const period = periods.find((p) => p.id === periodId);
+    if (teacherId) {
+      const clash = allSlots.find((s) => s.period_id === periodId && s.teacher_id === teacherId && s.class_id !== classId);
+      if (clash) {
+        const cls = classes.find((c) => c.id === clash.class_id);
+        issues.push(`Teacher already teaching ${cls?.name || "another class"} this period`);
+      }
+      if (period) {
+        const ua = unavailability.find((u) => u.teacher_id === teacherId && (u.period_id === periodId || (u.day_of_week === period.day_of_week && !u.period_id)));
+        if (ua) issues.push(`Teacher unavailable${ua.reason ? `: ${ua.reason}` : ""}`);
+      }
+    }
+    if (roomId) {
+      const clash = allSlots.find((s) => s.period_id === periodId && s.room_id === roomId && s.class_id !== classId);
+      if (clash) issues.push("Room already booked this period");
+    }
+    return issues;
+  };
+
   const addPeriod = async () => {
     if (!tenantId || !pForm.name) return;
     const { error } = await supabase.from("periods").insert({ ...pForm, tenant_id: tenantId, sort_order: periods.length });
@@ -57,6 +95,13 @@ export default function Timetable() {
 
   const setSlot = async (periodId: string, subjectId: string, teacherId: string, roomId: string) => {
     if (!tenantId || !termId || !classId) return;
+    // Pre-check conflicts
+    if (subjectId) {
+      const issues = conflictsFor(periodId, teacherId, roomId);
+      if (issues.length) {
+        toast({ title: "Schedule conflict", description: issues.join(" • "), variant: "destructive" });
+      }
+    }
     // upsert
     const existing = slots.find((s) => s.period_id === periodId);
     if (!subjectId && existing) {
@@ -152,8 +197,24 @@ export default function Timetable() {
                         const period = periods.find((p) => p.name === pname && p.day_of_week === di + 1);
                         if (!period) return <td key={di} className="p-1 text-muted-foreground">—</td>;
                         const slot = slots.find((s) => s.period_id === period.id);
+                        const issues = slot ? conflictsFor(period.id, slot.teacher_id, slot.room_id) : [];
+                        const hasConflict = issues.length > 0;
                         return (
-                          <td key={di} className="p-1">
+                          <td key={di} className={`p-1 ${hasConflict ? "bg-destructive/10 ring-1 ring-destructive/40" : ""}`}>
+                            {hasConflict && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex items-center gap-1 text-[10px] text-destructive mb-0.5">
+                                      <AlertTriangle className="h-3 w-3" />conflict
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <ul className="text-xs">{issues.map((i) => <li key={i}>• {i}</li>)}</ul>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
                             <select className="w-full border rounded text-xs bg-background"
                               value={slot?.subject_id || ""} onChange={(e) => setSlot(period.id, e.target.value, slot?.teacher_id || "", slot?.room_id || "")}>
                               <option value="">—</option>
