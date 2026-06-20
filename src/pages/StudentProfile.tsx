@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Edit, Loader2, Mail, Phone, MapPin, Shield, FileText, Heart, GraduationCap, DollarSign, Smartphone, Download, MoreHorizontal, Printer, UserMinus, ArrowRightLeft, KeyRound, MessageSquare, AlertTriangle, Bell, BookOpen, CalendarDays, Award, Users } from "lucide-react";
+import { ArrowLeft, Edit, Loader2, Mail, Phone, MapPin, Shield, FileText, Heart, GraduationCap, DollarSign, Smartphone, Download, MoreHorizontal, Printer, UserMinus, ArrowRightLeft, KeyRound, MessageSquare, AlertTriangle, Bell, BookOpen, CalendarDays, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -93,7 +93,6 @@ export default function StudentProfile() {
 
   const initials = `${student.first_name?.[0] || ""}${student.last_name?.[0] || ""}`.toUpperCase();
   const govFields = getStudentGovIdFields(tenant?.country_code);
-  const populatedGovFields = govFields.filter(f => student[f.key]);
   const age = student.date_of_birth ? Math.floor((Date.now() - new Date(student.date_of_birth).getTime()) / (365.25 * 24 * 3600 * 1000)) : null;
   const balance = invoices
     .filter((i: any) => i.status !== "void")
@@ -121,7 +120,7 @@ export default function StudentProfile() {
       const max = Number(r.max_marks) || 0;
       const raw = Number(r.raw_marks) || 0;
       if (!max) continue;
-      const entry = byExam.get(exName) ?? { name: exName, pct: [] };
+      const entry = byExam.get(exName) ?? { name: exName, pct: [] as number[] };
       entry.pct.push((raw / max) * 100);
       byExam.set(exName, entry);
     }
