@@ -44,6 +44,8 @@ const Communication = lazy(() => import("./pages/Communication"));
 const Messaging = lazy(() => import("./pages/Messaging"));
 const Admissions = lazy(() => import("./pages/Admissions"));
 const Transport = lazy(() => import("./pages/Transport"));
+const TransportLive = lazy(() => import("./pages/TransportLive"));
+const Driver = lazy(() => import("./pages/Driver"));
 const Discipline = lazy(() => import("./pages/Discipline"));
 const Health = lazy(() => import("./pages/Health"));
 const Events = lazy(() => import("./pages/Events"));
@@ -208,6 +210,8 @@ function AppRoutes() {
       <Route path="/staff" element={<ProtectedRoute><DashboardLayout><Staff /></DashboardLayout></ProtectedRoute>} />
       <Route path="/staff/:id" element={<ProtectedRoute><DashboardLayout><StaffProfile /></DashboardLayout></ProtectedRoute>} />
       <Route path="/transport" element={<ProtectedRoute><DashboardLayout><Transport /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/transport/live" element={<ProtectedRoute><DashboardLayout><TransportLive /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/driver" element={<ProtectedRoute><Driver /></ProtectedRoute>} />
       <Route path="/library" element={<ProtectedRoute><DashboardLayout><Library /></DashboardLayout></ProtectedRoute>} />
       <Route path="/inventory" element={<ProtectedRoute><DashboardLayout><Inventory /></DashboardLayout></ProtectedRoute>} />
       <Route path="/discipline" element={<ProtectedRoute><DashboardLayout><Discipline /></DashboardLayout></ProtectedRoute>} />
