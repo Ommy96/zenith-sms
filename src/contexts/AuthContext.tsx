@@ -73,6 +73,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    let cancelled = false;
+    // Safety net: never let the app hang on a spinner. If neither getSession
+    // nor onAuthStateChange resolves within 6s (network / storage issue in a
+    // standalone tab), force loading=false so route guards can redirect.
+    const safety = setTimeout(() => {
+      if (!cancelled) setLoading(false);
+    }, 6000);
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
@@ -84,19 +92,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setRole(null);
         }
         setLoading(false);
+        clearTimeout(safety);
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-      setLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (cancelled) return;
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchProfile(session.user.id);
+        }
+      })
+      .catch((err) => {
+        // Storage blocked, network failure, etc. Surface to console but do
+        // not strand the UI on a spinner.
+        console.error("[auth] getSession failed:", err);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+        clearTimeout(safety);
+      });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      clearTimeout(safety);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
