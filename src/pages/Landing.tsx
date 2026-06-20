@@ -10,7 +10,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 const WHATSAPP_NUMBER = "254700000000"; // TODO: replace with real support line
-const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hi! I'd like to learn more about SomaSphere.")}`;
+const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hi! I'd like to learn more about Zenith OS.")}`;
 
 const PILLARS = [
   {
@@ -65,7 +65,7 @@ export default function Landing() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 font-semibold text-lg">
             <span className="h-8 w-8 rounded-lg bg-primary text-primary-foreground grid place-items-center font-bold">S</span>
-            SomaSphere
+            Zenith OS
           </Link>
           <nav className="hidden md:flex items-center gap-7 text-sm text-muted-foreground">
             <a href="#pillars" className="hover:text-foreground">Product</a>
@@ -97,7 +97,7 @@ export default function Landing() {
               <span className="block text-primary mt-2">Modern fees, parents, and academics in one place.</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-2xl">
-              SomaSphere replaces the spreadsheet, the WhatsApp group, and the dusty fee book with one calm,
+              Zenith OS replaces the spreadsheet, the WhatsApp group, and the dusty fee book with one calm,
               fast, multi-tenant platform — built for CBC, 8-4-4, UNEB, and NECTA.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -183,7 +183,7 @@ export default function Landing() {
             <thead className="bg-muted/40 text-left">
               <tr>
                 <th className="px-4 py-3 font-medium">Feature</th>
-                <th className="px-4 py-3 font-medium text-primary">SomaSphere</th>
+                <th className="px-4 py-3 font-medium text-primary">Zenith OS</th>
                 <th className="px-4 py-3 font-medium">Zeraki</th>
                 <th className="px-4 py-3 font-medium">Shulesoft</th>
               </tr>
@@ -250,7 +250,7 @@ export default function Landing() {
           <div>
             <div className="flex items-center gap-2 font-semibold mb-3">
               <span className="h-7 w-7 rounded-md bg-primary text-primary-foreground grid place-items-center font-bold">S</span>
-              SomaSphere
+              Zenith OS
             </div>
             <p className="text-muted-foreground text-xs leading-relaxed">A unified operating system for modern schools across East Africa.</p>
           </div>
@@ -265,8 +265,8 @@ export default function Landing() {
           <div>
             <div className="font-medium mb-3">Company</div>
             <ul className="space-y-2 text-muted-foreground">
-              <li><a href="mailto:hello@somasphere.app" className="hover:text-foreground">Contact</a></li>
-              <li><a href="https://status.somasphere.app" className="hover:text-foreground" target="_blank" rel="noreferrer">Status</a></li>
+              <li><a href="mailto:hello@zenith-os.app" className="hover:text-foreground">Contact</a></li>
+              <li><a href="https://status.zenith-os.app" className="hover:text-foreground" target="_blank" rel="noreferrer">Status</a></li>
               <li><a href={WHATSAPP_URL} className="hover:text-foreground" target="_blank" rel="noreferrer">WhatsApp support</a></li>
             </ul>
           </div>
@@ -280,7 +280,7 @@ export default function Landing() {
           </div>
         </div>
         <div className="container mx-auto px-4 mt-8 pt-6 border-t border-border/60 flex flex-col md:flex-row md:justify-between gap-2 text-xs text-muted-foreground">
-          <div>© {new Date().getFullYear()} SomaSphere. All rights reserved.</div>
+          <div>© {new Date().getFullYear()} Zenith OS. All rights reserved.</div>
           <div>Made with care in Nairobi 🇰🇪</div>
         </div>
       </footer>

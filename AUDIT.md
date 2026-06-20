@@ -1,4 +1,4 @@
-# SomaSphere — Production Readiness Re-audit
+# Zenith OS — Production Readiness Re-audit
 
 Date: 2026-06-20  
 Sprint: Hardening Sprint, Sections 8–10  
