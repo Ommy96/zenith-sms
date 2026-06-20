@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Edit, Loader2, Mail, Phone, MapPin, Shield, FileText, Heart, GraduationCap, DollarSign, Smartphone, Download, MoreHorizontal, Printer, UserMinus, ArrowRightLeft, KeyRound, MessageSquare, AlertTriangle, Bell, BookOpen, CalendarDays, Award } from "lucide-react";
+import { ArrowLeft, Edit, Loader2, Mail, Phone, MapPin, Shield, FileText, Heart, GraduationCap, DollarSign, Smartphone, Download, MoreHorizontal, Printer, UserMinus, ArrowRightLeft, KeyRound, MessageSquare, AlertTriangle, Bell, BookOpen, CalendarDays, Award, UploadCloud, Syringe, Stethoscope, Star, Activity as ActivityIcon, Link2, Trash2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import { DateTime } from "@/components/DateTime";
 import { getStudentGovIdFields } from "@/lib/sis/countryFields";
 import { InlineEditCard } from "@/components/sis/InlineEditCard";
 import { ResponsiveContainer, LineChart, Line, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
+import { EmptyState } from "@/components/EmptyState";
 
 export default function StudentProfile() {
   const { id } = useParams<{ id: string }>();
@@ -36,6 +37,14 @@ export default function StudentProfile() {
   const [attendanceRows, setAttendanceRows] = useState<any[]>([]);
   const [examRows, setExamRows] = useState<any[]>([]);
   const [classSubjects, setClassSubjects] = useState<any[]>([]);
+  const [healthVisits, setHealthVisits] = useState<any[]>([]);
+  const [immunizations, setImmunizations] = useState<any[]>([]);
+  const [accidents, setAccidents] = useState<any[]>([]);
+  const [incidents, setIncidents] = useState<any[]>([]);
+  const [merits, setMerits] = useState<any[]>([]);
+  const [auditEvents, setAuditEvents] = useState<any[]>([]);
+  const [docBusy, setDocBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [stkOpen, setStkOpen] = useState(false);
@@ -77,6 +86,22 @@ export default function StudentProfile() {
         const { data: cs } = await supabase.from("class_subjects").select("periods_per_week, subjects:subject_id(name, code)").eq("class_id", s.current_class_id);
         setClassSubjects(cs ?? []);
       }
+
+      // Phase 4 datasets (parallel, non-blocking on errors)
+      const [{ data: hv }, { data: im }, { data: ar }, { data: di }, { data: mp }, { data: al }] = await Promise.all([
+        supabase.from("health_visits").select("*").eq("student_id", id).order("visit_date", { ascending: false }).limit(20),
+        supabase.from("immunization_records").select("*").eq("student_id", id).order("date_given", { ascending: false }).limit(20),
+        supabase.from("accident_reports").select("*").eq("student_id", id).order("incident_date", { ascending: false }).limit(10),
+        supabase.from("discipline_incidents").select("*").eq("student_id", id).order("incident_date", { ascending: false }).limit(20),
+        supabase.from("merit_points").select("*").eq("student_id", id).order("awarded_date", { ascending: false }).limit(20),
+        supabase.from("audit_logs").select("id,action,entity_type,before,after,created_at,actor_user_id").eq("entity_type", "students").eq("entity_id", id).order("created_at", { ascending: false }).limit(50),
+      ]);
+      setHealthVisits(hv ?? []);
+      setImmunizations(im ?? []);
+      setAccidents(ar ?? []);
+      setIncidents(di ?? []);
+      setMerits(mp ?? []);
+      setAuditEvents(al ?? []);
       setLoading(false);
     })();
   }, [id, profile?.tenant_id, navigate]);
@@ -156,6 +181,52 @@ export default function StudentProfile() {
   };
 
   const isCBC = (tenant?.curriculum || "").toLowerCase() === "cbc";
+
+  const totalMerits = merits.reduce((a, m) => a + Number(m.points || 0), 0);
+  const openIncidents = incidents.filter((i: any) => i.status !== "resolved").length;
+
+  const uploadDocs = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !profile?.tenant_id) return;
+    setDocBusy(true);
+    try {
+      for (const file of Array.from(files)) {
+        const path = `${profile.tenant_id}/students/${student.id}/${Date.now()}-${file.name}`;
+        const { error: upErr } = await supabase.storage.from("documents").upload(path, file, { upsert: false });
+        if (upErr) throw upErr;
+        const { error: insErr } = await supabase.from("documents").insert({
+          tenant_id: profile.tenant_id,
+          owner_type: "student",
+          owner_id: student.id,
+          doc_type: "other",
+          file_url: path,
+          file_name: file.name,
+          mime_type: file.type,
+          size_bytes: file.size,
+        });
+        if (insErr) throw insErr;
+      }
+      const { data: dd } = await supabase.from("documents").select("*").eq("owner_type", "student").eq("owner_id", student.id).order("created_at", { ascending: false });
+      setDocs(dd ?? []);
+      toast({ title: `Uploaded ${files.length} file${files.length > 1 ? "s" : ""}` });
+    } catch (e: any) {
+      toast({ title: "Upload failed", description: e.message, variant: "destructive" });
+    } finally {
+      setDocBusy(false);
+    }
+  };
+
+  const downloadDoc = async (d: any) => {
+    const { data, error } = await supabase.storage.from("documents").createSignedUrl(d.file_url, 60);
+    if (error || !data?.signedUrl) return toast({ title: "Could not open", variant: "destructive" });
+    window.open(data.signedUrl, "_blank");
+  };
+
+  const deleteDoc = async (d: any) => {
+    if (!confirm(`Delete ${d.file_name}?`)) return;
+    await supabase.storage.from("documents").remove([d.file_url]);
+    await supabase.from("documents").delete().eq("id", d.id);
+    setDocs(docs.filter(x => x.id !== d.id));
+  };
 
   const openPay = (invoiceId?: string, amount?: number) => {
     const primaryGuardianPhone = guardians.find((g: any) => g.is_primary_contact)?.guardians?.phone_primary
@@ -278,7 +349,12 @@ export default function StudentProfile() {
             <HeaderStat label="Balance" value={<Money amount={balance} />} tone={balance > 0 ? "danger" : "success"} />
               <HeaderStat label="Attendance" value={attRate != null ? `${attRate}%` : "—"} hint="this term" />
               <HeaderStat label="Avg score" value={avgScore != null ? `${avgScore}%` : "—"} hint="last exam" />
-            <HeaderStat label="Discipline" value="—" hint="merits / incidents" />
+              <HeaderStat
+                label="Discipline"
+                value={`${totalMerits} / ${openIncidents}`}
+                hint="merits / open"
+                tone={openIncidents > 0 ? "danger" : undefined}
+              />
             <HeaderStat label="Guardians" value={String(guardians.length)} />
             <HeaderStat label="Documents" value={String(docs.length)} />
           </div>
@@ -601,60 +677,233 @@ export default function StudentProfile() {
 
             {canViewMedical && (
               <TabsContent value="health" className="mt-4 space-y-3">
-                <Card className="p-5 space-y-3">
-                  <h3 className="text-sm font-semibold flex items-center gap-2"><Heart className="h-4 w-4" /> Medical</h3>
-                  <Row label="Blood group" value={student.blood_group !== "unknown" ? student.blood_group : null} />
-                  <Row label="Allergies" value={student.allergies} />
-                  <Row label="Chronic conditions" value={student.chronic_conditions} />
-                  <Row label="Medications" value={student.medications} />
-                  <Row label="Doctor" value={student.doctor_name && `${student.doctor_name} — ${student.doctor_phone || ""}`} />
-                  <Row label="Insurance" value={student.insurance_provider} />
-                  <Row label="NHIF/SHIF" value={student.nhif_or_shif_number} />
-                </Card>
+                <InlineEditCard
+                  title="Vitals & medical" icon={<Heart className="h-4 w-4" />}
+                  rowId={student.id} table="students" values={student}
+                  cardKey="medical" editingKey={editingKey} setEditingKey={setEditingKey}
+                  canEdit={canEditStudent} onSaved={onStudentSaved}
+                  fields={[
+                    { key: "blood_group", label: "Blood group" },
+                    { key: "allergies", label: "Allergies", type: "textarea" },
+                    { key: "chronic_conditions", label: "Chronic conditions", type: "textarea" },
+                    { key: "medications", label: "Medications", type: "textarea" },
+                    { key: "doctor_name", label: "Doctor name" },
+                    { key: "doctor_phone", label: "Doctor phone" },
+                    { key: "insurance_provider", label: "Insurance" },
+                    { key: "nhif_or_shif_number", label: "NHIF/SHIF" },
+                    { key: "last_medical_checkup", label: "Last checkup", type: "date" },
+                  ]}
+                />
+
                 {student.has_special_needs && (
-                  <Card className="p-5 space-y-3 border-warning/30">
+                  <Card className="p-5 space-y-2 border-warning/40 bg-warning-soft/30">
                     <h3 className="text-sm font-semibold">Special needs</h3>
-                    <p className="text-sm">{student.special_needs_details}</p>
+                    <p className="text-sm">{student.special_needs_details || "—"}</p>
                     <Row label="IEP on file" value={student.iep_on_file ? "Yes" : "No"} />
                     <Row label="Accommodations" value={student.accommodations} />
+                  </Card>
+                )}
+
+                <Card className="p-5">
+                  <h3 className="text-sm font-semibold flex items-center gap-2 mb-3"><Syringe className="h-4 w-4" /> Immunizations</h3>
+                  {immunizations.length === 0 ? (
+                    <EmptyState icon={<Syringe className="h-5 w-5" />} title="No immunizations recorded"
+                      description="Add vaccination records to keep parents and the school nurse in sync." />
+                  ) : (
+                    <div className="space-y-2">
+                      {immunizations.map((v: any) => (
+                        <div key={v.id} className="flex items-center justify-between text-sm py-2 border-b last:border-0">
+                          <div>
+                            <p className="font-medium">{v.vaccine_name}{v.dose_number ? ` · Dose ${v.dose_number}` : ""}</p>
+                            <p className="text-xs text-muted-foreground">Given <DateTime value={v.date_given} mode="date" />{v.next_due_date ? ` · next due ${v.next_due_date}` : ""}</p>
+                          </div>
+                          {v.batch_number && <Badge variant="outline" className="text-[10px]">Batch {v.batch_number}</Badge>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+
+                <Card className="p-5">
+                  <h3 className="text-sm font-semibold flex items-center gap-2 mb-3"><Stethoscope className="h-4 w-4" /> Clinic visits</h3>
+                  {healthVisits.length === 0 ? (
+                    <EmptyState icon={<Stethoscope className="h-5 w-5" />} title="No clinic visits" description="The school nurse hasn't logged any visits for this learner." />
+                  ) : (
+                    <div className="space-y-3">
+                      {healthVisits.map((v: any) => (
+                        <div key={v.id} className="text-sm border-b last:border-0 pb-3 last:pb-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium">{v.complaint || "Visit"}</p>
+                            <span className="text-xs text-muted-foreground"><DateTime value={v.visit_date} mode="date" /></span>
+                          </div>
+                          {v.diagnosis && <p className="text-xs text-muted-foreground mt-0.5">Dx: {v.diagnosis}</p>}
+                          {v.treatment && <p className="text-xs text-muted-foreground">Tx: {v.treatment}</p>}
+                          {v.sent_home && <Badge variant="outline" className="text-[10px] mt-1">Sent home</Badge>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+
+                {accidents.length > 0 && (
+                  <Card className="p-5 border-danger/30">
+                    <h3 className="text-sm font-semibold flex items-center gap-2 mb-3"><AlertTriangle className="h-4 w-4 text-danger" /> Accident reports</h3>
+                    <div className="space-y-3">
+                      {accidents.map((a: any) => (
+                        <div key={a.id} className="text-sm border-b last:border-0 pb-3 last:pb-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium">{a.injury_type || "Incident"}</p>
+                            <span className="text-xs text-muted-foreground"><DateTime value={a.incident_date} mode="date" /></span>
+                          </div>
+                          {a.description && <p className="text-xs text-muted-foreground mt-0.5">{a.description}</p>}
+                          <div className="flex gap-1.5 mt-1">
+                            {a.hospital_referred && <Badge variant="destructive" className="text-[10px]">Hospital</Badge>}
+                            {a.parent_notified && <Badge variant="outline" className="text-[10px]">Parent notified</Badge>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </Card>
                 )}
               </TabsContent>
             )}
 
             {canViewDiscipline && (
-              <TabsContent value="discipline" className="mt-4">
+              <TabsContent value="discipline" className="mt-4 space-y-3">
                 <Card className="p-5">
-                  <h3 className="text-sm font-semibold flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Discipline</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">No incidents or merits recorded yet.</p>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Merits</p>
+                      <p className="mt-1 text-2xl font-semibold tabular-nums text-success">{totalMerits}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Open incidents</p>
+                      <p className={`mt-1 text-2xl font-semibold tabular-nums ${openIncidents > 0 ? "text-danger" : "text-foreground"}`}>{openIncidents}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Total incidents</p>
+                      <p className="mt-1 text-2xl font-semibold tabular-nums">{incidents.length}</p>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-5">
+                  <h3 className="text-sm font-semibold flex items-center gap-2 mb-3"><AlertTriangle className="h-4 w-4" /> Incidents</h3>
+                  {incidents.length === 0 ? (
+                    <EmptyState icon={<AlertTriangle className="h-5 w-5" />} title="No incidents on record"
+                      description="A clean discipline history. Log an incident from the More menu." />
+                  ) : (
+                    <div className="space-y-3">
+                      {incidents.map((i: any) => (
+                        <div key={i.id} className="text-sm border-b last:border-0 pb-3 last:pb-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-medium capitalize">{(i.category || "incident").replace(/_/g, " ")}</p>
+                            <div className="flex items-center gap-1.5">
+                              <Badge variant={i.severity >= 4 ? "destructive" : i.severity >= 3 ? "outline" : "secondary"} className="text-[10px]">Sev {i.severity}</Badge>
+                              <Badge variant={i.status === "resolved" ? "secondary" : "outline"} className="text-[10px] capitalize">{i.status}</Badge>
+                            </div>
+                          </div>
+                          {i.description && <p className="text-xs text-muted-foreground mt-0.5">{i.description}</p>}
+                          <p className="text-[10px] text-muted-foreground mt-1"><DateTime value={i.incident_date} mode="date" />{i.location ? ` · ${i.location}` : ""}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Card>
+
+                <Card className="p-5">
+                  <h3 className="text-sm font-semibold flex items-center gap-2 mb-3"><Star className="h-4 w-4" /> Merits</h3>
+                  {merits.length === 0 ? (
+                    <EmptyState icon={<Star className="h-5 w-5" />} title="No merit points yet"
+                      description="Recognize positive behavior — merits build over the term." />
+                  ) : (
+                    <div className="space-y-2">
+                      {merits.map((m: any) => (
+                        <div key={m.id} className="flex items-center justify-between text-sm py-1.5 border-b last:border-0">
+                          <div>
+                            <p className="font-medium capitalize">{m.category || "Merit"}</p>
+                            <p className="text-xs text-muted-foreground">{m.reason || "—"} · <DateTime value={m.awarded_date} mode="date" /></p>
+                          </div>
+                          <Badge className="text-[10px] bg-success-soft text-success-foreground">+{m.points}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </Card>
               </TabsContent>
             )}
 
-            <TabsContent value="documents" className="mt-4">
+            <TabsContent value="documents" className="mt-4 space-y-3">
+              <Card
+                className="p-6 border-dashed text-center cursor-pointer hover:border-accent hover:bg-accent-soft/30 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); }}
+                onDrop={(e) => { e.preventDefault(); uploadDocs(e.dataTransfer.files); }}
+              >
+                <input ref={fileInputRef} type="file" multiple className="hidden" onChange={(e) => uploadDocs(e.target.files)} />
+                <div className="flex flex-col items-center gap-2">
+                  <div className="h-10 w-10 rounded-xl bg-accent-soft text-accent flex items-center justify-center">
+                    {docBusy ? <Loader2 className="h-5 w-5 animate-spin" /> : <UploadCloud className="h-5 w-5" />}
+                  </div>
+                  <p className="text-sm font-medium">Drag files here or click to upload</p>
+                  <p className="text-xs text-muted-foreground">Birth certificates, medical records, transcripts — anything for this student's file.</p>
+                </div>
+              </Card>
+
               <Card className="p-5">
-                {docs.length === 0 ? <p className="text-sm text-muted-foreground">No documents uploaded.</p> :
-                  <div className="space-y-2">
-                    {docs.map(d => (
-                      <div key={d.id} className="flex items-center gap-3 p-2 hover:bg-muted/30 rounded text-sm">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="flex-1 truncate">{d.file_name}</span>
-                        <Badge variant="outline" className="text-[10px]">{d.doc_type}</Badge>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold flex items-center gap-2"><FileText className="h-4 w-4" /> Files <Badge variant="secondary" className="ml-1">{docs.length}</Badge></h3>
+                </div>
+                {docs.length === 0 ? (
+                  <EmptyState icon={<FileText className="h-5 w-5" />} title="No documents yet" description="Upload the first file using the area above." />
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {docs.map((d: any) => (
+                      <div key={d.id} className="group flex items-center gap-3 p-2.5 rounded-lg border hover:border-accent transition-colors">
+                        <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{d.file_name}</p>
+                          <p className="text-[10px] text-muted-foreground"><Badge variant="outline" className="text-[10px] mr-1">{d.doc_type}</Badge><DateTime value={d.created_at} mode="date" /></p>
+                        </div>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100" onClick={() => downloadDoc(d)} aria-label="Open"><ExternalLink className="h-3.5 w-3.5" /></Button>
+                        {canEditStudent && (
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-danger opacity-0 group-hover:opacity-100" onClick={() => deleteDoc(d)} aria-label="Delete"><Trash2 className="h-3.5 w-3.5" /></Button>
+                        )}
                       </div>
                     ))}
                   </div>
-                }
+                )}
               </Card>
             </TabsContent>
 
             <TabsContent value="activity" className="mt-4">
               <Card className="p-5">
-                {activity.length === 0 ? <p className="text-sm text-muted-foreground">No activity yet.</p> :
-                  <div className="space-y-3">
-                    {activity.map(a => (
+                <h3 className="text-sm font-semibold flex items-center gap-2 mb-3"><ActivityIcon className="h-4 w-4" /> Activity timeline</h3>
+                {auditEvents.length === 0 && activity.length === 0 ? (
+                  <EmptyState icon={<ActivityIcon className="h-5 w-5" />} title="No activity yet" description="Edits, fee events, and other changes to this record will appear here." />
+                ) : (
+                  <div className="space-y-4">
+                    {auditEvents.map((a: any) => {
+                      const changed = a.action === "update" && a.before && a.after
+                        ? Object.keys(a.after).filter(k => JSON.stringify(a.after[k]) !== JSON.stringify(a.before[k]) && !["updated_at"].includes(k))
+                        : [];
+                      return (
+                        <div key={a.id} className="flex gap-3 text-sm">
+                          <div className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${a.action === "delete" ? "bg-danger" : a.action === "insert" ? "bg-success" : "bg-accent"}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium capitalize">{a.action === "insert" ? "Record created" : a.action === "delete" ? "Record deleted" : "Profile updated"}</p>
+                            {changed.length > 0 && (
+                              <p className="text-xs text-muted-foreground truncate">Changed: {changed.slice(0, 5).join(", ")}{changed.length > 5 ? "…" : ""}</p>
+                            )}
+                            <p className="text-[10px] text-muted-foreground mt-0.5"><DateTime value={a.created_at} mode="datetime" /></p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {activity.map((a: any) => (
                       <div key={a.id} className="flex gap-3 text-sm">
-                        <div className="h-2 w-2 rounded-full bg-primary mt-1.5 shrink-0" />
-                        <div className="flex-1">
+                        <div className="h-2 w-2 rounded-full bg-muted-foreground/50 mt-1.5 shrink-0" />
+                        <div className="flex-1 min-w-0">
                           <p className="font-medium">{a.title}</p>
                           {a.description && <p className="text-xs text-muted-foreground">{a.description}</p>}
                           <p className="text-[10px] text-muted-foreground mt-0.5"><DateTime value={a.occurred_at} mode="datetime" /></p>
@@ -662,7 +911,7 @@ export default function StudentProfile() {
                       </div>
                     ))}
                   </div>
-                }
+                )}
               </Card>
             </TabsContent>
           </Tabs>
@@ -672,7 +921,11 @@ export default function StudentProfile() {
         <div className="space-y-4">
           <Card className="p-5">
             <h3 className="text-sm font-semibold mb-3">Guardians</h3>
-            {guardians.length === 0 ? <p className="text-xs text-muted-foreground">No guardians linked.</p> :
+            {guardians.length === 0 ? (
+              <EmptyState icon={<Phone className="h-5 w-5" />} title="No guardians linked"
+                actionLabel={canEditStudent ? "Add guardian" : undefined}
+                onAction={canEditStudent ? () => navigate(`/students/${student.id}/edit?tab=guardians`) : undefined} />
+            ) : (
               <div className="space-y-3">
                 {guardians.map((sg: any) => (
                   <div key={sg.id} className="text-sm border-b last:border-0 pb-3 last:pb-0">
@@ -686,7 +939,7 @@ export default function StudentProfile() {
                   </div>
                 ))}
               </div>
-            }
+            )}
           </Card>
           <Card className="p-5">
             <h3 className="text-sm font-semibold mb-3">Key dates</h3>
@@ -694,6 +947,25 @@ export default function StudentProfile() {
               <Row label="Admitted" value={student.admission_date} />
               <Row label="DOB" value={student.date_of_birth} />
               <Row label="Last checkup" value={student.last_medical_checkup} />
+            </div>
+          </Card>
+          <Card className="p-5">
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Link2 className="h-4 w-4" /> Quick links</h3>
+            <div className="space-y-1.5 text-sm">
+              {classRow && (
+                <button onClick={() => navigate(`/classes/${classRow.id}`)} className="w-full text-left flex items-center justify-between hover:text-accent transition-colors py-1">
+                  <span>Class · {classRow.name}</span><ExternalLink className="h-3 w-3 opacity-50" />
+                </button>
+              )}
+              <button onClick={() => navigate(`/fees?student=${student.id}`)} className="w-full text-left flex items-center justify-between hover:text-accent transition-colors py-1">
+                <span>Fees & invoices</span><ExternalLink className="h-3 w-3 opacity-50" />
+              </button>
+              <button onClick={() => navigate(`/attendance?student=${student.id}`)} className="w-full text-left flex items-center justify-between hover:text-accent transition-colors py-1">
+                <span>Attendance history</span><ExternalLink className="h-3 w-3 opacity-50" />
+              </button>
+              <button onClick={() => navigate(`/messaging?student=${student.id}`)} className="w-full text-left flex items-center justify-between hover:text-accent transition-colors py-1">
+                <span>Messages</span><ExternalLink className="h-3 w-3 opacity-50" />
+              </button>
             </div>
           </Card>
         </div>
