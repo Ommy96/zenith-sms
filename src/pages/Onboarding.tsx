@@ -75,7 +75,7 @@ export default function Onboarding() {
 
   const finish = async () => {
     toast({ title: "Setup complete!", description: "Welcome to Zenith." });
-    navigate("/");
+    navigate("/app");
   };
 
   const taskDone = (key: string) => tasks.find((t) => t.id === key)?.done ?? false;
@@ -89,7 +89,7 @@ export default function Onboarding() {
             <Rocket className="h-5 w-5 text-primary" />
             <h1 className="font-semibold">Setup wizard</h1>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => navigate("/")}>Exit</Button>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/app")}>Exit</Button>
         </div>
         <div className="max-w-4xl mx-auto px-6 pb-4">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">

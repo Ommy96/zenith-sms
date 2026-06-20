@@ -55,7 +55,7 @@ export default function SuperAdminTenants() {
     })();
   }, [role]);
 
-  if (role !== "super_admin") return <Navigate to="/" replace />;
+  if (role !== "super_admin") return <Navigate to="/app" replace />;
 
   const toggleActive = async (t: TenantRow) => {
     const { error } = await supabase.from("tenants").update({ is_active: !t.is_active }).eq("id", t.id);

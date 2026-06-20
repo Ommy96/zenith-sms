@@ -35,7 +35,7 @@ export default function ResetPassword() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Password Updated", description: "Your password has been reset." });
-      navigate("/");
+      navigate("/app");
     }
   };
 

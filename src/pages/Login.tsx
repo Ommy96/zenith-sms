@@ -23,7 +23,7 @@ export default function Login() {
     if (error) {
       toast({ title: "Login Failed", description: error.message, variant: "destructive" });
     } else {
-      navigate("/");
+      navigate("/app");
     }
   };
 

@@ -177,7 +177,7 @@ export default function SchoolSetup() {
       }
 
       toast({ title: "School Setup Complete", description: `${schoolName} is ready with sample data to explore.` });
-      navigate("/");
+      navigate("/app");
       // Force a reload so AuthContext picks up new tenant_id and is_demo flag
       setTimeout(() => window.location.reload(), 100);
     } catch (err: any) {

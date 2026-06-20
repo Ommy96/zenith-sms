@@ -34,7 +34,7 @@ export default function SuperAdminAudit() {
     })();
   }, [role]);
 
-  if (role !== "super_admin") return <Navigate to="/" replace />;
+  if (role !== "super_admin") return <Navigate to="/app" replace />;
   if (loading) return <div className="flex items-center justify-center h-96"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
 
   return (
