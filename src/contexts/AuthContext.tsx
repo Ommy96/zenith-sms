@@ -15,8 +15,16 @@ interface AuthContextType {
   refreshSchool: () => Promise<void>;
 }
 
+// Default context value — safe to read even if the provider has not mounted yet.
 const AuthContext = createContext<AuthContextType>({
-  session: null, user: null, profile: null, role: null, isDemo: false, loading: true, signOut: async () => {}, refreshSchool: async () => {},
+  session: null,
+  user: null,
+  profile: null,
+  role: null,
+  isDemo: false,
+  loading: true,
+  signOut: async () => {},
+  refreshSchool: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -59,7 +67,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (tenantId) {
       const { data: schoolData } = await supabase
-        .from("tenants").select("is_demo").eq("id", tenantId).maybeSingle();
+        .from("tenants")
+        .select("is_demo")
+        .eq("id", tenantId)
+        .maybeSingle();
       setIsDemo(!!schoolData?.is_demo);
     } else {
       setIsDemo(false);
@@ -74,53 +85,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    // Safety net: never let the app hang on a spinner. If neither getSession
-    // nor onAuthStateChange resolves within 6s (network / storage issue in a
-    // standalone tab), force loading=false so route guards can redirect.
-    const safety = setTimeout(() => {
-      if (!cancelled) setLoading(false);
-    }, 6000);
+    let subscription: { unsubscribe: () => void } | null = null;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          setTimeout(() => fetchProfile(session.user.id), 0);
-        } else {
-          setProfile(null);
-          setRole(null);
-        }
+    // Invariant 1: loading MUST resolve to false within 5 s no matter what.
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.warn("[Auth] Session check timed out after 5s, proceeding as unauthenticated");
         setLoading(false);
-        clearTimeout(safety);
+        setUser(null);
       }
-    );
+    }, 5000);
 
     supabase.auth
       .getSession()
-      .then(({ data: { session } }) => {
+      .then(({ data, error }) => {
         if (cancelled) return;
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          fetchProfile(session.user.id);
+        if (error) console.error("[Auth] getSession error:", error);
+
+        const resolvedUser = data?.session?.user ?? null;
+        setUser(resolvedUser);
+        setSession(data?.session ?? null);
+        if (resolvedUser) {
+          fetchProfile(resolvedUser.id);
         }
+        setLoading(false);
+        clearTimeout(timeoutId);
+
+        // Invariant 2: listener registered ONLY after initial getSession resolves.
+        // This prevents a race where the listener fires before state is initialized.
+        const { data: listener } = supabase.auth.onAuthStateChange(
+          async (_event, newSession) => {
+            setSession(newSession);
+            setUser(newSession?.user ?? null);
+            if (newSession?.user) {
+              setTimeout(() => fetchProfile(newSession.user.id), 0);
+            } else {
+              setProfile(null);
+              setRole(null);
+            }
+          }
+        );
+        subscription = listener.subscription;
       })
       .catch((err) => {
-        // Storage blocked, network failure, etc. Surface to console but do
-        // not strand the UI on a spinner.
-        console.error("[auth] getSession failed:", err);
-      })
-      .finally(() => {
         if (cancelled) return;
+        console.error("[Auth] getSession threw:", err);
+        setUser(null);
         setLoading(false);
-        clearTimeout(safety);
+        clearTimeout(timeoutId);
       });
 
     return () => {
       cancelled = true;
-      clearTimeout(safety);
-      subscription.unsubscribe();
+      clearTimeout(timeoutId);
+      subscription?.unsubscribe();
     };
   }, []);
 
