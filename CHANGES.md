@@ -256,3 +256,4 @@ wired to their `_tg_*` functions; no orphan `_tg_*` functions were found.
 - `generate-report-cards` now accepts `autoDeliver: true` to fire delivery automatically when a run completes.
 - `report_cards` tracks `delivery_status`, `delivered_at`, `delivery_error`, `message_ids`; `report_card_runs` tracks `delivered_count`, `delivered_at`, `delivery_status`.
 - Report Cards page: "Send to parents automatically" checkbox on generation, per-run "Send to parents" button, and a "N sent" badge once delivered.
+- Section 9.2: Real-time timetable conflict detection (teacher double-booking, room clash, unavailability) with visual badges + pre-save toast warnings.
