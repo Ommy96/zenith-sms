@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Edit, Loader2, Mail, Phone, MapPin, Shield, FileText, Heart, GraduationCap, DollarSign, Smartphone, Download, MoreHorizontal, Printer, UserMinus, ArrowRightLeft, KeyRound, MessageSquare, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Edit, Loader2, Mail, Phone, MapPin, Shield, FileText, Heart, GraduationCap, DollarSign, Smartphone, Download, MoreHorizontal, Printer, UserMinus, ArrowRightLeft, KeyRound, MessageSquare, AlertTriangle, Bell, BookOpen, CalendarDays, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,8 @@ import { toast } from "@/hooks/use-toast";
 import { Money } from "@/components/Money";
 import { DateTime } from "@/components/DateTime";
 import { getStudentGovIdFields } from "@/lib/sis/countryFields";
+import { InlineEditCard } from "@/components/sis/InlineEditCard";
+import { ResponsiveContainer, LineChart, Line, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
 
 export default function StudentProfile() {
   const { id } = useParams<{ id: string }>();
@@ -31,6 +33,10 @@ export default function StudentProfile() {
   const [payments, setPayments] = useState<any[]>([]);
   const [activity, setActivity] = useState<any[]>([]);
   const [docs, setDocs] = useState<any[]>([]);
+  const [attendanceRows, setAttendanceRows] = useState<any[]>([]);
+  const [examRows, setExamRows] = useState<any[]>([]);
+  const [classSubjects, setClassSubjects] = useState<any[]>([]);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [stkOpen, setStkOpen] = useState(false);
   const [stkForm, setStkForm] = useState({ amount: "", phone: "", invoice_id: "" });
@@ -49,13 +55,15 @@ export default function StudentProfile() {
       if (error || !s) { toast({ title: "Student not found", variant: "destructive" }); navigate("/students"); return; }
       setStudent(s);
 
-      const [{ data: sg }, { data: cls }, { data: inv }, { data: pay }, { data: act }, { data: dd }] = await Promise.all([
+      const [{ data: sg }, { data: cls }, { data: inv }, { data: pay }, { data: act }, { data: dd }, { data: att }, { data: ex }] = await Promise.all([
         supabase.from("student_guardians").select("*, guardians(*)").eq("student_id", id),
         s.current_class_id ? supabase.from("classes").select("*").eq("id", s.current_class_id).maybeSingle() : Promise.resolve({ data: null }),
         supabase.from("student_invoices").select("*, terms:term_id(name), academic_years:academic_year_id(name)").eq("student_id", id).order("created_at", { ascending: false }).limit(50),
         supabase.from("student_payments").select("*").eq("student_id", id).order("paid_at", { ascending: false }).limit(50),
         supabase.from("student_activity").select("*").eq("student_id", id).order("occurred_at", { ascending: false }).limit(50),
         supabase.from("documents").select("*").eq("owner_type", "student").eq("owner_id", id).order("created_at", { ascending: false }),
+        supabase.from("attendance").select("date,status").eq("student_id", id).order("date", { ascending: false }).limit(200),
+        supabase.from("student_exam_results").select("raw_marks,max_marks,grade,position_in_class,entered_at,subjects:subject_id(name,code),exams:exam_id(name,term,academic_year)").eq("student_id", id).order("entered_at", { ascending: false }).limit(40),
       ]);
       setGuardians(sg ?? []);
       setClassRow(cls);
@@ -63,6 +71,12 @@ export default function StudentProfile() {
       setPayments(pay ?? []);
       setActivity(act ?? []);
       setDocs(dd ?? []);
+      setAttendanceRows(att ?? []);
+      setExamRows(ex ?? []);
+      if (s.current_class_id) {
+        const { data: cs } = await supabase.from("class_subjects").select("periods_per_week, subjects:subject_id(name, code)").eq("class_id", s.current_class_id);
+        setClassSubjects(cs ?? []);
+      }
       setLoading(false);
     })();
   }, [id, profile?.tenant_id, navigate]);
@@ -79,7 +93,6 @@ export default function StudentProfile() {
 
   const initials = `${student.first_name?.[0] || ""}${student.last_name?.[0] || ""}`.toUpperCase();
   const govFields = getStudentGovIdFields(tenant?.country_code);
-  const populatedGovFields = govFields.filter(f => student[f.key]);
   const age = student.date_of_birth ? Math.floor((Date.now() - new Date(student.date_of_birth).getTime()) / (365.25 * 24 * 3600 * 1000)) : null;
   const balance = invoices
     .filter((i: any) => i.status !== "void")
@@ -87,6 +100,41 @@ export default function StudentProfile() {
   const totalBilled = invoices.filter((i: any) => i.status !== "void" && i.status !== "draft").reduce((a, i) => a + Number(i.total || 0), 0);
   const totalPaid = invoices.reduce((a, i) => a + Number(i.paid_total || 0), 0);
   const outstandingInvoices = invoices.filter((i: any) => Number(i.balance) > 0 && i.status !== "void");
+
+  // Attendance summary (current term ≈ last 90 days)
+  const ninetyDaysAgo = Date.now() - 90 * 86400_000;
+  const termAtt = attendanceRows.filter(a => new Date(a.date).getTime() >= ninetyDaysAgo);
+  const present = termAtt.filter(a => a.status === "present").length;
+  const late = termAtt.filter(a => a.status === "late").length;
+  const absent = termAtt.filter(a => a.status === "absent").length;
+  const excused = termAtt.filter(a => a.status === "excused").length;
+  const totalAtt = termAtt.length;
+  const attRate = totalAtt > 0 ? Math.round(((present + late) / totalAtt) * 100) : null;
+  const recentAbsences = attendanceRows.filter(a => a.status === "absent" || a.status === "late").slice(0, 10);
+
+  // Exam sparkline — average % per exam, oldest→newest
+  const examTrend = (() => {
+    const byExam = new Map<string, { name: string; pct: number[] }>();
+    for (const r of examRows) {
+      const exName = r.exams?.name || "Exam";
+      const max = Number(r.max_marks) || 0;
+      const raw = Number(r.raw_marks) || 0;
+      if (!max) continue;
+      const entry = byExam.get(exName) ?? { name: exName, pct: [] as number[] };
+      entry.pct.push((raw / max) * 100);
+      byExam.set(exName, entry);
+    }
+    return Array.from(byExam.values()).slice(0, 8).reverse().map(e => ({
+      name: e.name,
+      avg: Math.round(e.pct.reduce((a, b) => a + b, 0) / e.pct.length),
+    }));
+  })();
+  const avgScore = examTrend.length ? examTrend[examTrend.length - 1].avg : null;
+
+  // YTD fees summary
+  const ytdStart = new Date(new Date().getFullYear(), 0, 1).getTime();
+  const ytdPaid = payments.filter(p => new Date(p.paid_at).getTime() >= ytdStart).reduce((a, p) => a + Number(p.amount || 0), 0);
+  const ytdBilled = invoices.filter(i => new Date(i.created_at).getTime() >= ytdStart && i.status !== "void").reduce((a, i) => a + Number(i.total || 0), 0);
 
   const fullName = [student.first_name, student.middle_name, student.last_name].filter(Boolean).join(" ");
   const statusKey = (student.enrollment_status || student.status || "").toLowerCase();
@@ -96,6 +144,18 @@ export default function StudentProfile() {
     statusKey === "graduated" || statusKey === "transferred" || statusKey === "withdrawn" ? "muted" :
     "warning";
   const lastUpdatedAt = student.updated_at || student.created_at;
+
+  const onStudentSaved = (patch: Partial<typeof student>) => setStudent({ ...student, ...patch });
+
+  const sendReminder = async () => {
+    const { error } = await supabase.functions.invoke("send-fee-reminder", {
+      body: { student_id: student.id },
+    });
+    if (error) return toast({ title: "Could not send reminder", description: error.message, variant: "destructive" });
+    toast({ title: "Reminder queued", description: "Guardians will receive an SMS/WhatsApp shortly." });
+  };
+
+  const isCBC = (tenant?.curriculum || "").toLowerCase() === "cbc";
 
   const openPay = (invoiceId?: string, amount?: number) => {
     const primaryGuardianPhone = guardians.find((g: any) => g.is_primary_contact)?.guardians?.phone_primary
@@ -216,8 +276,8 @@ export default function StudentProfile() {
           {/* 6-stat strip */}
           <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-px rounded-xl bg-border/60 overflow-hidden border">
             <HeaderStat label="Balance" value={<Money amount={balance} />} tone={balance > 0 ? "danger" : "success"} />
-            <HeaderStat label="Attendance" value="—" hint="this term" />
-            <HeaderStat label="Avg score" value="—" hint="last exam" />
+              <HeaderStat label="Attendance" value={attRate != null ? `${attRate}%` : "—"} hint="this term" />
+              <HeaderStat label="Avg score" value={avgScore != null ? `${avgScore}%` : "—"} hint="last exam" />
             <HeaderStat label="Discipline" value="—" hint="merits / incidents" />
             <HeaderStat label="Guardians" value={String(guardians.length)} />
             <HeaderStat label="Documents" value={String(docs.length)} />
@@ -256,40 +316,176 @@ export default function StudentProfile() {
             </TabsList>
 
             <TabsContent value="overview" className="space-y-4 mt-4">
-              <Card className="p-5 space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2"><Shield className="h-4 w-4" /> Identity</h3>
-                <Row label="Preferred name" value={student.preferred_name} />
-                <Row label="Date of birth" value={student.date_of_birth} />
-                <Row label="Nationality" value={student.nationality} />
-                <Row label="House" value={student.house} />
+              <InlineEditCard
+                title="Identity" icon={<Shield className="h-4 w-4" />}
+                rowId={student.id} table="students" values={student}
+                cardKey="identity" editingKey={editingKey} setEditingKey={setEditingKey}
+                canEdit={canEditStudent} onSaved={onStudentSaved}
+                fields={[
+                  { key: "preferred_name", label: "Preferred name" },
+                  { key: "date_of_birth", label: "Date of birth", type: "date" },
+                  { key: "nationality", label: "Nationality" },
+                  { key: "religion", label: "Religion" },
+                  { key: "house", label: "House" },
+                ]}
+              />
+              <InlineEditCard
+                title={`Government IDs${tenant?.country_code ? ` (${tenant.country_code})` : ""}`}
+                icon={<FileText className="h-4 w-4" />}
+                rowId={student.id} table="students" values={student}
+                cardKey="govids" editingKey={editingKey} setEditingKey={setEditingKey}
+                canEdit={canEditStudent} onSaved={onStudentSaved}
+                fields={govFields.map(f => ({ key: f.key, label: f.label, placeholder: f.placeholder }))}
+              />
+              <Card className="p-5">
+                <h3 className="text-sm font-semibold flex items-center gap-2 mb-3"><GraduationCap className="h-4 w-4" /> Academic snapshot</h3>
+                <div className="space-y-2.5 text-sm">
+                  <Row label="Class" value={classRow?.name} />
+                  <Row label="Stream" value={student.stream} />
+                  <Row label="Admission no." value={student.admission_number} />
+                  <Row label="Admitted" value={student.admission_date} />
+                  <Row label="Expected graduation" value={student.expected_graduation_year} />
+                </div>
               </Card>
-              {populatedGovFields.length > 0 && (
-                <Card className="p-5 space-y-3">
-                  <h3 className="text-sm font-semibold">Government IDs ({tenant?.country_code})</h3>
-                  {populatedGovFields.map(f => <Row key={f.key} label={f.label} value={student[f.key]} />)}
-                </Card>
-              )}
-              <Card className="p-5 space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2"><MapPin className="h-4 w-4" /> Contact</h3>
-                <Row label="Address" value={student.residential_address} />
-                <Row label="City" value={student.city} />
-                <Row label="Emergency contact" value={student.emergency_contact_name && `${student.emergency_contact_name} — ${student.emergency_contact_phone || ""}`} />
-              </Card>
+              <InlineEditCard
+                title="Contact" icon={<MapPin className="h-4 w-4" />}
+                rowId={student.id} table="students" values={student}
+                cardKey="contact" editingKey={editingKey} setEditingKey={setEditingKey}
+                canEdit={canEditStudent} onSaved={onStudentSaved}
+                fields={[
+                  { key: "residential_address", label: "Address", type: "textarea" },
+                  { key: "city", label: "City" },
+                  { key: "postal_code", label: "Postal code" },
+                  { key: "emergency_contact_name", label: "Emergency contact" },
+                  { key: "emergency_contact_phone", label: "Emergency phone" },
+                  { key: "emergency_contact_relation", label: "Relation" },
+                ]}
+              />
             </TabsContent>
 
             <TabsContent value="academics" className="space-y-4 mt-4">
-              <Card className="p-5 space-y-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2"><GraduationCap className="h-4 w-4" /> Academic record</h3>
-                <Row label="Current class" value={classRow?.name} />
-                <Row label="Admission grade" value={student.admission_grade} />
-                <Row label="Previous school" value={student.previous_school} />
-                <Row label="Expected graduation" value={student.expected_graduation_year} />
-                <Row label="Admission date" value={student.admission_date} />
+              <Card className="p-5">
+                <h3 className="text-sm font-semibold flex items-center gap-2 mb-3"><GraduationCap className="h-4 w-4" /> Class history</h3>
+                <div className="space-y-2 text-sm">
+                  {classRow ? (
+                    <div className="flex items-center justify-between border-l-2 border-accent pl-3">
+                      <div>
+                        <p className="font-medium">{classRow.name}{student.stream ? ` — ${student.stream}` : ""}</p>
+                        <p className="text-xs text-muted-foreground">Current · since {student.admission_date || "—"}</p>
+                      </div>
+                      <Badge variant="outline" className="text-[10px]">Active</Badge>
+                    </div>
+                  ) : <p className="text-sm text-muted-foreground">Not enrolled in a class.</p>}
+                  {student.previous_school && (
+                    <div className="text-xs text-muted-foreground border-l-2 border-border pl-3">
+                      Previously at <span className="text-foreground">{student.previous_school}</span>
+                      {student.admission_grade ? ` · admitted at ${student.admission_grade}` : ""}
+                    </div>
+                  )}
+                </div>
               </Card>
+
+              <Card className="p-5">
+                <h3 className="text-sm font-semibold flex items-center gap-2 mb-3"><BookOpen className="h-4 w-4" /> Subjects</h3>
+                {classSubjects.length === 0 ? <p className="text-sm text-muted-foreground">No subjects assigned to current class.</p> :
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {classSubjects.map((cs: any, i: number) => (
+                      <div key={i} className="rounded-lg border bg-card px-3 py-2">
+                        <p className="text-sm font-medium truncate">{cs.subjects?.name || cs.subjects?.code}</p>
+                        <p className="text-[11px] text-muted-foreground">{cs.periods_per_week ?? 0} periods/wk</p>
+                      </div>
+                    ))}
+                  </div>
+                }
+              </Card>
+
+              <Card className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold flex items-center gap-2"><Award className="h-4 w-4" /> Exam performance</h3>
+                  {avgScore != null && <span className="text-xs text-muted-foreground">Latest avg <span className="text-foreground font-semibold tabular-nums">{avgScore}%</span></span>}
+                </div>
+                {examTrend.length > 1 && (
+                  <div className="h-32 -mx-2 mb-3">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={examTrend}>
+                        <XAxis dataKey="name" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                        <YAxis hide domain={[0, 100]} />
+                        <RTooltip cursor={{ stroke: "hsl(var(--border))" }} contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))", background: "hsl(var(--popover))" }} />
+                        <Line type="monotone" dataKey="avg" stroke="hsl(var(--accent))" strokeWidth={2} dot={{ r: 3 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+                {examRows.length === 0 ? <p className="text-sm text-muted-foreground">No exam results recorded yet.</p> :
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead><tr className="text-left text-xs text-muted-foreground border-b">
+                        <th className="py-2">Exam</th><th>Subject</th><th className="text-right">Marks</th><th className="text-right">Grade</th><th className="text-right">Pos</th>
+                      </tr></thead>
+                      <tbody>
+                        {examRows.slice(0, 12).map((r: any, i: number) => (
+                          <tr key={i} className="border-b last:border-0">
+                            <td className="py-2 truncate">{r.exams?.name}</td>
+                            <td className="text-muted-foreground">{r.subjects?.name || r.subjects?.code}</td>
+                            <td className="text-right tabular-nums">{r.raw_marks}/{r.max_marks}</td>
+                            <td className="text-right font-medium">{r.grade || "—"}</td>
+                            <td className="text-right text-muted-foreground">{r.position_in_class || "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              </Card>
+
+              {isCBC && (
+                <Card className="p-5">
+                  <h3 className="text-sm font-semibold mb-2">CBC competencies & values</h3>
+                  <p className="text-sm text-muted-foreground">Competency assessments will appear here as teachers record them.</p>
+                </Card>
+              )}
             </TabsContent>
 
-            <TabsContent value="attendance" className="mt-4">
-              <Card className="p-5"><p className="text-sm text-muted-foreground">Attendance records will appear here.</p></Card>
+            <TabsContent value="attendance" className="mt-4 space-y-4">
+              <Card className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold flex items-center gap-2"><CalendarDays className="h-4 w-4" /> This term</h3>
+                  <span className="text-xs text-muted-foreground">{totalAtt} sessions</span>
+                </div>
+                {totalAtt === 0 ? <p className="text-sm text-muted-foreground">No attendance records yet.</p> : (
+                  <>
+                    <div className="flex items-baseline gap-3 mb-3">
+                      <span className="text-3xl font-semibold tabular-nums">{attRate}%</span>
+                      <span className="text-xs text-muted-foreground">attendance rate</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden flex">
+                      <div className="bg-success" style={{ width: `${(present / totalAtt) * 100}%` }} />
+                      <div className="bg-warning" style={{ width: `${(late / totalAtt) * 100}%` }} />
+                      <div className="bg-info" style={{ width: `${(excused / totalAtt) * 100}%` }} />
+                      <div className="bg-danger" style={{ width: `${(absent / totalAtt) * 100}%` }} />
+                    </div>
+                    <div className="mt-3 grid grid-cols-4 gap-3 text-xs">
+                      <Stat label="Present" value={present} dot="bg-success" />
+                      <Stat label="Late" value={late} dot="bg-warning" />
+                      <Stat label="Excused" value={excused} dot="bg-info" />
+                      <Stat label="Absent" value={absent} dot="bg-danger" />
+                    </div>
+                  </>
+                )}
+              </Card>
+              <Card className="p-5">
+                <h4 className="text-sm font-semibold mb-3">Recent absences & late marks</h4>
+                {recentAbsences.length === 0 ? <p className="text-sm text-muted-foreground">Clean record — no recent absences.</p> :
+                  <div className="space-y-2">
+                    {recentAbsences.map((a, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b last:border-0">
+                        <span>{new Date(a.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</span>
+                        <Badge variant={a.status === "absent" ? "destructive" : "outline"} className="text-[10px] capitalize">{a.status}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                }
+              </Card>
             </TabsContent>
 
             <TabsContent value="fees" className="mt-4 space-y-3">
@@ -297,16 +493,24 @@ export default function StudentProfile() {
                 <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                   <div>
                     <h3 className="text-sm font-semibold flex items-center gap-2"><DollarSign className="h-4 w-4" /> Fee account</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">Billed <Money amount={totalBilled} /> · Paid <Money amount={totalPaid} /></p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Billed <Money amount={totalBilled} /> · Paid <Money amount={totalPaid} />
+                      <span className="mx-1">·</span>
+                      YTD <Money amount={ytdPaid} /> / <Money amount={ytdBilled} />
+                    </p>
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-muted-foreground">Outstanding balance</p>
-                    <p className={`text-2xl font-bold ${balance > 0 ? "text-destructive" : "text-emerald-600"}`}><Money amount={balance} /></p>
+                    <p className={`text-2xl font-semibold tabular-nums ${balance > 0 ? "text-danger" : balance < 0 ? "text-info" : "text-success"}`}><Money amount={balance} /></p>
+                    {balance < 0 && <p className="text-[10px] text-info">Credit on account</p>}
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" onClick={() => openPay()} disabled={balance <= 0} className="gap-1.5 bg-accent text-accent-foreground hover:bg-accent/90">
                     <Smartphone className="h-3.5 w-3.5" /> Pay via M-Pesa
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={sendReminder} disabled={balance <= 0} className="gap-1.5">
+                    <Bell className="h-3.5 w-3.5" /> Send reminder
                   </Button>
                   <Button size="sm" variant="outline" onClick={downloadStatement} disabled={stmtBusy} className="gap-1.5">
                     {stmtBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} Statement
@@ -532,6 +736,18 @@ function HeaderStat({ label, value, hint, tone }: { label: string; value: React.
       <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className={`mt-1 text-lg font-semibold tabular-nums ${valueCls}`}>{value}</p>
       {hint && <p className="text-[10px] text-muted-foreground mt-0.5">{hint}</p>}
+    </div>
+  );
+}
+
+function Stat({ label, value, dot }: { label: string; value: React.ReactNode; dot?: string }) {
+  return (
+    <div>
+      <div className="flex items-center gap-1.5">
+        {dot && <span className={`inline-block h-1.5 w-1.5 rounded-full ${dot}`} />}
+        <span className="text-muted-foreground">{label}</span>
+      </div>
+      <p className="mt-0.5 font-semibold tabular-nums text-sm">{value}</p>
     </div>
   );
 }
