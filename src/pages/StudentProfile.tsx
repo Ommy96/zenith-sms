@@ -739,3 +739,15 @@ function HeaderStat({ label, value, hint, tone }: { label: string; value: React.
     </div>
   );
 }
+
+function Stat({ label, value, dot }: { label: string; value: React.ReactNode; dot?: string }) {
+  return (
+    <div>
+      <div className="flex items-center gap-1.5">
+        {dot && <span className={`inline-block h-1.5 w-1.5 rounded-full ${dot}`} />}
+        <span className="text-muted-foreground">{label}</span>
+      </div>
+      <p className="mt-0.5 font-semibold tabular-nums text-sm">{value}</p>
+    </div>
+  );
+}
