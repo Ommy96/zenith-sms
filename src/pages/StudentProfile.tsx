@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Edit, Loader2, Mail, Phone, MapPin, Shield, FileText, Heart, GraduationCap, DollarSign, Smartphone, Download, MoreHorizontal, Printer, UserMinus, ArrowRightLeft, KeyRound, MessageSquare, AlertTriangle, Bell, BookOpen, CalendarDays, Award } from "lucide-react";
+import { ArrowLeft, Edit, Loader2, Mail, Phone, MapPin, Shield, FileText, Heart, GraduationCap, DollarSign, Smartphone, Download, MoreHorizontal, Printer, UserMinus, ArrowRightLeft, KeyRound, MessageSquare, AlertTriangle, Bell, BookOpen, CalendarDays, Award, UploadCloud, Syringe, Stethoscope, Star, Activity as ActivityIcon, Link2, Trash2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import { DateTime } from "@/components/DateTime";
 import { getStudentGovIdFields } from "@/lib/sis/countryFields";
 import { InlineEditCard } from "@/components/sis/InlineEditCard";
 import { ResponsiveContainer, LineChart, Line, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
+import { EmptyState } from "@/components/EmptyState";
 
 export default function StudentProfile() {
   const { id } = useParams<{ id: string }>();
@@ -36,6 +37,14 @@ export default function StudentProfile() {
   const [attendanceRows, setAttendanceRows] = useState<any[]>([]);
   const [examRows, setExamRows] = useState<any[]>([]);
   const [classSubjects, setClassSubjects] = useState<any[]>([]);
+  const [healthVisits, setHealthVisits] = useState<any[]>([]);
+  const [immunizations, setImmunizations] = useState<any[]>([]);
+  const [accidents, setAccidents] = useState<any[]>([]);
+  const [incidents, setIncidents] = useState<any[]>([]);
+  const [merits, setMerits] = useState<any[]>([]);
+  const [auditEvents, setAuditEvents] = useState<any[]>([]);
+  const [docBusy, setDocBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [stkOpen, setStkOpen] = useState(false);
@@ -77,6 +86,22 @@ export default function StudentProfile() {
         const { data: cs } = await supabase.from("class_subjects").select("periods_per_week, subjects:subject_id(name, code)").eq("class_id", s.current_class_id);
         setClassSubjects(cs ?? []);
       }
+
+      // Phase 4 datasets (parallel, non-blocking on errors)
+      const [{ data: hv }, { data: im }, { data: ar }, { data: di }, { data: mp }, { data: al }] = await Promise.all([
+        supabase.from("health_visits").select("*").eq("student_id", id).order("visit_date", { ascending: false }).limit(20),
+        supabase.from("immunization_records").select("*").eq("student_id", id).order("date_given", { ascending: false }).limit(20),
+        supabase.from("accident_reports").select("*").eq("student_id", id).order("incident_date", { ascending: false }).limit(10),
+        supabase.from("discipline_incidents").select("*").eq("student_id", id).order("incident_date", { ascending: false }).limit(20),
+        supabase.from("merit_points").select("*").eq("student_id", id).order("awarded_date", { ascending: false }).limit(20),
+        supabase.from("audit_logs").select("id,action,entity_type,before,after,created_at,actor_user_id").eq("entity_type", "students").eq("entity_id", id).order("created_at", { ascending: false }).limit(50),
+      ]);
+      setHealthVisits(hv ?? []);
+      setImmunizations(im ?? []);
+      setAccidents(ar ?? []);
+      setIncidents(di ?? []);
+      setMerits(mp ?? []);
+      setAuditEvents(al ?? []);
       setLoading(false);
     })();
   }, [id, profile?.tenant_id, navigate]);
@@ -156,6 +181,52 @@ export default function StudentProfile() {
   };
 
   const isCBC = (tenant?.curriculum || "").toLowerCase() === "cbc";
+
+  const totalMerits = merits.reduce((a, m) => a + Number(m.points || 0), 0);
+  const openIncidents = incidents.filter((i: any) => i.status !== "resolved").length;
+
+  const uploadDocs = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !profile?.tenant_id) return;
+    setDocBusy(true);
+    try {
+      for (const file of Array.from(files)) {
+        const path = `${profile.tenant_id}/students/${student.id}/${Date.now()}-${file.name}`;
+        const { error: upErr } = await supabase.storage.from("documents").upload(path, file, { upsert: false });
+        if (upErr) throw upErr;
+        const { error: insErr } = await supabase.from("documents").insert({
+          tenant_id: profile.tenant_id,
+          owner_type: "student",
+          owner_id: student.id,
+          doc_type: "other",
+          file_url: path,
+          file_name: file.name,
+          mime_type: file.type,
+          size_bytes: file.size,
+        });
+        if (insErr) throw insErr;
+      }
+      const { data: dd } = await supabase.from("documents").select("*").eq("owner_type", "student").eq("owner_id", student.id).order("created_at", { ascending: false });
+      setDocs(dd ?? []);
+      toast({ title: `Uploaded ${files.length} file${files.length > 1 ? "s" : ""}` });
+    } catch (e: any) {
+      toast({ title: "Upload failed", description: e.message, variant: "destructive" });
+    } finally {
+      setDocBusy(false);
+    }
+  };
+
+  const downloadDoc = async (d: any) => {
+    const { data, error } = await supabase.storage.from("documents").createSignedUrl(d.file_url, 60);
+    if (error || !data?.signedUrl) return toast({ title: "Could not open", variant: "destructive" });
+    window.open(data.signedUrl, "_blank");
+  };
+
+  const deleteDoc = async (d: any) => {
+    if (!confirm(`Delete ${d.file_name}?`)) return;
+    await supabase.storage.from("documents").remove([d.file_url]);
+    await supabase.from("documents").delete().eq("id", d.id);
+    setDocs(docs.filter(x => x.id !== d.id));
+  };
 
   const openPay = (invoiceId?: string, amount?: number) => {
     const primaryGuardianPhone = guardians.find((g: any) => g.is_primary_contact)?.guardians?.phone_primary
