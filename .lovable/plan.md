@@ -1,62 +1,44 @@
-## Phase H: Compliance & Government Integrations
+# Student Profile + Edit Flow Rebuild
 
-Massive scope (10 sub-areas across 5 countries + DPA + audit reports). I'll deliver in 4 sequential sub-phases so each ships working code rather than 60 half-built files. Confirm the breakdown before I start, or tell me to merge/skip.
+The spec covers 16 parts touching ~15 files and adding ~2,500 lines. To keep each shipment reviewable (and the preview always working), I'll execute in **4 phases**, each one independently usable. Confirm the phasing — or tell me to collapse it into one push — and I'll start.
 
-### H1 — Kenya statutory core (this turn)
-The highest-leverage chunk for current/likely tenants:
-- **NEMIS module** (`System → Integrations → NEMIS`)
-  - Settings page: encrypted NEMIS credentials (stored via edge function + pgsodium-style symmetric encryption using a project secret)
-  - UPI coverage widget: "X% of students have NEMIS UPI"
-  - **Export**: CSV in NEMIS column format (M/D/YYYY dates, birth-cert names, gender M/F, etc.)
-  - **Import**: parse returned progression CSV, update `students.nemis_upi` + any returned fields, show diff before commit
-  - NEMIS Reports: Enrolment by class & gender, SNE enrolment, repeats, dropouts, transfers in/out, capitation tracking (all date-range parameterised, exportable)
-- **TSC**: `staff.tsc_number`, `tsc_job_group`, `tsc_subjects[]`; teacher-returns CSV; subject-mismatch report (TSC-registered vs assigned)
-- **KRA / Statutory payroll exports** (extend existing payroll):
-  - P9A per employee (annual), P10 monthly, iTax CSV, SHIF, NSSF Tier I+II, AHL, HELB
-  - Compliance dashboard tile: PAYE/SHIF/NSSF/AHL filed ✓ with last filing date + reference (new `statutory_filings` table)
+## Phase 1 — Foundation (the architecture, no visual regressions)
+Goal: shared schema + full edit route live, modal deleted.
 
-### H2 — Other East African countries
-- Uganda: LIN, EMIS export, UNEB candidate CSV, URA payroll (PAYE UG + NSSF UG)
-- Tanzania: PREMS, NECTA (CSEE/ACSEE) export, TRA payroll
-- Rwanda: REB student ID, national-exam CSV, RRA payroll, FR/EN toggle
-- Ethiopia: MoE ID, Amharic strings, Ethiopian calendar option on date pickers
-- Country detection from `tenants.country` — only show relevant modules
+- **`src/lib/schemas/student.ts`** — expand from 5 fields to full sectioned zod schemas: `identitySchema`, `academicSchema`, `contactSchema`, `medicalSchema`, `specialNeedsSchema`, `governmentIdsSchema` (country-aware: KE/UG/TZ/RW/ET), `guardianLinkSchema`. Validation rules from Part 15 (NEMIS 6 chars, E.164 phones, DOB past, graduation > admission year, unique admission #).
+- **`src/components/students/StudentFormSections/*`** — one component per section, RHF-driven, reused by both admission wizard and edit page.
+- **New route `/students/:id/edit`** → **`src/pages/StudentEdit.tsx`** — tab nav (Identity · Government IDs · Academic · Contact · Medical · Special Needs · Guardians · Documents), sticky Save bar, pre-populated from current row.
+- **Refactor `AdmissionWizard.tsx`** to consume the same section components.
+- **Delete** the inline Edit Student modal from `StudentProfile.tsx`.
+- Permission gating via `has_perm` for `students.edit`.
 
-### H3 — Data Protection & DPA compliance
-- `tenant_dpo` table (name, email, phone, registration #)
-- Subject Access Request workflow: parent/staff submits → admin reviews → packaged ZIP export (student record, attendance, fees, messages, exam results)
-- Right-to-erasure workflow with full audit trail (`erasure_requests`)
-- Cookie/consent banner on portal
-- Tenant-customisable privacy policy + ToS (markdown templates)
-- DPIA template (downloadable .docx)
-- "Data hosted in: [region]" surfaced in Settings (read from env)
+## Phase 2 — Profile header + tabs chrome (Parts 2, 3, 14)
+- New header: 96px soft-accent avatar, name + inline metadata (· bullets), status dots (Active green dot, balance danger), right-rail "Edit profile" + "More actions" dropdown, 6-stat bottom strip.
+- Replace giant "Back to students" with ghost breadcrumb link.
+- Tabs → underline style; reorder Overview · Academics · Attendance · Fees · Health · Discipline · Documents · Activity.
+- "Last updated by X" footer line. Card title icon convention.
 
-### H4 — Exam bodies + Audit-ready PDF packs
-- Generic exam-body export framework: KNEC, UNEB, NECTA, REB, Cambridge/IB formats
-- KNEC results import (CSV → `student_exam_results` by index #)
-- One-click PDF packs (server-rendered via edge function + react-pdf or puppeteer-deno):
-  - QASO visit pack
-  - Internal audit pack
-  - BoM report
-  - PTA report
-- All date-range parameterised, school letterhead, charts via QuickChart, reproducible
+## Phase 3 — Overview, Academics, Attendance, Fees polish (Parts 4–7)
+- **Overview**: Identity / Academic snapshot / Government IDs (country-aware) / Contact main cards + Guardians / Key dates / At a glance side cards. Inline-edit pencil per card (single-edit-at-a-time guard, save/cancel, optimistic).
+- **Academics**: class history timeline, subjects grid, exam table + sparkline, CBC competencies + values (CBC tenants only), co-curricular.
+- **Attendance**: term summary + calendar heatmap, recent absences, optional AI pattern insight via existing `ai-copilot` infra.
+- **Fees**: promote M-Pesa CTA to `--accent`, add Send reminder, color balance by sign, year-to-date summary line.
 
-### Schema additions (H1 only, this turn)
-```
-ALTER students ADD nemis_upi, birth_cert_no, sne_category, is_repeater, exit_reason, exit_date
-ALTER staff   ADD tsc_number, tsc_job_group, tsc_subjects text[]
-CREATE statutory_filings (tenant, type, period, reference, filed_at, filed_by, file_url)
-CREATE nemis_credentials (tenant, username, password_encrypted) -- service_role only
-CREATE compliance_reports_log (audit trail of generated exports)
-```
+## Phase 4 — Health, Discipline (new), Docs, Activity, Right rail, Empty states (Parts 8–13)
+- **Health** (gated by `health.view`): vitals, immunizations, clinic visits, accident reports — each with + CTA.
+- **Discipline tab (new)** (gated by `discipline.view`): behavior summary + sparkline, incidents, merits, CTAs.
+- **Docs**: drag-drop upload, categorised grid, count badge.
+- **Activity**: timeline from `audit_logs` filtered to this student, event-type filter.
+- **Right rail Quick links** card.
+- Empty-state component used everywhere (48px icon in surface-sunken circle + title + muted desc + CTA).
 
-### Tech notes
-- Encryption for NEMIS credentials: edge function uses `Deno.env.get('ENCRYPTION_KEY')` + AES-GCM; only service role reads ciphertext
-- All CSV generators in edge functions (server-side, avoids browser CSV quirks with UTF-8 BOM for Excel)
-- Country gating via `useTenantCountry()` hook reading `tenants.country`
+## Technical notes
+- All new components use existing shadcn primitives + tokens from `src/index.css` and `src/lib/design-tokens.ts`. No hardcoded colors.
+- Country-aware fields read `tenant.country` from `TenantContext`; field config already exists in `src/lib/sis/countryFields.ts`.
+- Inline edits write via Supabase client with optimistic update + `sonner` toast.
+- Activity feed reads `audit_logs` filtered by `entity_type='students' AND entity_id=:id` plus a few related tables (student_payments, attendance, discipline_incidents) unioned client-side.
+- No DB migrations needed — all 85 columns already exist.
+- Estimated lines added/changed: ~2,500. Phase 1 ~800, Phase 2 ~400, Phase 3 ~700, Phase 4 ~600.
 
-**Reply with**:
-- `go` → I start H1 (Kenya statutory core) now
-- `merge X+Y` → combine sub-phases
-- `skip X` → drop sub-phase
-- Any scope edits
+## Question before I start
+Confirm: **proceed phase-by-phase (4 separate shipments)**, or **knock it out in one push** (longer single response, higher risk of one bad section blocking the rest)?

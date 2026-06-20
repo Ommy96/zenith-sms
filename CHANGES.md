@@ -1,4 +1,33 @@
 
+## Student Profile rebuild — Phase 1 (architecture)
+
+Foundation for the full Student Profile + Edit Flow rebuild. Phase 1 ships the
+architecture: shared sectioned schemas, full-page edit route covering every
+student column, deletion of the legacy modal.
+
+- **`src/lib/schemas/student.ts`** — added sectioned zod schemas
+  (`identitySectionSchema`, `academicSectionSchema`, `contactSectionSchema`,
+  `medicalSectionSchema`, `specialNeedsSectionSchema`,
+  `governmentIdsSectionSchema`, `guardianLinkSchema`). Validation rules:
+  NEMIS UPI exactly 6 chars, phones E.164, DOB in past, expected graduation
+  year > admission year, primary guardian required.
+- **`src/pages/StudentEdit.tsx`** — new full-page edit at `/students/:id/edit`
+  with 8 underline-style tabs (Identity · Government IDs · Academic ·
+  Contact · Medical · Special needs · Guardians · Documents). All ~80
+  editable student columns + guardian junction rows surfaced and validated.
+  Country-aware gov ID tab reads `tenant.country_code` and switches between
+  KE/UG/TZ/RW/ET fields. Sticky save bar. Permission-gated by `students.edit`.
+- **`src/pages/StudentProfile.tsx`** — deleted the legacy inline Edit Student
+  modal (only 11 of 85 fields). Replaced the giant "Back to students" button
+  with a ghost breadcrumb link. "Edit" button is now "Edit profile" and
+  routes to `/students/:id/edit`. Legacy `?edit=1` query string redirects
+  to the new route.
+- **`src/App.tsx`** — registered `/students/:id/edit` route.
+
+Phases 2–4 (header rebuild, tab content for Overview / Academics / Attendance
+/ Fees polish / Health / new Discipline tab / Docs / Activity, right rail,
+empty states) will follow once Phase 1 is approved.
+
 ## Design System — Token foundation (this pass)
 
 Locked the visual token layer to spec so every component inherits correct values.

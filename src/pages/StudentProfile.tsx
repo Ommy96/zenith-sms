@@ -6,11 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
@@ -22,7 +19,7 @@ import { getStudentGovIdFields } from "@/lib/sis/countryFields";
 export default function StudentProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const { profile } = useAuth();
   const { tenant, can } = useTenant();
   const [student, setStudent] = useState<any>(null);
@@ -37,43 +34,9 @@ export default function StudentProfile() {
   const [stkForm, setStkForm] = useState({ amount: "", phone: "", invoice_id: "" });
   const [stkBusy, setStkBusy] = useState(false);
   const [stmtBusy, setStmtBusy] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState<any>({});
-  const [editSaving, setEditSaving] = useState(false);
-
-  const openEdit = () => {
-    if (!student) return;
-    setEditForm({
-      first_name: student.first_name || "",
-      middle_name: student.middle_name || "",
-      last_name: student.last_name || "",
-      email: student.email || "",
-      phone: student.phone || "",
-      admission_number: student.admission_number || "",
-      gender: student.gender || "",
-      date_of_birth: student.date_of_birth || "",
-      address: student.address || "",
-      stream: student.stream || "",
-      enrollment_status: student.enrollment_status || student.status || "active",
-    });
-    setEditOpen(true);
-  };
-
-  const handleEditSave = async () => {
-    if (!id) return;
-    setEditSaving(true);
-    const payload = { ...editForm };
-    if (!payload.date_of_birth) delete payload.date_of_birth;
-    const { error } = await supabase.from("students").update(payload).eq("id", id);
-    setEditSaving(false);
-    if (error) { toast({ title: "Update failed", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Student updated" });
-    setStudent({ ...student, ...payload });
-    setEditOpen(false);
-    if (searchParams.get("edit")) { searchParams.delete("edit"); setSearchParams(searchParams, { replace: true }); }
-  };
 
   const canViewMedical = can("students.view_medical");
+  const canEditStudent = can("students.edit");
 
   useEffect(() => {
     (async () => {
@@ -102,11 +65,11 @@ export default function StudentProfile() {
   }, [id, profile?.tenant_id, navigate]);
 
   useEffect(() => {
-    if (student && searchParams.get("edit") === "1" && !editOpen) {
-      openEdit();
+    if (student && searchParams.get("edit") === "1") {
+      // Legacy ?edit=1 query — redirect to the full edit route.
+      navigate(`/students/${student.id}/edit`, { replace: true });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [student, searchParams]);
+  }, [student, searchParams, navigate]);
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!student) return null;
@@ -173,7 +136,14 @@ export default function StudentProfile() {
 
   return (
     <div className="space-y-6">
-      <Button variant="ghost" size="sm" onClick={() => navigate("/students")} className="gap-1.5"><ArrowLeft className="h-4 w-4" /> Back to students</Button>
+      <button
+        onClick={() => navigate("/students")}
+        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" /> Students
+        <span className="text-muted-foreground/60 mx-1">›</span>
+        <span className="text-foreground font-medium">{student.first_name} {student.last_name}</span>
+      </button>
 
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
@@ -197,7 +167,11 @@ export default function StudentProfile() {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="gap-1.5" onClick={openEdit}><Edit className="h-3.5 w-3.5" /> Edit</Button>
+              {canEditStudent && (
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => navigate(`/students/${student.id}/edit`)}>
+                  <Edit className="h-3.5 w-3.5" /> Edit profile
+                </Button>
+              )}
               <Button size="sm" variant="outline" className="gap-1.5"><Mail className="h-3.5 w-3.5" /> Message</Button>
             </div>
           </div>
@@ -448,91 +422,6 @@ export default function StudentProfile() {
         </div>
       </div>
 
-      <Dialog open={editOpen} onOpenChange={(o) => {
-        setEditOpen(o);
-        if (!o && searchParams.get("edit")) { searchParams.delete("edit"); setSearchParams(searchParams, { replace: true }); }
-      }}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Student</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>First Name *</Label>
-                <Input value={editForm.first_name || ""} onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Last Name *</Label>
-                <Input value={editForm.last_name || ""} onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Middle Name</Label>
-              <Input value={editForm.middle_name || ""} onChange={(e) => setEditForm({ ...editForm, middle_name: e.target.value })} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input type="email" value={editForm.email || ""} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Phone</Label>
-                <Input value={editForm.phone || ""} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Admission Number</Label>
-                <Input value={editForm.admission_number || ""} onChange={(e) => setEditForm({ ...editForm, admission_number: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Stream</Label>
-                <Input value={editForm.stream || ""} onChange={(e) => setEditForm({ ...editForm, stream: e.target.value })} />
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Gender</Label>
-                <Select value={editForm.gender || ""} onValueChange={(v) => setEditForm({ ...editForm, gender: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Date of Birth</Label>
-                <Input type="date" value={editForm.date_of_birth || ""} onChange={(e) => setEditForm({ ...editForm, date_of_birth: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={editForm.enrollment_status || "active"} onValueChange={(v) => setEditForm({ ...editForm, enrollment_status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="graduated">Graduated</SelectItem>
-                    <SelectItem value="transferred">Transferred</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Address</Label>
-              <Textarea rows={2} value={editForm.address || ""} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} />
-            </div>
-          </div>
-          <DialogFooter>
-            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-            <Button onClick={handleEditSave} disabled={editSaving}>
-              {editSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Update Student
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
