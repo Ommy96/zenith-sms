@@ -1,4 +1,28 @@
 
+## TwoFactorGate removed — standalone spinner fix
+
+Removed `src/components/auth/TwoFactorGate.tsx` and its wrapper usage in
+`src/App.tsx` `RequireAuth`. The gate redirected sensitive roles to
+`/login?step_up=1`, which `PublicAuthRoute` immediately bounced back to
+`/app` for any authenticated user — producing the infinite-spinner
+redirect loop observed on `preview--zenith-sms.lovable.app/app` and
+`zenith.inferatechs.com`.
+
+- Deleted `src/components/auth/TwoFactorGate.tsx`.
+- `RequireAuth` now only checks: auth loading → spinner; no user →
+  `/login`; tenant loading → spinner; tenant error → error screen; no
+  tenant → `/onboarding`; otherwise render children.
+- No remaining imports or references to `TwoFactorGate`, `step_up`, or
+  `stepUp` in `src/`.
+- `/settings/security/2fa` enrolment page is untouched and still
+  reachable; users can still set up TOTP voluntarily.
+
+**2FA enforcement is deferred** to a future implementation that uses a
+dedicated `/auth/step-up` route (never `/login`) so the public-auth
+redirect cannot re-enter the gate. Until then, sensitive roles are not
+forced to elevate AAL on each session.
+
+
 ## Student Profile rebuild — Phase 1 (architecture)
 
 Foundation for the full Student Profile + Edit Flow rebuild. Phase 1 ships the
