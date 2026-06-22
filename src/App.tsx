@@ -18,7 +18,6 @@ import { PortalProvider } from "@/contexts/PortalContext";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import PortalLogin from "./pages/portal/PortalLogin";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { TwoFactorGate } from "@/components/auth/TwoFactorGate";
 
 const Landing = lazy(() => import("./pages/Landing"));
 // Lazy-loaded admin pages (code splitting)
@@ -153,11 +152,11 @@ function RequireAuth({ children, requireTenant = true }: { children: React.React
 
   if (authLoading) return <FullPageSpinner />;
   if (!user) return <Navigate to="/login" replace />;
-  if (!requireTenant) return <TwoFactorGate>{children}</TwoFactorGate>;
+  if (!requireTenant) return <>{children}</>;
   if (tenantLoading) return <FullPageSpinner />;
   if (tenantError) return <TenantErrorScreen error={tenantError} />;
   if (!tenant) return <Navigate to="/onboarding" replace />;
-  return <TwoFactorGate>{children}</TwoFactorGate>;
+  return <>{children}</>;
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
