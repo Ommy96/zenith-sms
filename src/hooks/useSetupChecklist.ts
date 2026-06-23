@@ -16,13 +16,15 @@ export function useSetupChecklist() {
   const [tasks, setTasks] = useState<SetupTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [dismissed, setDismissed] = useState<string[]>([]);
+  const [weightedPercent, setWeightedPercent] = useState(0);
 
   const load = useCallback(async () => {
     if (!tenant?.id) { setLoading(false); return; }
     setLoading(true);
     const tid = tenant.id;
 
-    const [terms, classes, subjects, staff, students, fees, sms] = await Promise.all([
+    const [years, terms, classes, subjects, staff, students, fees, sms, gradeLevels, rooms, learningAreas] = await Promise.all([
+      supabase.from("academic_years").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
       supabase.from("terms").select("id", { count: "exact", head: true }).eq("tenant_id", tid).eq("is_current", true),
       supabase.from("classes").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
       supabase.from("subjects").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
@@ -30,6 +32,9 @@ export function useSetupChecklist() {
       supabase.from("students").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
       supabase.from("fee_structures").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
       supabase.from("tenant_settings").select("value").eq("tenant_id", tid).eq("key", "messaging.provider_configured").maybeSingle(),
+      supabase.from("grade_levels").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
+      supabase.from("rooms").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
+      supabase.from("learning_areas").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
     ] as any) as any;
 
     const dismissedRes = await supabase.from("tenant_settings").select("value").eq("tenant_id", tid).eq("key", "dismissed_hints").maybeSingle();
@@ -48,6 +53,22 @@ export function useSetupChecklist() {
       { id: "comms", step: 7, label: "Communications", description: "Connect SMS or WhatsApp provider", route: "/onboarding?step=7", done: !!sms?.data },
     ];
     setTasks(list);
+
+    // Weighted progress calc
+    const isCbc = tenant.curriculum === "cbc";
+    const weights: { weight: number; done: boolean }[] = [
+      { weight: 10, done: (years?.count ?? 0) > 0 },
+      { weight: 10, done: (terms?.count ?? 0) > 0 },
+      { weight: 15, done: (gradeLevels?.count ?? 0) > 0 },
+      { weight: 15, done: (classes?.count ?? 0) > 0 },
+      { weight: 15, done: (subjects?.count ?? 0) > 0 },
+      { weight: 5,  done: (rooms?.count ?? 0) > 0 },
+      ...(isCbc ? [{ weight: 15, done: (learningAreas?.count ?? 0) > 0 }] : []),
+      { weight: 15, done: (students?.count ?? 0) > 0 },
+    ];
+    const totalWeight = weights.reduce((s, w) => s + w.weight, 0);
+    const earnedWeight = weights.reduce((s, w) => s + (w.done ? w.weight : 0), 0);
+    setWeightedPercent(Math.round((earnedWeight / totalWeight) * 100));
     setLoading(false);
   }, [tenant?.id, tenant?.name, tenant?.country_code, tenant?.curriculum]);
 
@@ -64,7 +85,7 @@ export function useSetupChecklist() {
 
   const done = tasks.filter((t) => t.done).length;
   const total = tasks.length || 7;
-  const percent = Math.round((done / total) * 100);
+  const percent = weightedPercent;
 
   return { tasks, loading, percent, done, total, dismissed, dismissHint, refresh: load };
 }

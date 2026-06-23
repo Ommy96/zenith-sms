@@ -68,6 +68,22 @@ export function CalendarTab() {
 
   if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>;
 
+  // sorted descending (newest first) — already ordered by query, but enforce here.
+  const sortedYears = [...years].sort((a, b) => (b.start_date || "").localeCompare(a.start_date || ""));
+  const sortedTerms = [...terms].sort((a, b) => (b.start_date || "").localeCompare(a.start_date || ""));
+  const termsByYear: Record<string, number> = {};
+  terms.forEach((t) => { termsByYear[t.academic_year_id] = (termsByYear[t.academic_year_id] || 0) + 1; });
+  const schoolDays = (start: string, end: string) => {
+    if (!start || !end) return 0;
+    const s = new Date(start), e = new Date(end);
+    let n = 0;
+    for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) {
+      const dow = d.getDay();
+      if (dow !== 0 && dow !== 6) n++;
+    }
+    return n;
+  };
+
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <Card>
@@ -80,11 +96,12 @@ export function CalendarTab() {
           </div>
           <Button size="sm" onClick={addYear}><Plus className="h-4 w-4 mr-1" />Add year</Button>
           <div className="space-y-1 mt-3">
-            {years.map((y) => (
+            {sortedYears.map((y) => (
               <div key={y.id} className="flex items-center justify-between rounded border p-2">
                 <div>
                   <div className="font-medium">{y.name} {y.is_current && <Badge variant="secondary" className="ml-2">Current</Badge>}</div>
                   <div className="text-xs text-muted-foreground">{y.start_date} → {y.end_date}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">{termsByYear[y.id] || 0} term{(termsByYear[y.id] || 0) === 1 ? "" : "s"}</div>
                 </div>
                 {!y.is_current && <Button size="sm" variant="outline" onClick={() => setCurrentYear(y.id)}><CheckCircle2 className="h-3 w-3 mr-1" />Set current</Button>}
               </div>
@@ -98,7 +115,7 @@ export function CalendarTab() {
           <div className="grid grid-cols-2 gap-2">
             <select className="border rounded px-2 py-1 text-sm bg-background" value={tForm.academic_year_id} onChange={(e) => setTForm({ ...tForm, academic_year_id: e.target.value })}>
               <option value="">Select year…</option>
-              {years.map((y) => <option key={y.id} value={y.id}>{y.name}</option>)}
+              {sortedYears.map((y) => <option key={y.id} value={y.id}>{y.name}</option>)}
             </select>
             <Input placeholder="Term 1" value={tForm.name} onChange={(e) => setTForm({ ...tForm, name: e.target.value })} />
             <Input type="date" value={tForm.start_date} onChange={(e) => setTForm({ ...tForm, start_date: e.target.value })} />
@@ -106,13 +123,14 @@ export function CalendarTab() {
           </div>
           <Button size="sm" onClick={addTerm}><Plus className="h-4 w-4 mr-1" />Add term</Button>
           <div className="space-y-1 mt-3">
-            {terms.map((t) => {
+            {sortedTerms.map((t) => {
               const y = years.find((yr) => yr.id === t.academic_year_id);
               return (
                 <div key={t.id} className="flex items-center justify-between rounded border p-2">
                   <div>
                     <div className="font-medium">{t.name} <span className="text-muted-foreground text-xs">({y?.name})</span> {t.is_current && <Badge variant="secondary" className="ml-2">Current</Badge>}</div>
                     <div className="text-xs text-muted-foreground">{t.start_date} → {t.end_date}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">{schoolDays(t.start_date, t.end_date)} school days</div>
                   </div>
                   {!t.is_current && <Button size="sm" variant="outline" onClick={() => setCurrentTerm(t.id)}><CheckCircle2 className="h-3 w-3 mr-1" />Set current</Button>}
                 </div>
