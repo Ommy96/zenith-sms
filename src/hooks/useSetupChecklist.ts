@@ -23,7 +23,7 @@ export function useSetupChecklist() {
     setLoading(true);
     const tid = tenant.id;
 
-    const [years, terms, classes, subjects, staff, students, fees, sms, gradeLevels, rooms, learningAreas] = await Promise.all([
+    const [years, terms, classes, subjects, staff, students, fees, sms, gradeLevels, rooms, learningAreas, periods, slots, currentExams] = await Promise.all([
       supabase.from("academic_years").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
       supabase.from("terms").select("id", { count: "exact", head: true }).eq("tenant_id", tid).eq("is_current", true),
       supabase.from("classes").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
@@ -35,6 +35,9 @@ export function useSetupChecklist() {
       supabase.from("grade_levels").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
       supabase.from("rooms").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
       supabase.from("learning_areas").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
+      supabase.from("periods").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
+      supabase.from("timetable_slots").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
+      supabase.from("exams").select("id", { count: "exact", head: true }).eq("tenant_id", tid),
     ] as any) as any;
 
     const dismissedRes = await supabase.from("tenant_settings").select("value").eq("tenant_id", tid).eq("key", "dismissed_hints").maybeSingle();
@@ -65,6 +68,9 @@ export function useSetupChecklist() {
       { weight: 5,  done: (rooms?.count ?? 0) > 0 },
       ...(isCbc ? [{ weight: 15, done: (learningAreas?.count ?? 0) > 0 }] : []),
       { weight: 15, done: (students?.count ?? 0) > 0 },
+      { weight: 5,  done: (periods?.count ?? 0) > 0 },
+      { weight: 5,  done: (slots?.count ?? 0) > 0 },
+      { weight: 5,  done: (currentExams?.count ?? 0) > 0 },
     ];
     const totalWeight = weights.reduce((s, w) => s + w.weight, 0);
     const earnedWeight = weights.reduce((s, w) => s + (w.done ? w.weight : 0), 0);
