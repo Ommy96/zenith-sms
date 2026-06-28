@@ -21,12 +21,12 @@ import {
 } from "@/components/ui/dialog";
 import {
   ClipboardList, Plus, Loader2, Calendar as CalendarIcon, Sparkles, Edit, Lock, Send,
-  CheckCircle2, FileText, BarChart3, BookOpenCheck, LayoutTemplate, Search,
+  FileText, BarChart3, BookOpenCheck, LayoutTemplate, Search,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { EmptyState } from "@/components/EmptyState";
 
-type ExamStatus = "planned" | "in_progress" | "completed" | "upcoming" | "cancelled";
+
 const statusGroup = (s: string): "planned" | "in_progress" | "completed" => {
   if (["in_progress", "in progress", "active"].includes(s)) return "in_progress";
   if (["completed", "done", "locked", "published"].includes(s)) return "completed";
@@ -475,7 +475,7 @@ export default function Examinations() {
             <CardContent>
               {!resultsExam ? (
                 <EmptyState icon={<FileText className="h-5 w-5" />} title="Pick an exam" description="Choose an exam to see per-class summaries and top performers." />
-              ) : <ResultsView tenantId={tenantId!} examId={resultsExam} subjects={subjects} />}
+              ) : <ResultsView tenantId={tenantId!} examId={resultsExam} />}
             </CardContent>
           </Card>
         </TabsContent>
@@ -531,7 +531,7 @@ export default function Examinations() {
 }
 
 // ============ ResultsView ============
-function ResultsView({ tenantId, examId, subjects }: { tenantId: string; examId: string; subjects: any[] }) {
+function ResultsView({ tenantId, examId, subjects }: { tenantId: string; examId: string }) {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
