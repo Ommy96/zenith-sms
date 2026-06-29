@@ -12,9 +12,6 @@ Deno.serve(async (req) => {
   const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
   const log = createLogger({ fn: "mpesa-c2b-callback", requestId });
   try {
-    const url = new URL(req.url);
-    // Accepts ?tenant=<uuid|slug> (preferred) or legacy ?school=<uuid>
-    const tenantHint = url.searchParams.get("tenant") ?? url.searchParams.get("school");
     const payload = await req.json().catch(() => ({}));
 
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -25,25 +22,33 @@ Deno.serve(async (req) => {
     const accountRef = String(payload.BillRefNumber ?? payload.AccountReference ?? "").trim();
     const shortcode = String(payload.BusinessShortCode ?? "");
 
-    // Resolve tenant: hint param > shortcode lookup > tenant.slug lookup
+    // SECURITY: tenant is resolved EXCLUSIVELY from the BusinessShortCode in
+    // Safaricom's payload. We no longer accept tenant hints via query string —
+    // exposing tenant UUIDs on a public URL was an information-disclosure risk
+    // and an integrity risk (any caller could spoof the routing target).
     let tenantId: string | null = null;
-    if (tenantHint) {
-      // Accept either uuid or slug
-      if (/^[0-9a-f-]{36}$/i.test(tenantHint)) {
-        tenantId = tenantHint;
-      } else {
-        const { data: t } = await admin.from("tenants").select("id").eq("slug", tenantHint).maybeSingle();
-        tenantId = t?.id ?? null;
-      }
-    }
-    if (!tenantId && shortcode) {
-      const { data } = await admin.from("mpesa_config")
-        .select("tenant_id").eq("shortcode", shortcode).not("tenant_id", "is", null).maybeSingle();
+    if (shortcode) {
+      const { data } = await admin
+        .from("mpesa_config")
+        .select("tenant_id")
+        .eq("shortcode", shortcode)
+        .eq("is_active", true)
+        .not("tenant_id", "is", null)
+        .limit(1)
+        .maybeSingle();
       tenantId = data?.tenant_id ?? null;
     }
     if (!tenantId) {
-      log.warn("no_tenant_resolved", { tenantHint, shortcode });
-      return new Response(JSON.stringify({ ResultCode: 0, ResultDesc: "Accepted (no school)" }), {
+      log.warn("unknown_shortcode", { shortcode });
+      // Best-effort audit trail so ops can investigate misrouted payments.
+      await admin.from("audit_logs").insert({
+        tenant_id: null,
+        entity_type: "mpesa_transactions",
+        action: "unknown_shortcode",
+        after: { shortcode, receipt, amount, accountRef, raw_payload: payload },
+      }).then(() => {}, () => {});
+      // Always 200 OK so Safaricom doesn't retry-flood us.
+      return new Response(JSON.stringify({ ResultCode: 0, ResultDesc: "Accepted (unknown shortcode)" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
