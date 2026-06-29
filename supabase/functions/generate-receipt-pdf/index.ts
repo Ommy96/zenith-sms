@@ -212,9 +212,13 @@ async function buildPdf(opts: {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const auth = await requireAuth(req).catch((e) => { throw e; });
     const url = Deno.env.get("SUPABASE_URL")!;
     const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    // Internal callers (M-Pesa callbacks, reconcile triggers) authenticate
+    // with the service-role key — skip auth/permission checks in that case.
+    const authHeader = req.headers.get("Authorization") ?? req.headers.get("authorization") ?? "";
+    const isInternal = authHeader === `Bearer ${service}`;
+    const auth = isInternal ? null : await requireAuth(req);
     const admin = createClient(url, service);
 
     const body = await req.json().catch(() => ({}));
@@ -228,11 +232,13 @@ Deno.serve(async (req) => {
       .from("student_receipts").select("*").eq("id", receiptId).maybeSingle();
     if (rErr || !receipt) return new Response(JSON.stringify({ error: "Receipt not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    if (!isInternal) {
+    const a = auth!;
     // Authorize
-    const isStaff = auth.isSuperAdmin
+    const isStaff = a.isSuperAdmin
       || auth.roles.some((r) => ["school_admin", "bursar", "finance"].includes(r))
       || auth.permissions.includes("fees.view");
-    const inTenant = auth.tenantIds.includes(receipt.tenant_id);
+    const inTenant = a.tenantIds.includes(receipt.tenant_id);
     if (!isStaff || !inTenant) {
       // parent path: check guardian -> student via payment
       const { data: pay } = await admin.from("student_payments").select("student_id, tenant_id").eq("id", receipt.payment_id).maybeSingle();
@@ -241,9 +247,10 @@ Deno.serve(async (req) => {
         .from("student_guardians").select("guardian_id, guardians:guardian_id(user_id)")
         .eq("student_id", pay.student_id).limit(20);
       const guardianUserIds = (link || []).map((l: any) => l.guardians?.user_id).filter(Boolean);
-      if (!guardianUserIds.includes(auth.userId)) {
+      if (!guardianUserIds.includes(a.userId)) {
         return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
       }
+    }
     }
 
     const tenantId = receipt.tenant_id;
