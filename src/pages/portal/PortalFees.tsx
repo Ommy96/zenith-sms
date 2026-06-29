@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Loader2, Smartphone } from "lucide-react";
+import { Loader2, Smartphone, Eye, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
@@ -56,6 +56,21 @@ export default function PortalFees() {
       return toast.error((data as any)?.error || error?.message || "Failed");
     }
     toast.success("Check your phone — enter your M-Pesa PIN to complete");
+  };
+
+  const openReceipt = async (paymentId: string, action: "view" | "download", studentName: string) => {
+    const { data: rcp } = await supabase
+      .from("student_receipts").select("id, receipt_number").eq("payment_id", paymentId).maybeSingle();
+    if (!rcp?.id) return toast.message("Receipt is still generating — try again shortly");
+    const { data, error } = await supabase.functions.invoke("generate-receipt-pdf", { body: { receipt_id: rcp.id } });
+    if (error || !(data as any)?.url) return toast.error((data as any)?.error || error?.message || "Could not load receipt");
+    const url = (data as any).url as string;
+    if (action === "view") return void window.open(url, "_blank", "noopener");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Receipt_${rcp.receipt_number || paymentId}_${studentName.replace(/\s+/g, "")}.pdf`;
+    a.target = "_blank"; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); a.remove();
   };
 
   if (loading) return <Skeleton className="h-40 w-full" />;
@@ -129,7 +144,17 @@ export default function PortalFees() {
                   <div className="text-sm font-medium">{currency} {Number(p.amount).toLocaleString()}</div>
                   <div className="text-xs text-muted-foreground">{p.method?.toUpperCase()} · {p.reference || "—"}</div>
                 </div>
-                <div className="text-xs text-muted-foreground">{new Date(p.paid_at).toLocaleDateString()}</div>
+                <div className="flex items-center gap-2">
+                  <div className="text-xs text-muted-foreground">{new Date(p.paid_at).toLocaleDateString()}</div>
+                  <Button size="icon" variant="ghost" className="h-7 w-7" title="View receipt"
+                    onClick={() => openReceipt(p.id, "view", `${activeChild?.first_name || ""}${activeChild?.last_name || ""}`)}>
+                    <Eye className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7" title="Download PDF"
+                    onClick={() => openReceipt(p.id, "download", `${activeChild?.first_name || ""}${activeChild?.last_name || ""}`)}>
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

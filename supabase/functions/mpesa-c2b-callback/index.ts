@@ -102,6 +102,43 @@ Deno.serve(async (req) => {
 
     log.info("receipt_accepted", { receipt, amount, accountRef, tenantId });
 
+    // Best-effort: kick off receipt PDF generation if the auto-match trigger
+    // produced a student_receipts row. Failure here MUST NOT block the
+    // payment confirmation — the PDF is a derived artifact.
+    try {
+      const { data: txn } = await admin
+        .from("mpesa_transactions")
+        .select("matched_payment_id")
+        .eq("tenant_id", tenantId)
+        .eq("mpesa_receipt", receipt)
+        .maybeSingle();
+      if (txn?.matched_payment_id) {
+        const { data: rcp } = await admin
+          .from("student_receipts")
+          .select("id")
+          .eq("payment_id", txn.matched_payment_id)
+          .maybeSingle();
+        if (rcp?.id) {
+          const fnUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-receipt-pdf`;
+          fetch(fnUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            },
+            body: JSON.stringify({ receipt_id: rcp.id }),
+          }).catch(() => {});
+        }
+      }
+    } catch (pdfErr) {
+      await admin.from("audit_logs").insert({
+        tenant_id: tenantId,
+        entity_type: "student_receipts",
+        action: "receipt_pdf_failed",
+        after: { reason: String((pdfErr as Error).message || pdfErr), mpesa_receipt: receipt },
+      }).then(() => {}, () => {});
+    }
+
     return new Response(JSON.stringify({ ResultCode: 0, ResultDesc: "Accepted" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

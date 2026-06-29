@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Users, CreditCard, ClipboardList,
   BookOpen, UserCog, Bus, Library, BarChart3, Settings,
   ChevronRight, Briefcase, CalendarDays, UserPlus,
-  Megaphone, Mail, DollarSign, Receipt, Package, Smartphone, MessageCircle,
+  Megaphone, Mail, Receipt, Package, Smartphone, MessageCircle,
   Bot,
   Database, ShieldCheck, GraduationCap as GradCap,
   Lock,
@@ -38,7 +38,6 @@ const sections: NavSection[] = [
   { label: "Finance", tKey: "nav.section.finance", items: [
     { title: "Fees & Invoices", tKey: "nav.feesInvoices", url: "/fees", icon: Receipt, perm: "fees.view" },
     { title: "Payments", tKey: "nav.payments", url: "/finance/mobile-money", icon: Smartphone, perm: "fees.configure" },
-    { title: "Payroll", tKey: "nav.payroll", url: "/finance?tab=payroll", icon: DollarSign, perm: "payroll.manage" },
   ]},
   { label: "Communication", tKey: "nav.section.communication", items: [
     { title: "Announcements", tKey: "nav.announcements", url: "/announcements", icon: Megaphone, perm: "communication.send" },
