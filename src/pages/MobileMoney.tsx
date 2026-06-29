@@ -106,10 +106,14 @@ function ConfigTab({ schoolId }: { schoolId: string }) {
   const [showPasskey, setShowPasskey] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // SECURITY: callback URL no longer encodes the tenant. Tenant routing now
+  // happens server-side via the BusinessShortCode in Safaricom's payload.
   const callbackUrl = useMemo(() => {
     const base = (import.meta as any).env.VITE_SUPABASE_URL;
-    return `${base}/functions/v1/mpesa-c2b-callback?school=${schoolId}`;
-  }, [schoolId]);
+    return `${base}/functions/v1/mpesa-c2b-callback`;
+  }, []);
+
+  const consumerKeyValid = !cfg.consumer_key || /^[A-Za-z0-9]{25,50}$/.test(cfg.consumer_key);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -122,6 +126,13 @@ function ConfigTab({ schoolId }: { schoolId: string }) {
   useEffect(() => { load(); }, [load]);
 
   const save = async () => {
+    if (cfg.consumer_key && !consumerKeyValid) {
+      return toast({
+        title: "Invalid Consumer Key",
+        description: "Must be 25–50 alphanumeric characters (no spaces or symbols).",
+        variant: "destructive",
+      });
+    }
     setSaving(true);
     const payload = { ...cfg, tenant_id: schoolId };
     const { error } = await sb.from("mpesa_config").upsert(payload, { onConflict: "tenant_id" });
@@ -154,6 +165,10 @@ function ConfigTab({ schoolId }: { schoolId: string }) {
           <CardDescription>Stored privately for your school. Only admins can read or update.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-sm text-amber-900 dark:text-amber-200">
+            <strong>Action required:</strong> If you previously registered your callback URL with Safaricom,
+            please re-register it using the new URL below for proper tenant routing.
+          </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Environment</Label>
@@ -181,16 +196,41 @@ function ConfigTab({ schoolId }: { schoolId: string }) {
             </div>
             <div className="space-y-2">
               <Label>Initiator name (optional)</Label>
-              <Input value={cfg.initiator_name ?? ""} onChange={(e) => setCfg({ ...cfg, initiator_name: e.target.value })} />
+              <Input
+                value={cfg.initiator_name ?? ""}
+                onChange={(e) => setCfg({ ...cfg, initiator_name: e.target.value })}
+                autoComplete="off"
+                data-form-type="other"
+                spellCheck={false}
+              />
             </div>
             <div className="space-y-2">
               <Label>Consumer Key</Label>
-              <Input value={cfg.consumer_key ?? ""} onChange={(e) => setCfg({ ...cfg, consumer_key: e.target.value })} />
+              <Input
+                value={cfg.consumer_key ?? ""}
+                onChange={(e) => setCfg({ ...cfg, consumer_key: e.target.value.replace(/\s+/g, "") })}
+                autoComplete="off"
+                data-form-type="other"
+                spellCheck={false}
+                pattern="[A-Za-z0-9]{25,50}"
+                maxLength={50}
+                aria-invalid={!consumerKeyValid}
+              />
+              {!consumerKeyValid && (
+                <p className="text-xs text-destructive">25–50 alphanumeric characters, no spaces or symbols.</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Consumer Secret</Label>
               <div className="flex gap-2">
-                <Input type={showSecret ? "text" : "password"} value={cfg.consumer_secret ?? ""} onChange={(e) => setCfg({ ...cfg, consumer_secret: e.target.value })} />
+                <Input
+                  type={showSecret ? "text" : "password"}
+                  value={cfg.consumer_secret ?? ""}
+                  onChange={(e) => setCfg({ ...cfg, consumer_secret: e.target.value.replace(/\s+/g, "") })}
+                  autoComplete="off"
+                  data-form-type="other"
+                  spellCheck={false}
+                />
                 <Button type="button" variant="outline" size="icon" onClick={() => setShowSecret(!showSecret)}>
                   {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -199,7 +239,14 @@ function ConfigTab({ schoolId }: { schoolId: string }) {
             <div className="space-y-2 md:col-span-2">
               <Label>Passkey (Lipa Na M-Pesa Online)</Label>
               <div className="flex gap-2">
-                <Input type={showPasskey ? "text" : "password"} value={cfg.passkey ?? ""} onChange={(e) => setCfg({ ...cfg, passkey: e.target.value })} />
+                <Input
+                  type={showPasskey ? "text" : "password"}
+                  value={cfg.passkey ?? ""}
+                  onChange={(e) => setCfg({ ...cfg, passkey: e.target.value.replace(/\s+/g, "") })}
+                  autoComplete="off"
+                  data-form-type="other"
+                  spellCheck={false}
+                />
                 <Button type="button" variant="outline" size="icon" onClick={() => setShowPasskey(!showPasskey)}>
                   {showPasskey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -213,7 +260,11 @@ function ConfigTab({ schoolId }: { schoolId: string }) {
                   {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">Register this URL with Safaricom for both Validation and Confirmation.</p>
+              <p className="text-xs text-muted-foreground">
+                Register this single URL with Safaricom for both Validation and Confirmation. Tenant routing is resolved
+                from the <code className="font-mono">BusinessShortCode</code> in the callback payload — your Paybill/Till
+                number must be saved above before registering.
+              </p>
             </div>
           </div>
 
