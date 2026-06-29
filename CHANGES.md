@@ -355,3 +355,56 @@ wired to their `_tg_*` functions; no orphan `_tg_*` functions were found.
 - **Unknown shortcodes** are logged to `audit_logs` with action `unknown_shortcode` and still return 200 OK to avoid Safaricom retry storms.
 - **Configuration UI:** single callback URL displayed for all tenants. Re-registration banner added.
 - **Credential fields** (Consumer Key/Secret, Passkey, Initiator Name): added `autocomplete="off"` + `data-form-type="other"` to block browser autofill; Consumer Key enforces 25–50 alphanumeric characters and strips whitespace on input.
+
+## Sidebar cleanup + Fee receipt PDFs (Jun 29 2026)
+
+### Sidebar
+- Removed the standalone **Payroll** item from the Finance section of the
+  sidebar (`src/components/AppSidebar.tsx`). Payroll remains reachable via
+  Finance & Billing → Payroll tab (`/finance?tab=payroll`), and the deep link
+  itself is preserved for bookmarks. Setup checklist is unaffected — it never
+  counted a separate "Payroll page" step.
+
+### Fee Payment Receipts
+Generated PDF receipts for every recorded fee payment.
+
+**New:**
+- `supabase/functions/generate-receipt-pdf/index.ts` — A4 receipt renderer
+  using `pdf-lib`. Returns a 30-day signed URL (7-day via `short_ttl: true`).
+  Cached: regenerates only when `regenerate: true` is passed.
+- Storage bucket `receipts` (private). RLS on `storage.objects` restricts
+  reads/writes to the service role; clients only ever see signed URLs minted
+  by the edge function after permission checks.
+
+**Permissions:**
+- School admin / bursar / `fees.view` → any receipt in their tenant.
+- Portal (parent) users → only receipts for students they guard
+  (checked via `student_guardians`).
+- Internal callers using the service-role bearer (M-Pesa callbacks) bypass
+  the per-user check.
+
+**Auto-generation hooks:**
+- `mpesa-c2b-callback` — after a successful match (DB trigger creates the
+  `student_receipts` row), fires a non-blocking PDF render. Failures are
+  written to `audit_logs` with action `receipt_pdf_failed` and never roll
+  back the underlying payment.
+- `mpesa-stk-callback` — same fire-and-forget render on `ResultCode 0`.
+- Manual "Record payment" in Finance → Payments — invokes the function
+  inline so the bursar can print/share immediately.
+
+**UI:**
+- Finance → Payments tab: each row gets View (eye) and Download icons via a
+  new `ReceiptActions` component.
+- Parent Portal → Fees → Recent payments: each row gets the same View /
+  Download icons.
+
+### Deferred (not implemented this pass)
+- Bulk "Download as ZIP" admin action.
+- Kebab "Regenerate receipt PDF" admin action (the function already supports
+  `regenerate: true` — only the menu wiring is missing).
+- "Email receipt to guardian" admin action via `send-email`.
+- WhatsApp share button on parent rows (Web Share API + 7-day signed link).
+- `manual_reconcile_mpesa` SQL function hook (PDF will be generated on the
+  next view; auto-render hook not added in this pass).
+- Inline modal PDF preview on parent portal — current behaviour opens the
+  signed URL in a new tab, which works on all mobile browsers.
