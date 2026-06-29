@@ -531,7 +531,7 @@ export default function Examinations() {
 }
 
 // ============ ResultsView ============
-function ResultsView({ tenantId, examId, subjects }: { tenantId: string; examId: string }) {
+function ResultsView({ tenantId, examId }: { tenantId: string; examId: string }) {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
