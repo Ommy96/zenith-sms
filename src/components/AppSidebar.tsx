@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Users, CreditCard, ClipboardList,
   BookOpen, UserCog, Bus, Library, BarChart3, Settings,
   ChevronRight, Briefcase, CalendarDays, UserPlus,
-  Megaphone, Mail, DollarSign, Receipt, Package, Smartphone, MessageCircle,
+  Megaphone, Mail, Receipt, Package, Smartphone, MessageCircle,
   Bot,
   Database, ShieldCheck, GraduationCap as GradCap,
   Lock,
