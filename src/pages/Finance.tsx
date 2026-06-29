@@ -499,10 +499,10 @@ function PaymentsTab({ tenantId, userId, payments, students, invoices, canRecord
       <CardContent className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow><TableHead>Date</TableHead><TableHead>Student</TableHead><TableHead>Method</TableHead><TableHead>Reference</TableHead><TableHead className="text-right">Amount</TableHead></TableRow>
+            <TableRow><TableHead>Date</TableHead><TableHead>Student</TableHead><TableHead>Method</TableHead><TableHead>Reference</TableHead><TableHead className="text-right">Amount</TableHead><TableHead className="text-right">Receipt</TableHead></TableRow>
           </TableHeader>
           <TableBody>
-            {payments.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No payments yet.</TableCell></TableRow>}
+            {payments.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No payments yet.</TableCell></TableRow>}
             {payments.map((p) => (
               <TableRow key={p.id}>
                 <TableCell className="text-xs">{new Date(p.paid_at).toLocaleDateString()}</TableCell>
@@ -510,12 +510,68 @@ function PaymentsTab({ tenantId, userId, payments, students, invoices, canRecord
                 <TableCell><Badge variant="outline">{p.method}</Badge></TableCell>
                 <TableCell className="font-mono text-xs">{p.reference || "—"}</TableCell>
                 <TableCell className="text-right font-medium"><Money amount={Number(p.amount)} /></TableCell>
+                <TableCell className="text-right"><ReceiptActions paymentId={p.id} student={p.students} /></TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </CardContent>
     </Card>
+  );
+}
+
+/* ===================== RECEIPT ACTIONS ===================== */
+
+function ReceiptActions({ paymentId, student }: { paymentId: string; student?: any }) {
+  const [loading, setLoading] = useState<"view" | "download" | null>(null);
+
+  const fetchUrl = async (): Promise<string | null> => {
+    // Resolve receipt id for this payment, then ask the edge function for a signed URL.
+    const { data: rcp } = await supabase
+      .from("student_receipts")
+      .select("id, receipt_number")
+      .eq("payment_id", paymentId)
+      .maybeSingle();
+    if (!rcp?.id) {
+      toast({ title: "Receipt not ready yet", description: "Try again in a few seconds." });
+      return null;
+    }
+    const { data, error } = await supabase.functions.invoke("generate-receipt-pdf", {
+      body: { receipt_id: rcp.id },
+    });
+    if (error || !(data as any)?.url) {
+      toast({ title: "Could not load receipt", description: error?.message || (data as any)?.error, variant: "destructive" });
+      return null;
+    }
+    return (data as any).url as string;
+  };
+
+  const onView = async () => {
+    setLoading("view");
+    const url = await fetchUrl();
+    setLoading(null);
+    if (url) window.open(url, "_blank", "noopener");
+  };
+  const onDownload = async () => {
+    setLoading("download");
+    const url = await fetchUrl();
+    setLoading(null);
+    if (!url) return;
+    const name = `Receipt_${student?.admission_number || "payment"}_${(student?.first_name || "").replace(/\s+/g, "")}.pdf`;
+    const a = document.createElement("a");
+    a.href = url; a.download = name; a.target = "_blank"; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+
+  return (
+    <div className="inline-flex items-center gap-1">
+      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onView} disabled={loading !== null} title="View receipt">
+        {loading === "view" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
+      </Button>
+      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onDownload} disabled={loading !== null} title="Download PDF">
+        {loading === "download" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+      </Button>
+    </div>
   );
 }
 
