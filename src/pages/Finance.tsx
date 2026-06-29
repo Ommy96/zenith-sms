@@ -443,8 +443,18 @@ function PaymentsTab({ tenantId, userId, payments, students, invoices, canRecord
     }
     if (allocs.length) await supabase.from("payment_allocations").insert(allocs);
 
-    // Receipt
-    await supabase.from("student_receipts").insert({ tenant_id: tenantId, payment_id: pay.id, receipt_number: "" });
+    // Receipt row (DB trigger fills receipt_number)
+    const { data: rcp } = await supabase
+      .from("student_receipts")
+      .insert({ tenant_id: tenantId, payment_id: pay.id, receipt_number: "" })
+      .select("id")
+      .single();
+
+    // Fire-and-forget PDF generation so the bursar can print/share immediately.
+    if (rcp?.id) {
+      supabase.functions.invoke("generate-receipt-pdf", { body: { receipt_id: rcp.id } })
+        .catch(() => { /* non-blocking */ });
+    }
 
     toast({ title: "Payment recorded", description: remaining > 0 ? `Unallocated: ${remaining.toFixed(2)}` : "All allocated" });
     setOpen(false);
