@@ -236,8 +236,8 @@ Deno.serve(async (req) => {
     const a = auth!;
     // Authorize
     const isStaff = a.isSuperAdmin
-      || auth.roles.some((r) => ["school_admin", "bursar", "finance"].includes(r))
-      || auth.permissions.includes("fees.view");
+      || a.roles.some((r) => ["school_admin", "bursar", "finance"].includes(r))
+      || a.permissions.includes("fees.view");
     const inTenant = a.tenantIds.includes(receipt.tenant_id);
     if (!isStaff || !inTenant) {
       // parent path: check guardian -> student via payment
