@@ -5,8 +5,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Lock, Unlock, Save, Calculator, ArrowLeft } from "lucide-react";
+import { Loader2, Lock, Unlock, Save, Calculator, ArrowLeft, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { CommentGeneratorDrawer, type CommentTarget } from "@/components/exams/CommentGeneratorDrawer";
+import { BulkCommentDialog } from "@/components/exams/BulkCommentDialog";
 
 type Subject = { id: string; code: string; name: string; max_marks: number };
 type Student = { id: string; first_name: string; last_name: string; admission_number: string | null };
@@ -16,7 +18,7 @@ export default function ExamGradeEntry() {
   const { examId } = useParams();
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  const { can } = useTenant();
+  const { can, tenant } = useTenant();
   const tenantId = profile?.tenant_id;
 
   const [exam, setExam] = useState<any | null>(null);
@@ -24,6 +26,9 @@ export default function ExamGradeEntry() {
   const [students, setStudents] = useState<Student[]>([]);
   const [grid, setGrid] = useState<Record<string, Record<string, { v: string; locked: boolean; dirty?: boolean; saving?: boolean; error?: boolean }>>>({});
   const [loading, setLoading] = useState(true);
+  const [commentFor, setCommentFor] = useState<{ studentId: string; subjectId?: string } | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const canComment = can("teachers.edit_grades") || can("exams.enter_marks");
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const load = useCallback(async () => {
@@ -111,6 +116,22 @@ export default function ExamGradeEntry() {
 
   if (loading) return <div className="flex items-center justify-center py-24"><Loader2 className="h-8 w-8 animate-spin" /></div>;
 
+  const targetsFor = (studentId: string): CommentTarget[] => {
+    const st = students.find((s) => s.id === studentId);
+    if (!st) return [];
+    return subjects.map((sub) => {
+      const cell = grid[studentId]?.[sub.id];
+      const score = cell?.v ? Number(cell.v) : null;
+      return {
+        studentId, studentName: `${st.first_name} ${st.last_name}`,
+        className: exam?.name ?? null, gradeLevel: null,
+        subjectId: sub.id, subjectName: sub.name,
+        grade: null, score: score != null && !isNaN(score) ? score : null,
+      };
+    });
+  };
+  const allTargets: CommentTarget[] = students.flatMap((st) => targetsFor(st.id));
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -121,6 +142,9 @@ export default function ExamGradeEntry() {
         </div>
         <Badge variant={exam?.status === "published" ? "default" : "secondary"}>{exam?.status}</Badge>
         <Button size="sm" variant="outline" onClick={recompute}><Calculator className="h-4 w-4 mr-1" />Recompute positions</Button>
+        <Button size="sm" variant="outline" onClick={() => setBulkOpen(true)} disabled={!canComment || subjects.length === 0}>
+          <Sparkles className="h-4 w-4 mr-1" />Generate all comments
+        </Button>
         <Button size="sm" onClick={toggleLock}>
           {exam?.status === "published" ? <><Unlock className="h-4 w-4 mr-1" />Unlock</> : <><Lock className="h-4 w-4 mr-1" />Lock & publish</>}
         </Button>
@@ -140,6 +164,7 @@ export default function ExamGradeEntry() {
                     <div className="text-[10px] font-normal text-muted-foreground">/{s.max_marks}</div>
                   </th>
                 ))}
+                <th className="px-2 py-2 text-center border-l w-24">Comments</th>
               </tr>
             </thead>
             <tbody>
@@ -168,6 +193,16 @@ export default function ExamGradeEntry() {
                       </td>
                     );
                   })}
+                  <td className="border-l text-center">
+                    <Button
+                      variant="ghost" size="icon" className="h-7 w-7"
+                      aria-label={`Generate AI comment for ${st.first_name} ${st.last_name}`}
+                      disabled={!canComment}
+                      onClick={() => setCommentFor({ studentId: st.id, subjectId: subjects[0]?.id })}
+                    >
+                      <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -175,6 +210,30 @@ export default function ExamGradeEntry() {
         </div>
       )}
       <p className="text-xs text-muted-foreground"><Save className="h-3 w-3 inline mr-1" />Auto-saved on blur. Paste from Excel supported.</p>
+
+      {commentFor && tenantId && examId && (
+        <CommentGeneratorDrawer
+          open={!!commentFor}
+          onOpenChange={(v) => !v && setCommentFor(null)}
+          tenantId={tenantId}
+          examId={examId}
+          locale={tenant?.locale}
+          targets={targetsFor(commentFor.studentId)}
+          initialSubjectId={commentFor.subjectId}
+          canEdit={canComment}
+        />
+      )}
+      {tenantId && examId && (
+        <BulkCommentDialog
+          open={bulkOpen}
+          onOpenChange={setBulkOpen}
+          tenantId={tenantId}
+          examId={examId}
+          locale={tenant?.locale}
+          targets={allTargets}
+          subjects={subjects.map((s) => ({ id: s.id, name: s.name }))}
+        />
+      )}
     </div>
   );
 }
