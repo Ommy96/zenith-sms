@@ -1,4 +1,5 @@
 import { CountryIntegrationPage, type CountryConfig } from "@/components/integrations/CountryIntegrationPage";
+import { ResultsImportCard } from "@/components/integrations/ResultsImportCard";
 
 const config: CountryConfig = {
   countryCode: "TZ",
@@ -16,4 +17,18 @@ const config: CountryConfig = {
   ],
 };
 
-export default function TanzaniaPage() { return <CountryIntegrationPage config={config} />; }
+export default function TanzaniaPage() {
+  return (
+    <CountryIntegrationPage
+      config={config}
+      extra={
+        <ResultsImportCard
+          fn="necta-results-import"
+          boardName="NECTA"
+          indexLabel="NECTA index number"
+          description="Upload the PSLE / CSEE / ACSEE results CSV released by NECTA and match candidates to learner records."
+        />
+      }
+    />
+  );
+}
