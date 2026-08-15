@@ -18,6 +18,7 @@ type Msg = {
   tool_calls?: ToolCall[];
   provider?: string;
   tokens?: { input: number; output: number };
+  fallback?: boolean;
 };
 
 const SUGGESTIONS = [
@@ -52,14 +53,34 @@ export default function Copilot() {
     const { data, error } = await supabase.functions.invoke("ai-copilot", {
       body: { tenantId, messages: next.map((m) => ({ role: m.role, content: m.content })) },
     });
-    setBusy(false);
-    setTimeout(() => inputRef.current?.focus(), 0);
     const err = (data as any)?.error || error?.message;
     if (err) {
-      toast({ title: "Copilot error", description: err, variant: "destructive" });
-      setMessages((m) => [...m, { role: "assistant", content: `Sorry — ${err}` }]);
+      // Fallback: the structured copilot is unavailable — answer with the generic AI proxy.
+      const { data: fb, error: fbErr } = await supabase.functions.invoke("ai-invoke", {
+        body: {
+          tenantId,
+          feature: "copilot_fallback",
+          messages: next.map((m) => ({ role: m.role, content: m.content })),
+        },
+      });
+      setBusy(false);
+      setTimeout(() => inputRef.current?.focus(), 0);
+      const fbError = (fb as any)?.error || fbErr?.message;
+      if (fbError) {
+        toast({ title: "Copilot error", description: err, variant: "destructive" });
+        setMessages((m) => [...m, { role: "assistant", content: `Sorry — ${err}` }]);
+        return;
+      }
+      setMessages((m) => [...m, {
+        role: "assistant",
+        content: (fb as any).text || (fb as any).content || "(no response)",
+        provider: (fb as any).provider,
+        fallback: true,
+      }]);
       return;
     }
+    setBusy(false);
+    setTimeout(() => inputRef.current?.focus(), 0);
     setMessages((m) => [...m, {
       role: "assistant",
       content: (data as any).text || "(no response)",
@@ -174,6 +195,11 @@ function MessageBubble({ m }: { m: Msg }) {
       </div>
       <div className="flex-1 space-y-2 min-w-0">
         {(m.tool_calls ?? []).length > 0 && <ToolActivity calls={m.tool_calls!} />}
+        {m.fallback && (
+          <div className="rounded-md border border-dashed px-2 py-1 text-[11px] text-muted-foreground">
+            Answered without live data tools — school data lookups were unavailable, so double-check any figures.
+          </div>
+        )}
         <div className="text-sm whitespace-pre-wrap leading-relaxed">{m.content}</div>
         {(m.provider || m.tokens) && (
           <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground pt-1">
