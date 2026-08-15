@@ -33,7 +33,7 @@ export interface CountryConfig {
   language?: string;          // optional language note (Kinyarwanda, Amharic)
 }
 
-export function CountryIntegrationPage({ config }: { config: CountryConfig }) {
+export function CountryIntegrationPage({ config, extra }: { config: CountryConfig; extra?: React.ReactNode }) {
   const { profile } = useAuth();
   const { tenant } = useTenant();
   const { toast } = useToast();
@@ -185,6 +185,7 @@ export function CountryIntegrationPage({ config }: { config: CountryConfig }) {
           </Card>
         </TabsContent>
       </Tabs>
+      {extra}
     </div>
   );
 }
