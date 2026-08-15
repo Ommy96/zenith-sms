@@ -1,4 +1,5 @@
 import { CountryIntegrationPage, type CountryConfig } from "@/components/integrations/CountryIntegrationPage";
+import { ResultsImportCard } from "@/components/integrations/ResultsImportCard";
 
 const config: CountryConfig = {
   countryCode: "UG",
@@ -16,4 +17,18 @@ const config: CountryConfig = {
   ],
 };
 
-export default function UgandaPage() { return <CountryIntegrationPage config={config} />; }
+export default function UgandaPage() {
+  return (
+    <CountryIntegrationPage
+      config={config}
+      extra={
+        <ResultsImportCard
+          fn="uneb-results-import"
+          boardName="UNEB"
+          indexLabel="UNEB index number"
+          description="Upload the PLE / UCE / UACE results CSV released by UNEB and match candidates to learner records."
+        />
+      }
+    />
+  );
+}

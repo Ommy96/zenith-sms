@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { BotPreviewTab } from "@/components/messaging/BotPreviewTab";
 
 const sb = supabase as any;
 
@@ -103,11 +104,13 @@ export default function WhatsApp() {
             <TabsTrigger value="templates">Templates</TabsTrigger>
             <TabsTrigger value="broadcast">Broadcast</TabsTrigger>
             <TabsTrigger value="inbox">Inbox</TabsTrigger>
+            <TabsTrigger value="bot">Bot preview</TabsTrigger>
           </TabsList>
           <TabsContent value="connection"><ConnectionTab schoolId={schoolId} /></TabsContent>
           <TabsContent value="templates"><TemplatesTab schoolId={schoolId} /></TabsContent>
           <TabsContent value="broadcast"><BroadcastTab schoolId={schoolId} /></TabsContent>
           <TabsContent value="inbox"><InboxTab schoolId={schoolId} /></TabsContent>
+          <TabsContent value="bot"><BotPreviewTab schoolId={schoolId} /></TabsContent>
         </Tabs>
       )}
     </div>
