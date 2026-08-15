@@ -46,8 +46,8 @@ export function ResultsImportCard({ fn, boardName, indexLabel, description }: Pr
   };
 
   const template = () => downloadCsv(
+    "index_number,subject_code,grade,points\n",
     `${boardName.toLowerCase()}-results-template.csv`,
-    [{ index_number: "", subject_code: "", grade: "", points: "" }],
   );
 
   return (
