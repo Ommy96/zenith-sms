@@ -417,6 +417,77 @@ function PaymentsTab({ tenantId, userId, payments, students, invoices, canRecord
     student_id: "", amount: "", method: "cash", reference: "", notes: "",
     invoice_id: "",
   });
+  const { can } = useTenant();
+  const canBulk = can("fees.bulk_export");
+  const canRegen = can("fees.regenerate_receipt");
+  const canEmail = can("fees.email_receipt");
+
+  // paymentId -> receipt row, receiptId -> delivery messages
+  const [receiptByPayment, setReceiptByPayment] = useState<Record<string, Row>>({});
+  const [deliveryByReceipt, setDeliveryByReceipt] = useState<Record<string, Row[]>>({});
+  const [selected, setSelected] = useState<string[]>([]);
+  const [zipping, setZipping] = useState(false);
+
+  const loadReceipts = useCallback(async () => {
+    const ids = payments.map((p) => p.id);
+    if (!ids.length) { setReceiptByPayment({}); setDeliveryByReceipt({}); return; }
+    const { data: rcps } = await supabase
+      .from("student_receipts")
+      .select("id, receipt_number, payment_id, pdf_url")
+      .in("payment_id", ids);
+    const byPayment: Record<string, Row> = {};
+    (rcps || []).forEach((r: Row) => { byPayment[r.payment_id] = r; });
+    setReceiptByPayment(byPayment);
+
+    const rIds = (rcps || []).map((r: Row) => r.id);
+    if (!rIds.length) { setDeliveryByReceipt({}); return; }
+    const { data: msgs } = await supabase
+      .from("messages")
+      .select("id, receipt_id, channel, status, sent_at, error")
+      .in("receipt_id", rIds);
+    const byReceipt: Record<string, Row[]> = {};
+    (msgs || []).forEach((m: Row) => {
+      if (!m.receipt_id) return;
+      (byReceipt[m.receipt_id] ||= []).push(m);
+    });
+    setDeliveryByReceipt(byReceipt);
+  }, [payments]);
+
+  useEffect(() => { loadReceipts(); }, [loadReceipts]);
+
+  const selectableIds = useMemo(
+    () => payments.map((p) => receiptByPayment[p.id]?.id).filter(Boolean) as string[],
+    [payments, receiptByPayment],
+  );
+  const allSelected = selectableIds.length > 0 && selected.length === selectableIds.length;
+
+  const toggleAll = () => setSelected(allSelected ? [] : selectableIds);
+  const toggleOne = (id: string) =>
+    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+
+  const downloadZip = async () => {
+    if (!selected.length) return;
+    if (selected.length > 500) {
+      return toast({ title: "Too many receipts", description: "Select 500 or fewer receipts, or narrow your filter.", variant: "destructive" });
+    }
+    setZipping(true);
+    const { data, error } = await supabase.functions.invoke("bulk-receipts-zip", {
+      body: { receipt_ids: selected },
+    });
+    setZipping(false);
+    const res = data as any;
+    if (error || !res?.url) {
+      return toast({ title: "Bulk download failed", description: error?.message || res?.error, variant: "destructive" });
+    }
+    const a = document.createElement("a");
+    a.href = res.url; a.download = res.filename || "receipts.zip"; a.target = "_blank"; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+    toast({
+      title: `${res.count} receipt${res.count === 1 ? "" : "s"} downloaded`,
+      description: res.failed?.length ? `${res.failed.length} could not be included.` : undefined,
+    });
+    setSelected([]);
+  };
 
   const studentInvoices = useMemo(() => {
     if (!form.student_id) return [];
@@ -466,6 +537,7 @@ function PaymentsTab({ tenantId, userId, payments, students, invoices, canRecord
     setOpen(false);
     setForm({ student_id: "", amount: "", method: "cash", reference: "", notes: "", invoice_id: "" });
     onChange();
+    setTimeout(loadReceipts, 2500);
   };
 
   return (
