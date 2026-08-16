@@ -22,6 +22,78 @@ const corsHeaders = {
 const SIGNED_URL_TTL = 60 * 60 * 24 * 30; // 30 days
 const SHORT_TTL = 60 * 60 * 24 * 7;       // 7 days (share links)
 
+// ---------------------------------------------------------------------------
+// Logo handling
+//
+// NOTE ON REGENERATION: the logo is baked into the PDF at generation time.
+// If a school later changes its logo (or address / details), existing receipts
+// keep the old artwork until they are explicitly regenerated via
+// { receipt_id, force: true }. This is intentional — a receipt is a historical
+// document and must reflect the branding in force when it was issued.
+// ---------------------------------------------------------------------------
+
+type LogoAsset = { bytes: Uint8Array; kind: "png" | "jpg" } | null;
+
+// In-memory cache, keyed by logo_url. Survives for the lifetime of the isolate,
+// so a bulk ZIP of 500 receipts fetches the same logo once.
+const logoCache = new Map<string, LogoAsset>();
+
+async function loadLogo(admin: any, logoUrl: string | null | undefined): Promise<LogoAsset> {
+  if (!logoUrl) return null;
+  if (logoCache.has(logoUrl)) return logoCache.get(logoUrl)!;
+
+  let result: LogoAsset = null;
+  try {
+    const lower = logoUrl.split("?")[0].toLowerCase();
+    if (lower.endsWith(".svg")) {
+      console.warn("[receipt-pdf] SVG logos are not supported by pdf-lib — skipping logo");
+      logoCache.set(logoUrl, null);
+      return null;
+    }
+
+    let bytes: Uint8Array | null = null;
+    let contentType = "";
+
+    if (/^https?:\/\//i.test(logoUrl)) {
+      const res = await fetch(logoUrl);
+      if (res.ok) {
+        contentType = res.headers.get("content-type") || "";
+        bytes = new Uint8Array(await res.arrayBuffer());
+      } else {
+        console.warn("[receipt-pdf] logo fetch failed", res.status);
+      }
+    } else {
+      // Stored path inside the `tenant-logos` bucket (per project convention).
+      const path = logoUrl.replace(/^\/?tenant-logos\//, "");
+      const { data, error } = await admin.storage.from("tenant-logos").download(path);
+      if (error || !data) {
+        console.warn("[receipt-pdf] logo download failed", error?.message);
+      } else {
+        contentType = (data as Blob).type || "";
+        bytes = new Uint8Array(await (data as Blob).arrayBuffer());
+      }
+    }
+
+    if (bytes && bytes.length) {
+      if (contentType.includes("svg")) {
+        console.warn("[receipt-pdf] SVG logo content-type — skipping logo");
+      } else {
+        const isPng = bytes[0] === 0x89 && bytes[1] === 0x50;
+        const isJpg = bytes[0] === 0xff && bytes[1] === 0xd8;
+        if (isPng || contentType.includes("png")) result = { bytes, kind: "png" };
+        else if (isJpg || contentType.includes("jpeg") || contentType.includes("jpg")) result = { bytes, kind: "jpg" };
+        else console.warn("[receipt-pdf] unsupported logo format — skipping logo");
+      }
+    }
+  } catch (e) {
+    console.warn("[receipt-pdf] logo load error", (e as Error).message);
+    result = null;
+  }
+
+  logoCache.set(logoUrl, result);
+  return result;
+}
+
 function fmtMoney(n: number, ccy: string) {
   const v = Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   return `${ccy} ${v}`;
@@ -44,8 +116,9 @@ async function buildPdf(opts: {
   invoices: any[]; allocations: any[]; payment: any; receipt: any;
   issuedBy: string | null; currency: string;
   termBefore: number; termAfter: number;
+  logo?: LogoAsset;
 }): Promise<Uint8Array> {
-  const { tenant, student, payer, payerPhone, allocations, payment, receipt, issuedBy, currency, termBefore, termAfter } = opts;
+  const { tenant, student, payer, payerPhone, allocations, payment, receipt, issuedBy, currency, termBefore, termAfter, logo } = opts;
 
   const doc = await PDFDocument.create();
   // A4 in points: 595.28 x 841.89
@@ -66,22 +139,40 @@ async function buildPdf(opts: {
 
   // === HEADER ===
   const schoolName = tenant?.name || "School";
-  page.drawText(schoolName, { x: M, y: y - 14, size: 18, font: bold, color: accent });
+  let headerTextX = M;
+  let logoBottom = y;
+  if (logo) {
+    try {
+      const img = logo.kind === "png" ? await doc.embedPng(logo.bytes) : await doc.embedJpg(logo.bytes);
+      const maxH = 80;
+      const maxW = 160;
+      const scale = Math.min(maxH / img.height, maxW / img.width, 1);
+      const w = img.width * scale;
+      const h = img.height * scale;
+      page.drawImage(img, { x: M, y: y - h, width: w, height: h });
+      headerTextX = M + w + 14;
+      logoBottom = y - h;
+    } catch (e) {
+      // Corrupt/unsupported image — fall back to a text-only header.
+      console.warn("[receipt-pdf] logo embed failed", (e as Error).message);
+    }
+  }
+  page.drawText(schoolName, { x: headerTextX, y: y - 14, size: 18, font: bold, color: accent });
   const headerLines = [
     tenant?.address, tenant?.phone, tenant?.email,
   ].filter(Boolean) as string[];
   let hy = y - 32;
   for (const line of headerLines) {
-    page.drawText(line, { x: M, y: hy, size: 9, font: helv, color: muted });
+    page.drawText(line, { x: headerTextX, y: hy, size: 9, font: helv, color: muted });
     hy -= 11;
   }
   const meta2 = [
     tenant?.registration_number ? `Reg. No: ${tenant.registration_number}` : null,
     tenant?.nemis_code ? `NEMIS: ${tenant.nemis_code}` : null,
   ].filter(Boolean).join("   ");
-  if (meta2) { page.drawText(meta2, { x: M, y: hy, size: 9, font: helv, color: muted }); hy -= 11; }
+  if (meta2) { page.drawText(meta2, { x: headerTextX, y: hy, size: 9, font: helv, color: muted }); hy -= 11; }
 
-  y = Math.min(hy, y - 64) - 6;
+  y = Math.min(hy, logoBottom, y - 64) - 6;
   page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 0.6, color: muted });
   y -= 22;
 
@@ -223,7 +314,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const receiptId = body?.receipt_id as string | undefined;
-    const regenerate = !!body?.regenerate;
+    const regenerate = !!body?.regenerate || !!body?.force;
     const ttl = body?.short_ttl ? SHORT_TTL : SIGNED_URL_TTL;
     if (!receiptId) return new Response(JSON.stringify({ error: "receipt_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
@@ -286,11 +377,14 @@ Deno.serve(async (req) => {
     const balanceAfter = (openInvoices || []).reduce((s: number, r: any) => s + Number(r.balance || 0), 0);
     const balanceBefore = balanceAfter + Number(payment.amount || 0);
 
+    const logo = await loadLogo(admin, tenant?.logo_url);
+
     const pdfBytes = await buildPdf({
       tenant, student, payer: primary?.full_name || null, payerPhone: primary?.phone || payment.payer_phone || null,
       invoices: [], allocations: allocations || [], payment, receipt,
       issuedBy: receivedBy?.full_name || null, currency,
       termBefore: balanceBefore, termAfter: balanceAfter,
+      logo,
     });
 
     const year = new Date(receipt.issued_at || Date.now()).getFullYear();
@@ -305,6 +399,26 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Upload failed", detail: upErr.message }), { status: 500, headers: corsHeaders });
     }
     await admin.from("student_receipts").update({ pdf_url: path }).eq("id", receipt.id);
+
+    // --- Scheduled auto-email (Fix 5) -------------------------------------
+    // Fires only on FIRST generation (never on regenerate) and only when the
+    // school has opted in via tenant_settings.auto_email_receipts. Entirely
+    // fire-and-forget: a failed email must never break receipt generation.
+    if (!regenerate) {
+      try {
+        const { data: setting } = await admin
+          .from("tenant_settings").select("value").eq("tenant_id", tenantId)
+          .eq("key", "auto_email_receipts").maybeSingle();
+        const enabled = setting?.value === true || (setting?.value as any)?.enabled === true;
+        if (enabled) {
+          fetch(`${url}/functions/v1/email-receipt`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${service}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ receipt_id: receipt.id }),
+          }).catch(() => {});
+        }
+      } catch { /* non-blocking */ }
+    }
 
     const { data: signed } = await admin.storage.from("receipts").createSignedUrl(path, ttl);
     return new Response(JSON.stringify({ url: signed?.signedUrl, path, cached: false }), {

@@ -16,11 +16,17 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Money } from "@/components/Money";
 import {
   Loader2, Plus, Wallet, Receipt, FileText, TrendingUp, AlertCircle,
   Layers, Trash2, Banknote, Bell,
-  Users, ReceiptText, Eye, Download,
+  Users, ReceiptText, Eye, Download, MoreHorizontal, RefreshCw, Mail, MessageCircle,
+  Smartphone, FileArchive, CheckCircle2, XCircle,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { BursarDashboard } from "@/components/finance/BursarDashboard";
@@ -411,6 +417,77 @@ function PaymentsTab({ tenantId, userId, payments, students, invoices, canRecord
     student_id: "", amount: "", method: "cash", reference: "", notes: "",
     invoice_id: "",
   });
+  const { can } = useTenant();
+  const canBulk = can("fees.bulk_export");
+  const canRegen = can("fees.regenerate_receipt");
+  const canEmail = can("fees.email_receipt");
+
+  // paymentId -> receipt row, receiptId -> delivery messages
+  const [receiptByPayment, setReceiptByPayment] = useState<Record<string, Row>>({});
+  const [deliveryByReceipt, setDeliveryByReceipt] = useState<Record<string, Row[]>>({});
+  const [selected, setSelected] = useState<string[]>([]);
+  const [zipping, setZipping] = useState(false);
+
+  const loadReceipts = useCallback(async () => {
+    const ids = payments.map((p) => p.id);
+    if (!ids.length) { setReceiptByPayment({}); setDeliveryByReceipt({}); return; }
+    const { data: rcps } = await supabase
+      .from("student_receipts")
+      .select("id, receipt_number, payment_id, pdf_url")
+      .in("payment_id", ids);
+    const byPayment: Record<string, Row> = {};
+    (rcps || []).forEach((r: Row) => { byPayment[r.payment_id] = r; });
+    setReceiptByPayment(byPayment);
+
+    const rIds = (rcps || []).map((r: Row) => r.id);
+    if (!rIds.length) { setDeliveryByReceipt({}); return; }
+    const { data: msgs } = await supabase
+      .from("messages")
+      .select("id, receipt_id, channel, status, sent_at, error")
+      .in("receipt_id", rIds);
+    const byReceipt: Record<string, Row[]> = {};
+    (msgs || []).forEach((m: Row) => {
+      if (!m.receipt_id) return;
+      (byReceipt[m.receipt_id] ||= []).push(m);
+    });
+    setDeliveryByReceipt(byReceipt);
+  }, [payments]);
+
+  useEffect(() => { loadReceipts(); }, [loadReceipts]);
+
+  const selectableIds = useMemo(
+    () => payments.map((p) => receiptByPayment[p.id]?.id).filter(Boolean) as string[],
+    [payments, receiptByPayment],
+  );
+  const allSelected = selectableIds.length > 0 && selected.length === selectableIds.length;
+
+  const toggleAll = () => setSelected(allSelected ? [] : selectableIds);
+  const toggleOne = (id: string) =>
+    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+
+  const downloadZip = async () => {
+    if (!selected.length) return;
+    if (selected.length > 500) {
+      return toast({ title: "Too many receipts", description: "Select 500 or fewer receipts, or narrow your filter.", variant: "destructive" });
+    }
+    setZipping(true);
+    const { data, error } = await supabase.functions.invoke("bulk-receipts-zip", {
+      body: { receipt_ids: selected },
+    });
+    setZipping(false);
+    const res = data as any;
+    if (error || !res?.url) {
+      return toast({ title: "Bulk download failed", description: error?.message || res?.error, variant: "destructive" });
+    }
+    const a = document.createElement("a");
+    a.href = res.url; a.download = res.filename || "receipts.zip"; a.target = "_blank"; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); a.remove();
+    toast({
+      title: `${res.count} receipt${res.count === 1 ? "" : "s"} downloaded`,
+      description: res.failed?.length ? `${res.failed.length} could not be included.` : undefined,
+    });
+    setSelected([]);
+  };
 
   const studentInvoices = useMemo(() => {
     if (!form.student_id) return [];
@@ -460,6 +537,7 @@ function PaymentsTab({ tenantId, userId, payments, students, invoices, canRecord
     setOpen(false);
     setForm({ student_id: "", amount: "", method: "cash", reference: "", notes: "", invoice_id: "" });
     onChange();
+    setTimeout(loadReceipts, 2500);
   };
 
   return (
@@ -497,22 +575,65 @@ function PaymentsTab({ tenantId, userId, payments, students, invoices, canRecord
         )}
       </CardHeader>
       <CardContent className="overflow-x-auto">
+        {canBulk && selected.length > 0 && (
+          <div className="mb-3 flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
+            <div className="text-sm font-medium">{selected.length} receipt{selected.length === 1 ? "" : "s"} selected</div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="ghost" onClick={() => setSelected([])}>Clear</Button>
+              <Button size="sm" onClick={downloadZip} disabled={zipping}>
+                {zipping ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileArchive className="h-4 w-4 mr-1" />}
+                Download ZIP
+              </Button>
+            </div>
+          </div>
+        )}
         <Table>
           <TableHeader>
-            <TableRow><TableHead>Date</TableHead><TableHead>Student</TableHead><TableHead>Method</TableHead><TableHead>Reference</TableHead><TableHead className="text-right">Amount</TableHead><TableHead className="text-right">Receipt</TableHead></TableRow>
+            <TableRow>
+              {canBulk && (
+                <TableHead className="w-8">
+                  <Checkbox checked={allSelected} onCheckedChange={toggleAll} aria-label="Select all receipts" disabled={selectableIds.length === 0} />
+                </TableHead>
+              )}
+              <TableHead>Date</TableHead><TableHead>Student</TableHead><TableHead>Method</TableHead>
+              <TableHead>Reference</TableHead><TableHead className="text-right">Amount</TableHead>
+              <TableHead>Delivery</TableHead><TableHead className="text-right">Receipt</TableHead>
+            </TableRow>
           </TableHeader>
           <TableBody>
-            {payments.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No payments yet.</TableCell></TableRow>}
-            {payments.map((p) => (
+            {payments.length === 0 && <TableRow><TableCell colSpan={canBulk ? 8 : 7} className="text-center text-muted-foreground py-8">No payments yet.</TableCell></TableRow>}
+            {payments.map((p) => {
+              const rcp = receiptByPayment[p.id];
+              return (
               <TableRow key={p.id}>
+                {canBulk && (
+                  <TableCell>
+                    <Checkbox
+                      checked={!!rcp && selected.includes(rcp.id)}
+                      disabled={!rcp}
+                      onCheckedChange={() => rcp && toggleOne(rcp.id)}
+                      aria-label="Select receipt"
+                    />
+                  </TableCell>
+                )}
                 <TableCell className="text-xs">{new Date(p.paid_at).toLocaleDateString()}</TableCell>
                 <TableCell>{p.students?.first_name} {p.students?.last_name}<div className="text-xs text-muted-foreground">{p.students?.admission_number}</div></TableCell>
                 <TableCell><Badge variant="outline">{p.method}</Badge></TableCell>
                 <TableCell className="font-mono text-xs">{p.reference || "—"}</TableCell>
                 <TableCell className="text-right font-medium"><Money amount={Number(p.amount)} /></TableCell>
-                <TableCell className="text-right"><ReceiptActions paymentId={p.id} student={p.students} /></TableCell>
+                <TableCell><DeliveryBadges messages={rcp ? deliveryByReceipt[rcp.id] : undefined} /></TableCell>
+                <TableCell className="text-right">
+                  <ReceiptActions
+                    paymentId={p.id}
+                    student={p.students}
+                    receipt={rcp}
+                    canRegen={canRegen}
+                    canEmail={canEmail}
+                    onRefresh={loadReceipts}
+                  />
+                </TableCell>
               </TableRow>
-            ))}
+            );})}
           </TableBody>
         </Table>
       </CardContent>
@@ -520,24 +641,70 @@ function PaymentsTab({ tenantId, userId, payments, students, invoices, canRecord
   );
 }
 
+/* ===================== DELIVERY BADGES ===================== */
+
+const CHANNEL_ICON: Record<string, any> = { email: Mail, whatsapp: MessageCircle, sms: Smartphone };
+
+function DeliveryBadges({ messages }: { messages?: Row[] }) {
+  if (!messages?.length) return <span className="text-xs text-muted-foreground">Not sent</span>;
+  return (
+    <TooltipProvider>
+      <div className="inline-flex items-center gap-1.5">
+        {messages.map((m) => {
+          const Icon = CHANNEL_ICON[m.channel] || Mail;
+          const ok = ["sent", "delivered", "read"].includes(m.status);
+          const failed = ["failed", "opted_out"].includes(m.status);
+          return (
+            <Tooltip key={m.id}>
+              <TooltipTrigger asChild>
+                <span className={`inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-xs ${ok ? "text-emerald-600" : failed ? "text-destructive" : "text-muted-foreground"}`}>
+                  <Icon className="h-3.5 w-3.5" />
+                  {ok ? <CheckCircle2 className="h-3 w-3" /> : failed ? <XCircle className="h-3 w-3" /> : <Loader2 className="h-3 w-3" />}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-xs">
+                  {m.channel} · {m.status}
+                  {m.sent_at ? ` · ${new Date(m.sent_at).toLocaleString()}` : ""}
+                  {m.error ? <div className="text-destructive">{m.error}</div> : null}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </div>
+    </TooltipProvider>
+  );
+}
+
 /* ===================== RECEIPT ACTIONS ===================== */
 
-function ReceiptActions({ paymentId, student }: { paymentId: string; student?: any }) {
-  const [loading, setLoading] = useState<"view" | "download" | null>(null);
+function ReceiptActions({ paymentId, student, receipt, canRegen, canEmail, onRefresh }:
+  { paymentId: string; student?: any; receipt?: Row; canRegen: boolean; canEmail: boolean; onRefresh: () => void }) {
+  const [loading, setLoading] = useState<"view" | "download" | "regen" | "email" | null>(null);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
 
-  const fetchUrl = async (): Promise<string | null> => {
+  const resolveReceiptId = async (): Promise<string | null> => {
+    if (receipt?.id) return receipt.id;
     // Resolve receipt id for this payment, then ask the edge function for a signed URL.
     const { data: rcp } = await supabase
       .from("student_receipts")
-      .select("id, receipt_number")
+      .select("id")
       .eq("payment_id", paymentId)
       .maybeSingle();
     if (!rcp?.id) {
       toast({ title: "Receipt not ready yet", description: "Try again in a few seconds." });
       return null;
     }
+    return rcp.id;
+  };
+
+  const fetchUrl = async (force = false): Promise<string | null> => {
+    const receiptId = await resolveReceiptId();
+    if (!receiptId) return null;
     const { data, error } = await supabase.functions.invoke("generate-receipt-pdf", {
-      body: { receipt_id: rcp.id },
+      body: { receipt_id: receiptId, ...(force ? { force: true } : {}) },
     });
     if (error || !(data as any)?.url) {
       toast({ title: "Could not load receipt", description: error?.message || (data as any)?.error, variant: "destructive" });
@@ -563,6 +730,41 @@ function ReceiptActions({ paymentId, student }: { paymentId: string; student?: a
     document.body.appendChild(a); a.click(); a.remove();
   };
 
+  const onRegenerate = async () => {
+    if (!confirm("Regenerate this receipt PDF with the current school branding and details?")) return;
+    setLoading("regen");
+    const url = await fetchUrl(true);
+    setLoading(null);
+    if (url) {
+      toast({ title: "Receipt regenerated" });
+      window.open(url, "_blank", "noopener");
+      onRefresh();
+    }
+  };
+
+  const onEmail = async () => {
+    const receiptId = await resolveReceiptId();
+    if (!receiptId) return;
+    setLoading("email");
+    const { data, error } = await supabase.functions.invoke("email-receipt", {
+      body: { receipt_id: receiptId, ...(emailTo.trim() ? { override_email: emailTo.trim() } : {}) },
+    });
+    setLoading(null);
+    const res = data as any;
+    if (error || res?.error) {
+      toast({
+        title: "Email not sent",
+        description: res?.code === "no_email" ? "No email address on file for this guardian." : (res?.error || error?.message),
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({ title: "Receipt emailed", description: res?.to });
+    setEmailOpen(false);
+    setEmailTo("");
+    onRefresh();
+  };
+
   return (
     <div className="inline-flex items-center gap-1">
       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onView} disabled={loading !== null} title="View receipt">
@@ -571,6 +773,52 @@ function ReceiptActions({ paymentId, student }: { paymentId: string; student?: a
       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onDownload} disabled={loading !== null} title="Download PDF">
         {loading === "download" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
       </Button>
+      {(canRegen || canEmail) && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="icon" variant="ghost" className="h-7 w-7" disabled={loading !== null} title="More receipt actions">
+              {loading === "regen" || loading === "email"
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : <MoreHorizontal className="h-3.5 w-3.5" />}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            {canRegen && (
+              <DropdownMenuItem onClick={onRegenerate}>
+                <RefreshCw className="h-3.5 w-3.5 mr-2" />Regenerate PDF
+              </DropdownMenuItem>
+            )}
+            {canRegen && canEmail && <DropdownMenuSeparator />}
+            {canEmail && (
+              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setEmailOpen(true); }}>
+                <Mail className="h-3.5 w-3.5 mr-2" />Email to guardian
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+
+      <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Email receipt to guardian</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Sends the receipt PDF to the primary guardian on file. Leave blank to use their saved address.
+            </p>
+            <Input
+              placeholder="Override email (optional)"
+              value={emailTo}
+              onChange={(e) => setEmailTo(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button onClick={onEmail} disabled={loading === "email"}>
+              {loading === "email" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Mail className="h-4 w-4 mr-1" />}
+              Send receipt
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

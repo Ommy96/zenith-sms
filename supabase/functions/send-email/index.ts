@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const { message_id } = await req.json();
+    const { message_id, attachments } = await req.json();
     if (!message_id) return jr({ error: "message_id required" }, 400);
 
     const { data: msg } = await admin.from("messages").select("*").eq("id", message_id).maybeSingle();
@@ -39,6 +39,9 @@ Deno.serve(async (req) => {
         subject: msg.subject || "Message from your school",
         html,
         text: msg.body,
+        ...(Array.isArray(attachments) && attachments.length
+          ? { attachments: attachments.map((a: any) => ({ filename: a.filename, content: a.content })) }
+          : {}),
       }),
     });
     const data = await res.json();
