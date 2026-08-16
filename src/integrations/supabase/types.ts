@@ -4186,6 +4186,7 @@ export type Database = {
           provider: string | null
           provider_message_id: string | null
           read_at: string | null
+          receipt_id: string | null
           recipient_address: string | null
           recipient_id: string | null
           recipient_name: string | null
@@ -4219,6 +4220,7 @@ export type Database = {
           provider?: string | null
           provider_message_id?: string | null
           read_at?: string | null
+          receipt_id?: string | null
           recipient_address?: string | null
           recipient_id?: string | null
           recipient_name?: string | null
@@ -4252,6 +4254,7 @@ export type Database = {
           provider?: string | null
           provider_message_id?: string | null
           read_at?: string | null
+          receipt_id?: string | null
           recipient_address?: string | null
           recipient_id?: string | null
           recipient_name?: string | null
@@ -4275,6 +4278,13 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "broadcast_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "student_receipts"
             referencedColumns: ["id"]
           },
           {
@@ -9207,6 +9217,7 @@ export type Database = {
           provider: string | null
           provider_message_id: string | null
           read_at: string | null
+          receipt_id: string | null
           recipient_address: string | null
           recipient_id: string | null
           recipient_name: string | null
