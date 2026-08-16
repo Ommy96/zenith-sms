@@ -16,11 +16,17 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Money } from "@/components/Money";
 import {
   Loader2, Plus, Wallet, Receipt, FileText, TrendingUp, AlertCircle,
   Layers, Trash2, Banknote, Bell,
-  Users, ReceiptText, Eye, Download,
+  Users, ReceiptText, Eye, Download, MoreHorizontal, RefreshCw, Mail, MessageCircle,
+  Smartphone, FileArchive, CheckCircle2, XCircle,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { BursarDashboard } from "@/components/finance/BursarDashboard";
