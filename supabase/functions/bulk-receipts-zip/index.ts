@@ -113,10 +113,10 @@ Deno.serve(async (req) => {
 
     await admin.from("audit_logs").insert({
       tenant_id: tenantId,
-      user_id: auth.userId,
+      actor_user_id: auth.userId,
       action: "bulk_receipt_export",
-      table_name: "student_receipts",
-      new_values: { count: added, failed_count: failed.length, file: fileName },
+      entity_type: "student_receipts",
+      after: { count: added, failed_count: failed.length, file: fileName, receipt_ids: ids },
     }).then(() => {}, () => {});
 
     return jr({ url: signed?.signedUrl, path: zipPath, filename: fileName, count: added, failed });
