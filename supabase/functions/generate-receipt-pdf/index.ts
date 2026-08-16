@@ -400,6 +400,26 @@ Deno.serve(async (req) => {
     }
     await admin.from("student_receipts").update({ pdf_url: path }).eq("id", receipt.id);
 
+    // --- Scheduled auto-email (Fix 5) -------------------------------------
+    // Fires only on FIRST generation (never on regenerate) and only when the
+    // school has opted in via tenant_settings.auto_email_receipts. Entirely
+    // fire-and-forget: a failed email must never break receipt generation.
+    if (!regenerate) {
+      try {
+        const { data: setting } = await admin
+          .from("tenant_settings").select("value").eq("tenant_id", tenantId)
+          .eq("key", "auto_email_receipts").maybeSingle();
+        const enabled = setting?.value === true || (setting?.value as any)?.enabled === true;
+        if (enabled) {
+          fetch(`${url}/functions/v1/email-receipt`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${service}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ receipt_id: receipt.id }),
+          }).catch(() => {});
+        }
+      } catch { /* non-blocking */ }
+    }
+
     const { data: signed } = await admin.storage.from("receipts").createSignedUrl(path, ttl);
     return new Response(JSON.stringify({ url: signed?.signedUrl, path, cached: false }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
