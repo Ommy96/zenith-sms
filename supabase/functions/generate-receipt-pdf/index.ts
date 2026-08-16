@@ -314,7 +314,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const receiptId = body?.receipt_id as string | undefined;
-    const regenerate = !!body?.regenerate;
+    const regenerate = !!body?.regenerate || !!body?.force;
     const ttl = body?.short_ttl ? SHORT_TTL : SIGNED_URL_TTL;
     if (!receiptId) return new Response(JSON.stringify({ error: "receipt_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
@@ -377,11 +377,14 @@ Deno.serve(async (req) => {
     const balanceAfter = (openInvoices || []).reduce((s: number, r: any) => s + Number(r.balance || 0), 0);
     const balanceBefore = balanceAfter + Number(payment.amount || 0);
 
+    const logo = await loadLogo(admin, tenant?.logo_url);
+
     const pdfBytes = await buildPdf({
       tenant, student, payer: primary?.full_name || null, payerPhone: primary?.phone || payment.payer_phone || null,
       invoices: [], allocations: allocations || [], payment, receipt,
       issuedBy: receivedBy?.full_name || null, currency,
       termBefore: balanceBefore, termAfter: balanceAfter,
+      logo,
     });
 
     const year = new Date(receipt.issued_at || Date.now()).getFullYear();
