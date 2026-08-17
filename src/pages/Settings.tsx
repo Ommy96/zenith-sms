@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Building, Palette, GraduationCap, Bell, Sparkles, RotateCcw, Trash2, Loader2, Brain, Rocket } from "lucide-react";
+import { Building, Palette, GraduationCap, Bell, Sparkles, RotateCcw, Trash2, Loader2, Brain, Rocket, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,9 +15,70 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { clearDemoData, seedDemoData } from "@/lib/demoSeed";
 import { AiSettingsTab } from "@/components/settings/AiSettingsTab";
+
+/** Persisted school-level toggle: auto-email every new receipt to the guardian. */
+function AutoEmailReceiptsCard() {
+  const { profile, role } = useAuth();
+  const { toast } = useToast();
+  const tenantId = profile?.tenant_id;
+  const isAdmin = role === "school_admin" || role === "super_admin";
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!tenantId) return;
+    (async () => {
+      const { data } = await supabase
+        .from("tenant_settings").select("value")
+        .eq("tenant_id", tenantId).eq("key", "auto_email_receipts").maybeSingle();
+      setEnabled(data?.value === true);
+      setLoading(false);
+    })();
+  }, [tenantId]);
+
+  const toggle = async (next: boolean) => {
+    if (!tenantId) return;
+    setSaving(true);
+    setEnabled(next);
+    const { error } = await supabase
+      .from("tenant_settings")
+      .upsert({ tenant_id: tenantId, key: "auto_email_receipts", value: next }, { onConflict: "tenant_id,key" });
+    setSaving(false);
+    if (error) {
+      setEnabled(!next);
+      toast({ title: "Could not save", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: next ? "Receipts will be emailed automatically" : "Automatic receipt emails turned off" });
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-sm font-semibold text-card-foreground flex items-center gap-1.5">
+            <Mail className="h-3.5 w-3.5" /> Auto-email fee receipts
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1 max-w-prose">
+            When a payment is confirmed, email the official receipt PDF to the primary guardian on file.
+            Guardians without an email address are skipped. Requires email to be configured in Messaging settings.
+          </p>
+        </div>
+        <Switch
+          checked={enabled}
+          disabled={!isAdmin || loading || saving}
+          onCheckedChange={toggle}
+          aria-label="Auto-email fee receipts"
+        />
+      </div>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   const { profile, role, refreshSchool } = useAuth();
