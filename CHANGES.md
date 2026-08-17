@@ -408,3 +408,37 @@ Generated PDF receipts for every recorded fee payment.
   next view; auto-render hook not added in this pass).
 - Inline modal PDF preview on parent portal — current behaviour opens the
   signed URL in a new tab, which works on all mobile browsers.
+
+## Fee receipts — logo, bulk export, regenerate, email (Fixes 1–6)
+
+### Fix 1 — School logo embedded in the receipt PDF
+`supabase/functions/generate-receipt-pdf/index.ts`
+- Added `loadLogo()`: fetches `tenants.logo_url` (http(s) URL, or a storage path in `tenant-logos`), sniffs PNG/JPEG by magic bytes + content-type, and caches the bytes in-module keyed by URL so a 500-receipt batch fetches once.
+- Header now draws the logo top-left (max 80pt high / 160pt wide, aspect preserved) with school name and contact lines shifted right of it. No other layout change.
+- Graceful degradation: SVG, unsupported formats, fetch failures and corrupt images log a warning and fall back to the previous text-only header.
+- Regeneration note (also in code): the logo is baked in at generation time, so branding changes only reach existing receipts when they are regenerated with `force: true`.
+
+### Fix 2 — Admin bulk ZIP download
+- New edge function `supabase/functions/bulk-receipts-zip/index.ts`: accepts `receipt_ids[]` (max 500), enforces tenant scoping + `fees.bulk_export`, generates any missing PDFs, zips them as `Receipt_<number>_<Student>.pdf` via JSZip, uploads to `receipts/<tenant>/bulk/…` and returns a 24h signed URL. Partial failures are reported in `failed[]`. Writes an `audit_logs` row (`bulk_receipt_export`).
+- `src/pages/Finance.tsx`: checkbox column + select-all on the Payments table, sticky selection bar showing "N receipts selected" with Download ZIP, and an over-500 guard.
+
+### Fix 3 — Regenerate receipt
+- `generate-receipt-pdf` now accepts `force: true` (alias of the existing `regenerate`) to bypass the cached PDF.
+- Kebab menu per payment row in Finance → Payments with "Regenerate PDF" (confirm dialog, opens the fresh PDF), gated on `fees.regenerate_receipt`.
+
+### Fix 4 — Email receipt to guardian
+- New edge function `supabase/functions/email-receipt/index.ts`: resolves the primary guardian, downloads the PDF (generating it if missing), queues a `messages` row (channel `email`, linked via `receipt_id`) and calls `send-email` with the PDF as a base64 attachment. Localised EN/SW subject and body.
+- Authorization: staff with `fees.view` + `fees.email_receipt` (or admin/bursar roles) may send and may override the recipient address; a guardian may only send to their own address on file; service-role callers bypass for automation. Missing address returns `code: "no_email"`.
+- `supabase/functions/send-email/index.ts`: now forwards an optional `attachments[]` array to Resend.
+- UI: admin kebab item "Email to guardian" with optional override address; parent portal (`src/pages/portal/PortalFees.tsx`) gets an "Email me a copy" icon per payment.
+
+### Fix 5 — Scheduled auto-email on payment
+- After a *first* successful PDF generation (never on regenerate), `generate-receipt-pdf` reads `tenant_settings.auto_email_receipts` and fire-and-forgets `email-receipt`. Payment callbacks were left untouched — this covers M-Pesa C2B, STK and manual bursar payments alike.
+- `src/pages/Settings.tsx` → Notifications: new persisted "Auto-email fee receipts" switch (admin only) writing `tenant_settings.auto_email_receipts`.
+
+### Fix 6 — Receipt delivery status badge
+- New `Delivery` column in Finance → Payments showing per-channel icons (email / WhatsApp / SMS) with green tick for sent/delivered/read, red cross for failed/opted-out, spinner for queued, and a tooltip carrying channel, status, timestamp and error text. "Not sent" when no messages exist.
+
+### Database
+- Migration: `messages.receipt_id uuid REFERENCES student_receipts(id) ON DELETE SET NULL` + partial index; new permissions `fees.bulk_export`, `fees.regenerate_receipt`, `fees.email_receipt` granted to `school_admin`, `principal` (except regenerate) and `bursar`.
+- **No new RLS policies were added.** Existing `messages` and `student_receipts` policies already scope by tenant; the new column inherits them, and both new edge functions run under the service role with explicit in-code tenant/permission checks.
