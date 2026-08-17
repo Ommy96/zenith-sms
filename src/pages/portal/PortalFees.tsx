@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Loader2, Smartphone, Eye, Download } from "lucide-react";
+import { Loader2, Smartphone, Eye, Download, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
@@ -37,6 +37,27 @@ export default function PortalFees() {
   }, [activeChild?.id]);
 
   const balance = invoices.reduce((s, r: any) => s + Number(r.balance || 0), 0);
+  const [emailing, setEmailing] = useState<string | null>(null);
+
+  // "Email me a copy" — the edge function sends only to the guardian's own
+  // address on file, so no recipient is accepted from the client here.
+  const emailReceipt = async (paymentId: string) => {
+    const { data: rcp } = await supabase
+      .from("student_receipts").select("id").eq("payment_id", paymentId).maybeSingle();
+    if (!rcp?.id) return toast.message("Receipt is still generating — try again shortly");
+    setEmailing(paymentId);
+    const { data, error } = await supabase.functions.invoke("email-receipt", { body: { receipt_id: rcp.id } });
+    setEmailing(null);
+    const res = data as any;
+    if (error || res?.error) {
+      return toast.error(
+        res?.code === "no_email"
+          ? "No email address on your profile — ask the school to add one."
+          : (res?.error || error?.message || "Could not send receipt"),
+      );
+    }
+    toast.success(`Receipt sent to ${res?.to}`);
+  };
 
   const initiateStk = async () => {
     if (!activeChild) return;
@@ -153,6 +174,10 @@ export default function PortalFees() {
                   <Button size="icon" variant="ghost" className="h-7 w-7" title="Download PDF"
                     onClick={() => openReceipt(p.id, "download", `${activeChild?.first_name || ""}${activeChild?.last_name || ""}`)}>
                     <Download className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7" title="Email me a copy"
+                    disabled={emailing === p.id} onClick={() => emailReceipt(p.id)}>
+                    {emailing === p.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
                   </Button>
                 </div>
               </CardContent>
