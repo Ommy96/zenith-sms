@@ -244,6 +244,9 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="notifications" className="mt-6">
+          <div className="mb-4">
+            <AutoEmailReceiptsCard />
+          </div>
           <div className="rounded-xl border border-border bg-card p-6 space-y-5">
             <h3 className="text-sm font-semibold text-card-foreground mb-2">Notification Preferences</h3>
             {[
