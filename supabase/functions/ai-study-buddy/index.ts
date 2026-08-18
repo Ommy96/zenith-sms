@@ -4,6 +4,7 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { authedUser, aiStream, checkQuota } from "../_shared/ai-service.ts";
+import { requireOwnsResource, EdgeAuthError } from "../_shared/auth.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -22,9 +23,12 @@ Deno.serve(async (req) => {
 
     const svc = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    const { data } = await svc.rpc("portal_my_student_ids", { _user: user.userId });
-    const allowed = (data ?? []).some((r: any) => r.student_id === studentId);
-    if (!allowed) return json({ error: "Forbidden" }, 403);
+    // Ownership is resolved live (guardian link / staff tenant membership) and audited.
+    const owned = await requireOwnsResource({
+      user, resourceType: "student", resourceId: studentId,
+      functionName: "ai-study-buddy", req,
+    });
+    if (owned.tenantId !== tenantId) return json({ error: "Forbidden: tenant mismatch" }, 403);
 
     const { data: stu } = await svc.from("students")
       .select("first_name, last_name, classes(name, grade_levels(name, stage))")
@@ -52,6 +56,7 @@ Rules:
       requestMeta: { studentId, subject },
     }, corsHeaders);
   } catch (e) {
+    if (e instanceof EdgeAuthError) return json({ error: e.message }, e.status);
     return json({ error: e instanceof Error ? e.message : String(e) }, 500);
   }
 });

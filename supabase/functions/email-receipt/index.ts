@@ -6,7 +6,7 @@
 //         internal service-role caller (auto-email on payment confirmation).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { requireAuth, EdgeAuthError } from "../_shared/auth.ts";
+import { requireAuth, EdgeAuthError, requireOwnsResource } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,10 +65,15 @@ Deno.serve(async (req) => {
       const isStaff = a.isSuperAdmin
         || a.roles.some((r) => ["school_admin", "principal", "bursar", "finance"].includes(r))
         || (a.permissions.includes("fees.view") && a.permissions.includes("fees.email_receipt"));
-      const isGuardian = links.some((l) => l.guardian?.portal_user_id === a.userId);
-      if (!(isStaff && inTenant) && !isGuardian) return jr({ error: "Forbidden" }, 403);
+      // Live ownership check (guardian link or tenant staff), audited. Throws 403/404.
+      await requireOwnsResource({
+        user: a, resourceType: "receipt", resourceId: receiptId,
+        functionName: "email-receipt", req,
+      });
       // Guardians may only send to their own address on file.
-      if (!isStaff && overrideEmail) return jr({ error: "Forbidden: cannot override recipient" }, 403);
+      if (!(isStaff && inTenant) && overrideEmail) {
+        return jr({ error: "Forbidden: cannot override recipient" }, 403);
+      }
     }
 
     const to = overrideEmail || primary?.email || null;
