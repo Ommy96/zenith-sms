@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { requireOwnsResource, EdgeAuthError } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -41,8 +42,29 @@ Deno.serve(async (req) => {
     if (!phone || !amount) {
       return new Response(JSON.stringify({ error: "phone and amount required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const { data: profile } = await supabase.from("profiles").select("default_tenant_id").eq("id", claimsData.claims.sub).maybeSingle();
-    const schoolId = (profile as any)?.default_tenant_id;
+    const userId = claimsData.claims.sub as string;
+
+    // Resolve the tenant from the resource being paid for, and prove the caller
+    // owns it. Portal users have no staff profile/tenant role, so the invoice or
+    // student is the only trustworthy tenant source for them.
+    let schoolId: string | null = null;
+    if (invoice_id || student_id) {
+      const owned = await requireOwnsResource({
+        user: { userId },
+        resourceType: invoice_id ? "invoice" : "student",
+        resourceId: (invoice_id ?? student_id) as string,
+        functionName: "mpesa-stk-push",
+        req,
+      });
+      schoolId = owned.tenantId;
+      if (invoice_id && student_id && owned.studentId !== student_id) {
+        return new Response(JSON.stringify({ error: "Forbidden: student does not match invoice" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    } else {
+      // Staff-initiated ad-hoc push with no resource — fall back to their tenant.
+      const { data: profile } = await supabase.from("profiles").select("default_tenant_id").eq("id", userId).maybeSingle();
+      schoolId = (profile as any)?.default_tenant_id ?? null;
+    }
     if (!schoolId) return new Response(JSON.stringify({ error: "No school" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const { data: cfg } = await supabase.from("mpesa_config").select("*").eq("tenant_id", schoolId).maybeSingle();
     if (!cfg?.shortcode || !cfg?.passkey || !cfg?.consumer_key || !cfg?.consumer_secret) {
@@ -103,6 +125,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
+    if (e instanceof EdgeAuthError) {
+      return new Response(JSON.stringify({ error: e.message }), { status: e.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
