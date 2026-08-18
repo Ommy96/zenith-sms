@@ -11,7 +11,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1";
-import { requireAuth, EdgeAuthError } from "../_shared/auth.ts";
+import { requireAuth, EdgeAuthError, requireOwnsResource } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -331,16 +331,11 @@ Deno.serve(async (req) => {
       || a.permissions.includes("fees.view");
     const inTenant = a.tenantIds.includes(receipt.tenant_id);
     if (!isStaff || !inTenant) {
-      // parent path: check guardian -> student via payment
-      const { data: pay } = await admin.from("student_payments").select("student_id, tenant_id").eq("id", receipt.payment_id).maybeSingle();
-      if (!pay) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
-      const { data: link } = await admin
-        .from("student_guardians").select("guardian_id, guardians:guardian_id(user_id)")
-        .eq("student_id", pay.student_id).limit(20);
-      const guardianUserIds = (link || []).map((l: any) => l.guardians?.user_id).filter(Boolean);
-      if (!guardianUserIds.includes(a.userId)) {
-        return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: corsHeaders });
-      }
+      // Portal path — live guardian/self linkage, audited. Throws 403/404.
+      await requireOwnsResource({
+        user: a, resourceType: "receipt", resourceId: receiptId,
+        functionName: "generate-receipt-pdf", req,
+      });
     }
     }
 
