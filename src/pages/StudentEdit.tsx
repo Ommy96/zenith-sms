@@ -905,5 +905,27 @@ export default function StudentEdit() {
         </Button>
       </div>
     </div>
+
+      <AlertDialog open={!!phoneConflict} onOpenChange={(o) => { if (!o) resolvePhoneConflict("new"); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Guardian already exists</AlertDialogTitle>
+            <AlertDialogDescription>
+              A guardian with phone {phoneConflict?.phone} already exists:{" "}
+              <strong>{phoneConflict?.fullName}</strong>. Link them to this student instead of
+              creating a new record?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => resolvePhoneConflict("new")}>
+              Create new anyway
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => resolvePhoneConflict("link")}>
+              Link existing
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }
