@@ -809,7 +809,25 @@ export default function StudentEdit() {
                   </Select>
                 </Field>
                 <Field label="Phone" error={err(`guardians.${i}.phone_primary`)}>
-                  <Input value={g.phone_primary} onChange={(e) => updateGuardian(i, { phone_primary: e.target.value })} placeholder="+254712345678" />
+                  <Input value={g.phone_primary} onChange={(e) => updateGuardian(i, { phone_primary: e.target.value })} onBlur={() => checkGuardianPhone(i)} placeholder="+254712345678" />
+                  {g._match && !g.guardian_id && (
+                    <p className="mt-1.5 text-xs text-muted-foreground flex flex-wrap items-center gap-2">
+                      <AlertCircle className="h-3 w-3" />
+                      {g._match.alreadyLinked
+                        ? "Already linked to this student — saving will update the relationship."
+                        : `${g._match.full_name || "A guardian"} already exists with this phone.`}
+                      {!g._match.alreadyLinked && (
+                        <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={() => linkExistingGuardian(i)}>
+                          Link existing guardian
+                        </Button>
+                      )}
+                    </p>
+                  )}
+                  {g._match?.adopted && g.guardian_id && (
+                    <p className="mt-1.5 text-xs text-muted-foreground flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" /> Linking existing guardian record — details will be updated.
+                    </p>
+                  )}
                 </Field>
                 <Field label="WhatsApp" error={err(`guardians.${i}.whatsapp_number`)}>
                   <Input value={g.whatsapp_number} onChange={(e) => updateGuardian(i, { whatsapp_number: e.target.value })} />
