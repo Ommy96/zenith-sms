@@ -323,21 +323,24 @@ export default function StudentEdit() {
       if (guardianId) {
         await supabase.from("guardians").update(guardianPayload as any).eq("id", guardianId);
       } else {
-        // Reuse an existing guardian in this tenant with the same phone instead of duplicating
-        let existingId: string | null = null;
+        // A guardian with this phone may already exist in the tenant — ask before duplicating
+        let existing: { id: string; full_name: string | null } | null = null;
         if (g.phone_primary) {
           const { data: match } = await supabase
             .from("guardians")
-            .select("id")
+            .select("id, full_name")
             .eq("tenant_id", student.tenant_id as string)
             .eq("phone_primary", g.phone_primary as string)
             .limit(1)
             .maybeSingle();
-          existingId = (match as AnyObj)?.id ?? null;
+          existing = (match as AnyObj) ?? null;
         }
-        if (existingId) {
-          await supabase.from("guardians").update(guardianPayload as any).eq("id", existingId);
-          guardianId = existingId;
+        const choice = existing
+          ? await askPhoneConflict(g.phone_primary as string, existing.full_name || "Unnamed guardian")
+          : "new";
+        if (existing && choice === "link") {
+          // Link the existing record as-is; don't overwrite their details
+          guardianId = existing.id;
         } else {
           const { data: ng, error: gErr } = await supabase
             .from("guardians")
