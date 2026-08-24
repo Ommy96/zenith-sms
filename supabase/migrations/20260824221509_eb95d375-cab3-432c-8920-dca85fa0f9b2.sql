@@ -1,0 +1,10 @@
+REVOKE ALL ON FUNCTION public.ai_current_month_usage(uuid) FROM authenticated;
+REVOKE ALL ON FUNCTION public.compute_grade(uuid, numeric) FROM authenticated;
+REVOKE ALL ON FUNCTION public.current_academic_year(uuid) FROM authenticated;
+REVOKE ALL ON FUNCTION public.generate_doc_number(uuid, text, text) FROM authenticated;
+REVOKE ALL ON FUNCTION public.generate_expense_number(uuid) FROM authenticated;
+REVOKE ALL ON FUNCTION public.generate_invoice_number(uuid) FROM authenticated;
+REVOKE ALL ON FUNCTION public.generate_receipt_number(uuid) FROM authenticated;
+REVOKE ALL ON FUNCTION public.portal_my_guardian_tenants(uuid) FROM authenticated;
+REVOKE ALL ON FUNCTION public.recompute_invoice_totals(uuid) FROM authenticated;
+REVOKE ALL ON FUNCTION public.seed_default_message_templates(uuid) FROM authenticated;
