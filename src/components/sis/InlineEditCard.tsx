@@ -42,7 +42,7 @@ export function InlineEditCard<T extends Record<string, any>>({
       const v = draft[f.key];
       patch[f.key] = v === "" ? null : v;
     }
-    const { error } = await supabase.from(table).update(patch).eq("id", rowId);
+    const { error } = await supabase.from(table).update(patch as any).eq("id", rowId);
     setBusy(false);
     if (error) return toast({ title: "Save failed", description: error.message, variant: "destructive" });
     onSaved(patch as Partial<T>);

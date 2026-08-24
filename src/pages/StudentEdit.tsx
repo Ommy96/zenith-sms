@@ -278,7 +278,7 @@ export default function StudentEdit() {
     // current_class_id requires explicit null when cleared
     if (academic.current_class_id === "") payload.current_class_id = null;
     const { error: upErr } = await supabase
-      .from("students").update(payload).eq("id", student.id);
+      .from("students").update(payload as any).eq("id", student.id);
     if (upErr) {
       setSaving(false);
       toast.error("Save failed", { description: upErr.message });
@@ -298,7 +298,7 @@ export default function StudentEdit() {
         occupation: g.occupation,
       });
       if (guardianId) {
-        await supabase.from("guardians").update(guardianPayload).eq("id", guardianId);
+        await supabase.from("guardians").update(guardianPayload as any).eq("id", guardianId);
       } else {
         // Reuse an existing guardian in this tenant with the same phone instead of duplicating
         let existingId: string | null = null;
