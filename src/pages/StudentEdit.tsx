@@ -222,6 +222,22 @@ export default function StudentEdit() {
     return { ok: true, data: r.data as AnyObj, nextErrors: ne };
   }
 
+  /**
+   * Ask the user whether to link an existing guardian (same phone, same tenant)
+   * or create a brand new guardian record. Resolves with the user's choice.
+   */
+  function askPhoneConflict(phone: string, fullName: string): Promise<"link" | "new"> {
+    return new Promise((resolve) => {
+      setPhoneConflict({ phone, fullName, resolve });
+    });
+  }
+
+  function resolvePhoneConflict(choice: "link" | "new") {
+    phoneConflict?.resolve(choice);
+    setPhoneConflict(null);
+  }
+
+
   async function saveAll() {
     if (!student) return;
     setSaving(true);
