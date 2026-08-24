@@ -145,7 +145,7 @@ export default function AdmissionWizard() {
             occupation: g.occupation || null,
           }).select().single();
         if (gErr) throw gErr;
-        await supabase.from("student_guardians").insert({
+        await supabase.from("student_guardians").upsert({
           tenant_id: tenantId,
           student_id: student.id,
           guardian_id: guardian.id,
@@ -153,7 +153,7 @@ export default function AdmissionWizard() {
           is_primary_contact: g.is_primary_contact,
           has_pickup_authorization: g.has_pickup_authorization,
           has_financial_responsibility: g.has_financial_responsibility,
-        });
+        }, { onConflict: "student_id,guardian_id", ignoreDuplicates: false });
       }
 
       // 4. Upload documents

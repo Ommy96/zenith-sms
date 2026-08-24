@@ -65,7 +65,7 @@ export default function StudentProfile() {
       setStudent(s);
 
       const [{ data: sg }, { data: cls }, { data: inv }, { data: pay }, { data: act }, { data: dd }, { data: att }, { data: ex }] = await Promise.all([
-        supabase.from("student_guardians").select("*, guardians(*)").eq("student_id", id),
+        supabase.from("student_guardians").select("*, guardian:guardians!student_guardians_guardian_id_fkey(*)").eq("student_id", id),
         s.current_class_id ? supabase.from("classes").select("*").eq("id", s.current_class_id).maybeSingle() : Promise.resolve({ data: null }),
         supabase.from("student_invoices").select("*, terms:term_id(name), academic_years:academic_year_id(name)").eq("student_id", id).order("created_at", { ascending: false }).limit(50),
         supabase.from("student_payments").select("*").eq("student_id", id).order("paid_at", { ascending: false }).limit(50),
@@ -229,8 +229,8 @@ export default function StudentProfile() {
   };
 
   const openPay = (invoiceId?: string, amount?: number) => {
-    const primaryGuardianPhone = guardians.find((g: any) => g.is_primary_contact)?.guardians?.phone_primary
-      || guardians[0]?.guardians?.phone_primary || "";
+    const primaryGuardianPhone = guardians.find((g: any) => g.is_primary_contact)?.guardian?.phone_primary
+      || guardians[0]?.guardian?.phone_primary || "";
     setStkForm({
       invoice_id: invoiceId || "",
       amount: amount ? String(amount) : String(balance || ""),
@@ -930,12 +930,12 @@ export default function StudentProfile() {
                 {guardians.map((sg: any) => (
                   <div key={sg.id} className="text-sm border-b last:border-0 pb-3 last:pb-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium">{sg.guardians?.full_name}</p>
+                      <p className="font-medium">{sg.guardian?.full_name}</p>
                       {sg.is_primary_contact && <Badge className="text-[10px]">Primary</Badge>}
                     </div>
                     <p className="text-xs text-muted-foreground capitalize">{sg.relationship}</p>
-                    {sg.guardians?.phone_primary && <p className="text-xs flex items-center gap-1 mt-1"><Phone className="h-3 w-3" /> {sg.guardians.phone_primary}</p>}
-                    {sg.guardians?.email && <p className="text-xs flex items-center gap-1"><Mail className="h-3 w-3" /> {sg.guardians.email}</p>}
+                    {sg.guardian?.phone_primary && <p className="text-xs flex items-center gap-1 mt-1"><Phone className="h-3 w-3" /> {sg.guardian.phone_primary}</p>}
+                    {sg.guardian?.email && <p className="text-xs flex items-center gap-1"><Mail className="h-3 w-3" /> {sg.guardian.email}</p>}
                   </div>
                 ))}
               </div>
