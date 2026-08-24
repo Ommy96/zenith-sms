@@ -12,6 +12,10 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
@@ -76,6 +80,9 @@ export default function StudentEdit() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [phoneConflict, setPhoneConflict] = useState<
+    { phone: string; fullName: string; resolve: (c: "link" | "new") => void } | null
+  >(null);
   const [student, setStudent] = useState<AnyObj | null>(null);
   const [tab, setTab] = useState<SectionKey>("identity");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -218,6 +225,22 @@ export default function StudentEdit() {
     return { ok: true, data: r.data as AnyObj, nextErrors: ne };
   }
 
+  /**
+   * Ask the user whether to link an existing guardian (same phone, same tenant)
+   * or create a brand new guardian record. Resolves with the user's choice.
+   */
+  function askPhoneConflict(phone: string, fullName: string): Promise<"link" | "new"> {
+    return new Promise((resolve) => {
+      setPhoneConflict({ phone, fullName, resolve });
+    });
+  }
+
+  function resolvePhoneConflict(choice: "link" | "new") {
+    phoneConflict?.resolve(choice);
+    setPhoneConflict(null);
+  }
+
+
   async function saveAll() {
     if (!student) return;
     setSaving(true);
@@ -300,21 +323,24 @@ export default function StudentEdit() {
       if (guardianId) {
         await supabase.from("guardians").update(guardianPayload as any).eq("id", guardianId);
       } else {
-        // Reuse an existing guardian in this tenant with the same phone instead of duplicating
-        let existingId: string | null = null;
+        // A guardian with this phone may already exist in the tenant — ask before duplicating
+        let existing: { id: string; full_name: string | null } | null = null;
         if (g.phone_primary) {
           const { data: match } = await supabase
             .from("guardians")
-            .select("id")
+            .select("id, full_name")
             .eq("tenant_id", student.tenant_id as string)
             .eq("phone_primary", g.phone_primary as string)
             .limit(1)
             .maybeSingle();
-          existingId = (match as AnyObj)?.id ?? null;
+          existing = (match as AnyObj as { id: string; full_name: string | null }) ?? null;
         }
-        if (existingId) {
-          await supabase.from("guardians").update(guardianPayload as any).eq("id", existingId);
-          guardianId = existingId;
+        const choice = existing
+          ? await askPhoneConflict(g.phone_primary as string, existing.full_name || "Unnamed guardian")
+          : "new";
+        if (existing && choice === "link") {
+          // Link the existing record as-is; don't overwrite their details
+          guardianId = existing.id;
         } else {
           const { data: ng, error: gErr } = await supabase
             .from("guardians")
@@ -878,6 +904,29 @@ export default function StudentEdit() {
           Save changes
         </Button>
       </div>
+
+
+
+      <AlertDialog open={!!phoneConflict} onOpenChange={(o) => { if (!o) resolvePhoneConflict("new"); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Guardian already exists</AlertDialogTitle>
+            <AlertDialogDescription>
+              A guardian with phone {phoneConflict?.phone} already exists:{" "}
+              <strong>{phoneConflict?.fullName}</strong>. Link them to this student instead of
+              creating a new record?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => resolvePhoneConflict("new")}>
+              Create new anyway
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => resolvePhoneConflict("link")}>
+              Link existing
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
