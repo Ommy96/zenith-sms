@@ -80,6 +80,9 @@ export default function StudentEdit() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [phoneConflict, setPhoneConflict] = useState<
+    { phone: string; fullName: string; resolve: (c: "link" | "new") => void } | null
+  >(null);
   const [student, setStudent] = useState<AnyObj | null>(null);
   const [tab, setTab] = useState<SectionKey>("identity");
   const [errors, setErrors] = useState<Record<string, string>>({});
