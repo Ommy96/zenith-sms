@@ -104,7 +104,7 @@ export default function StudentEdit() {
         supabase.from("students").select("*").eq("id", id).maybeSingle(),
         supabase
           .from("student_guardians")
-          .select("*, guardians(*)")
+          .select("*, guardian:guardians!student_guardians_guardian_id_fkey(*)")
           .eq("student_id", id),
         supabase
           .from("classes")
@@ -129,12 +129,12 @@ export default function StudentEdit() {
           has_pickup_authorization: sg.has_pickup_authorization,
           has_financial_responsibility: sg.has_financial_responsibility,
           receives_communications: sg.receives_communications ?? true,
-          full_name: sg.guardians?.full_name ?? "",
-          phone_primary: sg.guardians?.phone_primary ?? "",
-          whatsapp_number: sg.guardians?.whatsapp_number ?? "",
-          email: sg.guardians?.email ?? "",
-          national_id_number: sg.guardians?.national_id_number ?? "",
-          occupation: sg.guardians?.occupation ?? "",
+          full_name: sg.guardian?.full_name ?? "",
+          phone_primary: sg.guardian?.phone_primary ?? "",
+          whatsapp_number: sg.guardian?.whatsapp_number ?? "",
+          email: sg.guardian?.email ?? "",
+          national_id_number: sg.guardian?.national_id_number ?? "",
+          occupation: sg.guardian?.occupation ?? "",
           _dirty: false,
         })),
       );
@@ -278,7 +278,7 @@ export default function StudentEdit() {
     // current_class_id requires explicit null when cleared
     if (academic.current_class_id === "") payload.current_class_id = null;
     const { error: upErr } = await supabase
-      .from("students").update(payload).eq("id", student.id);
+      .from("students").update(payload as any).eq("id", student.id);
     if (upErr) {
       setSaving(false);
       toast.error("Save failed", { description: upErr.message });
@@ -298,18 +298,35 @@ export default function StudentEdit() {
         occupation: g.occupation,
       });
       if (guardianId) {
-        await supabase.from("guardians").update(guardianPayload).eq("id", guardianId);
+        await supabase.from("guardians").update(guardianPayload as any).eq("id", guardianId);
       } else {
-        const { data: ng, error: gErr } = await supabase
-          .from("guardians")
-          .insert({
-            tenant_id: student.tenant_id as string,
-            full_name: g.full_name as string,
-            ...guardianPayload,
-          } as any)
-          .select().single();
-        if (gErr) { toast.error("Guardian add failed", { description: gErr.message }); continue; }
-        guardianId = ng.id;
+        // Reuse an existing guardian in this tenant with the same phone instead of duplicating
+        let existingId: string | null = null;
+        if (g.phone_primary) {
+          const { data: match } = await supabase
+            .from("guardians")
+            .select("id")
+            .eq("tenant_id", student.tenant_id as string)
+            .eq("phone_primary", g.phone_primary as string)
+            .limit(1)
+            .maybeSingle();
+          existingId = (match as AnyObj)?.id ?? null;
+        }
+        if (existingId) {
+          await supabase.from("guardians").update(guardianPayload as any).eq("id", existingId);
+          guardianId = existingId;
+        } else {
+          const { data: ng, error: gErr } = await supabase
+            .from("guardians")
+            .insert({
+              tenant_id: student.tenant_id as string,
+              full_name: g.full_name as string,
+              ...guardianPayload,
+            } as any)
+            .select().single();
+          if (gErr) { toast.error("Guardian add failed", { description: gErr.message }); continue; }
+          guardianId = ng.id;
+        }
       }
       const linkPayload = {
         relationship: g.relationship,
@@ -318,15 +335,44 @@ export default function StudentEdit() {
         has_financial_responsibility: g.has_financial_responsibility,
         receives_communications: g.receives_communications,
       };
+      // Only one primary contact per student is allowed at DB level — demote others first
+      if (g.is_primary_contact) {
+        await supabase
+          .from("student_guardians")
+          .update({ is_primary_contact: false })
+          .eq("student_id", student.id)
+          .neq("guardian_id", guardianId as string);
+      }
       if (g.link_id) {
         await supabase.from("student_guardians").update(linkPayload).eq("id", g.link_id);
       } else {
-        await supabase.from("student_guardians").insert({
-          tenant_id: student.tenant_id,
-          student_id: student.id,
-          guardian_id: guardianId,
-          ...linkPayload,
-        });
+        const { data: link, error: linkErr } = await supabase
+          .from("student_guardians")
+          .upsert(
+            {
+              tenant_id: student.tenant_id,
+              student_id: student.id,
+              guardian_id: guardianId,
+              ...linkPayload,
+            },
+            { onConflict: "student_id,guardian_id", ignoreDuplicates: false },
+          )
+          .select("id")
+          .maybeSingle();
+        if (linkErr) {
+          toast.error("Guardian link failed", { description: linkErr.message });
+          continue;
+        }
+        // Keep local state in sync so a second save updates instead of re-inserting
+        if (link?.id) {
+          setGuardians((prev) =>
+            prev.map((row) =>
+              row.guardian_id === guardianId || row === g
+                ? { ...row, link_id: link.id, guardian_id: guardianId, _dirty: false }
+                : row,
+            ),
+          );
+        }
       }
     }
 
@@ -388,6 +434,50 @@ export default function StudentEdit() {
       toast.success("Guardian unlinked");
     }
     setGuardians((p) => p.filter((_, i) => i !== idx));
+  };
+
+  /** On phone blur for an unsaved row, detect an existing guardian in this tenant. */
+  const checkGuardianPhone = async (idx: number) => {
+    const g = guardians[idx];
+    if (!g || g.guardian_id || !g.phone_primary || !profile?.tenant_id) return;
+    const { data: match } = await supabase
+      .from("guardians")
+      .select("id, full_name, whatsapp_number, email, national_id_number, occupation")
+      .eq("tenant_id", profile.tenant_id)
+      .eq("phone_primary", g.phone_primary)
+      .limit(1)
+      .maybeSingle();
+    const m = match as AnyObj | null;
+    if (!m) {
+      setGuardians((p) => p.map((row, i) => (i === idx ? { ...row, _match: null } : row)));
+      return;
+    }
+    const alreadyLinked = guardians.some((row, i) => i !== idx && row.guardian_id === m.id);
+    setGuardians((p) =>
+      p.map((row, i) => (i === idx ? { ...row, _match: { ...m, alreadyLinked } } : row)),
+    );
+  };
+
+  /** Adopt the detected existing guardian into this row instead of creating a duplicate. */
+  const linkExistingGuardian = (idx: number) => {
+    setGuardians((p) =>
+      p.map((row, i) => {
+        if (i !== idx) return row;
+        const m = row._match;
+        if (!m) return row;
+        return {
+          ...row,
+          guardian_id: m.id,
+          full_name: row.full_name || m.full_name || "",
+          whatsapp_number: row.whatsapp_number || m.whatsapp_number || "",
+          email: row.email || m.email || "",
+          national_id_number: row.national_id_number || m.national_id_number || "",
+          occupation: row.occupation || m.occupation || "",
+          _match: { ...m, adopted: true },
+          _dirty: true,
+        };
+      }),
+    );
   };
 
   return (
@@ -719,7 +809,25 @@ export default function StudentEdit() {
                   </Select>
                 </Field>
                 <Field label="Phone" error={err(`guardians.${i}.phone_primary`)}>
-                  <Input value={g.phone_primary} onChange={(e) => updateGuardian(i, { phone_primary: e.target.value })} placeholder="+254712345678" />
+                  <Input value={g.phone_primary} onChange={(e) => updateGuardian(i, { phone_primary: e.target.value })} onBlur={() => checkGuardianPhone(i)} placeholder="+254712345678" />
+                  {g._match && !g.guardian_id && (
+                    <p className="mt-1.5 text-xs text-muted-foreground flex flex-wrap items-center gap-2">
+                      <AlertCircle className="h-3 w-3" />
+                      {g._match.alreadyLinked
+                        ? "Already linked to this student — saving will update the relationship."
+                        : `${g._match.full_name || "A guardian"} already exists with this phone.`}
+                      {!g._match.alreadyLinked && (
+                        <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={() => linkExistingGuardian(i)}>
+                          Link existing guardian
+                        </Button>
+                      )}
+                    </p>
+                  )}
+                  {g._match?.adopted && g.guardian_id && (
+                    <p className="mt-1.5 text-xs text-muted-foreground flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" /> Linking existing guardian record — details will be updated.
+                    </p>
+                  )}
                 </Field>
                 <Field label="WhatsApp" error={err(`guardians.${i}.whatsapp_number`)}>
                   <Input value={g.whatsapp_number} onChange={(e) => updateGuardian(i, { whatsapp_number: e.target.value })} />

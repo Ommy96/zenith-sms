@@ -120,7 +120,7 @@ export default function Examinations() {
   // students for grade entry
   useEffect(() => {
     if (!tenantId || !geClass) { setStudents([]); return; }
-    supabase.from("students").select("id,admission_number,first_name,last_name,photo_url").eq("tenant_id", tenantId).eq("class_id", geClass).order("last_name").then(({ data }) => setStudents(data || []));
+    supabase.from("students").select("id,admission_number,first_name,last_name,photo_url").eq("tenant_id", tenantId).eq("current_class_id", geClass).order("last_name").then(({ data }) => setStudents(data || []));
   }, [tenantId, geClass]);
 
   const resultsByExam = useMemo(() => {
