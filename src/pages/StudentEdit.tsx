@@ -313,7 +313,7 @@ export default function StudentEdit() {
           existingId = (match as AnyObj)?.id ?? null;
         }
         if (existingId) {
-          await supabase.from("guardians").update(guardianPayload).eq("id", existingId);
+          await supabase.from("guardians").update(guardianPayload as any).eq("id", existingId);
           guardianId = existingId;
         } else {
           const { data: ng, error: gErr } = await supabase
