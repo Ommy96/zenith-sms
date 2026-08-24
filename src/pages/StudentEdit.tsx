@@ -104,7 +104,7 @@ export default function StudentEdit() {
         supabase.from("students").select("*").eq("id", id).maybeSingle(),
         supabase
           .from("student_guardians")
-          .select("*, guardians(*)")
+          .select("*, guardian:guardians!student_guardians_guardian_id_fkey(*)")
           .eq("student_id", id),
         supabase
           .from("classes")
