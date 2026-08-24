@@ -300,16 +300,33 @@ export default function StudentEdit() {
       if (guardianId) {
         await supabase.from("guardians").update(guardianPayload).eq("id", guardianId);
       } else {
-        const { data: ng, error: gErr } = await supabase
-          .from("guardians")
-          .insert({
-            tenant_id: student.tenant_id as string,
-            full_name: g.full_name as string,
-            ...guardianPayload,
-          } as any)
-          .select().single();
-        if (gErr) { toast.error("Guardian add failed", { description: gErr.message }); continue; }
-        guardianId = ng.id;
+        // Reuse an existing guardian in this tenant with the same phone instead of duplicating
+        let existingId: string | null = null;
+        if (g.phone_primary) {
+          const { data: match } = await supabase
+            .from("guardians")
+            .select("id")
+            .eq("tenant_id", student.tenant_id as string)
+            .eq("phone_primary", g.phone_primary as string)
+            .limit(1)
+            .maybeSingle();
+          existingId = (match as AnyObj)?.id ?? null;
+        }
+        if (existingId) {
+          await supabase.from("guardians").update(guardianPayload).eq("id", existingId);
+          guardianId = existingId;
+        } else {
+          const { data: ng, error: gErr } = await supabase
+            .from("guardians")
+            .insert({
+              tenant_id: student.tenant_id as string,
+              full_name: g.full_name as string,
+              ...guardianPayload,
+            } as any)
+            .select().single();
+          if (gErr) { toast.error("Guardian add failed", { description: gErr.message }); continue; }
+          guardianId = ng.id;
+        }
       }
       const linkPayload = {
         relationship: g.relationship,
@@ -318,15 +335,44 @@ export default function StudentEdit() {
         has_financial_responsibility: g.has_financial_responsibility,
         receives_communications: g.receives_communications,
       };
+      // Only one primary contact per student is allowed at DB level — demote others first
+      if (g.is_primary_contact) {
+        await supabase
+          .from("student_guardians")
+          .update({ is_primary_contact: false })
+          .eq("student_id", student.id)
+          .neq("guardian_id", guardianId as string);
+      }
       if (g.link_id) {
         await supabase.from("student_guardians").update(linkPayload).eq("id", g.link_id);
       } else {
-        await supabase.from("student_guardians").insert({
-          tenant_id: student.tenant_id,
-          student_id: student.id,
-          guardian_id: guardianId,
-          ...linkPayload,
-        });
+        const { data: link, error: linkErr } = await supabase
+          .from("student_guardians")
+          .upsert(
+            {
+              tenant_id: student.tenant_id,
+              student_id: student.id,
+              guardian_id: guardianId,
+              ...linkPayload,
+            },
+            { onConflict: "student_id,guardian_id", ignoreDuplicates: false },
+          )
+          .select("id")
+          .maybeSingle();
+        if (linkErr) {
+          toast.error("Guardian link failed", { description: linkErr.message });
+          continue;
+        }
+        // Keep local state in sync so a second save updates instead of re-inserting
+        if (link?.id) {
+          setGuardians((prev) =>
+            prev.map((row) =>
+              row.guardian_id === guardianId || row === g
+                ? { ...row, link_id: link.id, guardian_id: guardianId, _dirty: false }
+                : row,
+            ),
+          );
+        }
       }
     }
 
