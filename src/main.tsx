@@ -37,9 +37,41 @@ async function cleanStaleServiceWorkers() {
   );
 }
 
-function boot() {
-  void import("./bootstrap");
+const RELOAD_FLAG = "zenith:boot-retry";
+
+async function hardReset() {
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.allSettled(regs.map((r) => r.unregister()));
+    }
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.allSettled(keys.map((k) => caches.delete(k)));
+    }
+  } catch {
+    /* ignore */
+  }
 }
+
+function boot() {
+  import("./bootstrap").catch(async (err) => {
+    console.error("[boot] failed to load app bundle", err);
+    // Retry once with a cache-busting query before giving up.
+    try {
+      await import(/* @vite-ignore */ `./bootstrap?retry=${Date.now()}`);
+      return;
+    } catch {
+      /* fall through */
+    }
+    await hardReset();
+    if (!sessionStorage.getItem(RELOAD_FLAG)) {
+      sessionStorage.setItem(RELOAD_FLAG, "1");
+      window.location.reload();
+    }
+  });
+}
+
 
 if (typeof window !== "undefined" && "serviceWorker" in navigator) {
   Promise.race([
