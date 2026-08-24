@@ -333,7 +333,7 @@ export default function StudentEdit() {
             .eq("phone_primary", g.phone_primary as string)
             .limit(1)
             .maybeSingle();
-          existing = (match as AnyObj) ?? null;
+          existing = (match as AnyObj as { id: string; full_name: string | null }) ?? null;
         }
         const choice = existing
           ? await askPhoneConflict(g.phone_primary as string, existing.full_name || "Unnamed guardian")
