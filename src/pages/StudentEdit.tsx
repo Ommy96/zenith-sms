@@ -436,6 +436,50 @@ export default function StudentEdit() {
     setGuardians((p) => p.filter((_, i) => i !== idx));
   };
 
+  /** On phone blur for an unsaved row, detect an existing guardian in this tenant. */
+  const checkGuardianPhone = async (idx: number) => {
+    const g = guardians[idx];
+    if (!g || g.guardian_id || !g.phone_primary || !profile?.tenant_id) return;
+    const { data: match } = await supabase
+      .from("guardians")
+      .select("id, full_name, whatsapp_number, email, national_id_number, occupation")
+      .eq("tenant_id", profile.tenant_id)
+      .eq("phone_primary", g.phone_primary)
+      .limit(1)
+      .maybeSingle();
+    const m = match as AnyObj | null;
+    if (!m) {
+      setGuardians((p) => p.map((row, i) => (i === idx ? { ...row, _match: null } : row)));
+      return;
+    }
+    const alreadyLinked = guardians.some((row, i) => i !== idx && row.guardian_id === m.id);
+    setGuardians((p) =>
+      p.map((row, i) => (i === idx ? { ...row, _match: { ...m, alreadyLinked } } : row)),
+    );
+  };
+
+  /** Adopt the detected existing guardian into this row instead of creating a duplicate. */
+  const linkExistingGuardian = (idx: number) => {
+    setGuardians((p) =>
+      p.map((row, i) => {
+        if (i !== idx) return row;
+        const m = row._match;
+        if (!m) return row;
+        return {
+          ...row,
+          guardian_id: m.id,
+          full_name: row.full_name || m.full_name || "",
+          whatsapp_number: row.whatsapp_number || m.whatsapp_number || "",
+          email: row.email || m.email || "",
+          national_id_number: row.national_id_number || m.national_id_number || "",
+          occupation: row.occupation || m.occupation || "",
+          _match: { ...m, adopted: true },
+          _dirty: true,
+        };
+      }),
+    );
+  };
+
   return (
     <div className="space-y-4 pb-24">
       {/* Breadcrumb */}
