@@ -58,6 +58,9 @@ Deno.serve(async (req) => {
         recipient_type: "guardian",
         recipient_id: match.id,
         recipient_phone: normalized,
+        recipient_address: normalized,
+        recipient_name: match.full_name || null,
+        template_key: "portal_otp",
         body: `Your Zenith parent portal code is ${code}. It expires in 10 minutes.`,
         status: "queued",
       })
