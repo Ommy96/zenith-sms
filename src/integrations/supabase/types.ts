@@ -4190,7 +4190,10 @@ export type Database = {
           recipient_address: string | null
           recipient_id: string | null
           recipient_name: string | null
+          recipient_phone: string | null
           recipient_type: Database["public"]["Enums"]["message_recipient_type_enum"]
+          related_entity_id: string | null
+          related_entity_type: string | null
           retry_count: number
           scheduled_for: string | null
           sender_user_id: string | null
@@ -4199,6 +4202,7 @@ export type Database = {
           student_id: string | null
           subject: string | null
           template_id: string | null
+          template_key: string | null
           template_variables: Json | null
           tenant_id: string
           thread_id: string | null
@@ -4224,7 +4228,10 @@ export type Database = {
           recipient_address?: string | null
           recipient_id?: string | null
           recipient_name?: string | null
+          recipient_phone?: string | null
           recipient_type: Database["public"]["Enums"]["message_recipient_type_enum"]
+          related_entity_id?: string | null
+          related_entity_type?: string | null
           retry_count?: number
           scheduled_for?: string | null
           sender_user_id?: string | null
@@ -4233,6 +4240,7 @@ export type Database = {
           student_id?: string | null
           subject?: string | null
           template_id?: string | null
+          template_key?: string | null
           template_variables?: Json | null
           tenant_id: string
           thread_id?: string | null
@@ -4258,7 +4266,10 @@ export type Database = {
           recipient_address?: string | null
           recipient_id?: string | null
           recipient_name?: string | null
+          recipient_phone?: string | null
           recipient_type?: Database["public"]["Enums"]["message_recipient_type_enum"]
+          related_entity_id?: string | null
+          related_entity_type?: string | null
           retry_count?: number
           scheduled_for?: string | null
           sender_user_id?: string | null
@@ -4267,6 +4278,7 @@ export type Database = {
           student_id?: string | null
           subject?: string | null
           template_id?: string | null
+          template_key?: string | null
           template_variables?: Json | null
           tenant_id?: string
           thread_id?: string | null
@@ -9243,7 +9255,10 @@ export type Database = {
           recipient_address: string | null
           recipient_id: string | null
           recipient_name: string | null
+          recipient_phone: string | null
           recipient_type: Database["public"]["Enums"]["message_recipient_type_enum"]
+          related_entity_id: string | null
+          related_entity_type: string | null
           retry_count: number
           scheduled_for: string | null
           sender_user_id: string | null
@@ -9252,6 +9267,7 @@ export type Database = {
           student_id: string | null
           subject: string | null
           template_id: string | null
+          template_key: string | null
           template_variables: Json | null
           tenant_id: string
           thread_id: string | null
