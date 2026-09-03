@@ -29,17 +29,15 @@ Deno.serve(async (req) => {
     const normalized = normPhone(phone);
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    // Find a guardian with this phone to determine tenant
+    // Find a guardian with this phone to determine tenant (match on last 9 digits)
     const digits = normalized.replace(/[^0-9]/g, "");
+    const tail = digits.slice(-9);
     const { data: guardians } = await admin
       .from("guardians")
       .select("id, tenant_id, phone_primary, whatsapp_number, full_name")
+      .or(`phone_primary.ilike.%${tail},whatsapp_number.ilike.%${tail}`)
       .limit(5);
-    const match = (guardians || []).find((g: any) => {
-      const a = (g.phone_primary || "").replace(/[^0-9]/g, "");
-      const b = (g.whatsapp_number || "").replace(/[^0-9]/g, "");
-      return a === digits || b === digits;
-    });
+    const match = (guardians || [])[0];
     if (!match) return jr({ error: "No parent account found for this phone number" }, 404);
 
     // Generate 6-digit code
