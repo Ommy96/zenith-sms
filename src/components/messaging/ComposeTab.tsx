@@ -149,14 +149,16 @@ export function ComposeTab({ tenantId }: { tenantId: string | undefined }) {
             sender_user_id: user.id,
             recipient_type: ch === "email" ? "email" : "phone",
             recipient_address: address,
+            recipient_phone: ch === "email" ? null : address,
             recipient_name: r.guardian_name,
             student_id: r.student_id,
             channel: ch,
+            direction: "outbound",
             template_id: templateId || null,
             template_variables: vars,
             subject: ch === "email" ? renderTemplate(subject, vars) : null,
             body: renderTemplate(body, vars),
-            status: scheduledFor ? "queued" : "queued",
+            status: "queued",
             scheduled_for: scheduledFor || null,
           });
         }
