@@ -129,6 +129,13 @@ Deno.serve(async (req) => {
 
     return jr({ ok, provider_id: providerId, error: errMsg });
   } catch (e) {
-    return jr({ error: (e as Error).message }, 500);
+    const emsg = (e as Error).message;
+    if (adminRef && messageId) {
+      await adminRef.from("messages").update({
+        status: "failed", failed_at: new Date().toISOString(), error: emsg.slice(0, 300),
+      }).eq("id", messageId);
+    }
+    return jr({ ok: false, error: emsg }, 500);
   }
+
 });
