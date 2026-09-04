@@ -86,14 +86,15 @@ Deno.serve(async (req) => {
           },
           body: params.toString(),
         });
-        const data = await res.json();
+        const data = await readBody(res);
         const r = data?.SMSMessageData?.Recipients?.[0];
-        if (r && (r.status === "Success" || r.statusCode === 101 || r.statusCode === 102)) {
+        if (res.ok && r && (r.status === "Success" || r.statusCode === 101 || r.statusCode === 102)) {
           ok = true;
           providerId = r.messageId;
         } else {
-          errMsg = r?.status || data?.SMSMessageData?.Message || "Send failed";
+          errMsg = (r?.status || data?.SMSMessageData?.Message || data?.__raw || `Send failed (HTTP ${res.status})`).toString().slice(0, 300);
         }
+
       }
     } else if (cfg.sms_provider === "twilio") {
       if (!cfg.twilio_account_sid || !cfg.twilio_auth_token || !cfg.twilio_from_number) {
