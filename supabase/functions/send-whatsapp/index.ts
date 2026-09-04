@@ -14,12 +14,22 @@ function normPhone(p: string) {
   return x;
 }
 
+async function readBody(res: Response): Promise<any> {
+  const text = await res.text();
+  try { return JSON.parse(text); } catch { return { __raw: text }; }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  let messageId: string | null = null;
+  let adminRef: any = null;
   try {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    adminRef = admin;
     const { message_id } = await req.json();
+    messageId = message_id ?? null;
     if (!message_id) return jr({ error: "message_id required" }, 400);
+
 
     const { data: msg } = await admin.from("messages").select("*").eq("id", message_id).maybeSingle();
     if (!msg) return jr({ error: "Not found" }, 404);
@@ -43,7 +53,7 @@ Deno.serve(async (req) => {
       headers: { Authorization: `Bearer ${cfg.access_token}`, "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const data = await res.json();
+    const data = await readBody(res);
     const ok = res.ok;
     const wa_id = data?.messages?.[0]?.id || null;
     await admin.from("messages").update({
@@ -52,10 +62,15 @@ Deno.serve(async (req) => {
       failed_at: ok ? null : new Date().toISOString(),
       provider: "whatsapp",
       provider_message_id: wa_id,
-      error: ok ? null : (data?.error?.message || "Send failed"),
+      error: ok ? null : (data?.error?.message || data?.__raw || `Send failed (HTTP ${res.status})`).toString().slice(0, 300),
     }).eq("id", message_id);
     return jr({ ok, wa_id, error: ok ? null : data });
   } catch (e) {
-    return jr({ error: (e as Error).message }, 500);
+    const emsg = (e as Error).message;
+    if (adminRef && messageId) {
+      await adminRef.from("messages").update({ status: "failed", failed_at: new Date().toISOString(), error: emsg.slice(0, 300) }).eq("id", messageId);
+    }
+    return jr({ ok: false, error: emsg }, 500);
   }
+
 });

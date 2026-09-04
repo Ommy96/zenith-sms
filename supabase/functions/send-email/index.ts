@@ -6,12 +6,22 @@ const corsHeaders = {
 };
 const jr = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+async function readBody(res: Response): Promise<any> {
+  const text = await res.text();
+  try { return JSON.parse(text); } catch { return { __raw: text }; }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  let messageId: string | null = null;
+  let adminRef: any = null;
   try {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    adminRef = admin;
     const { message_id, attachments } = await req.json();
+    messageId = message_id ?? null;
     if (!message_id) return jr({ error: "message_id required" }, 400);
+
 
     const { data: msg } = await admin.from("messages").select("*").eq("id", message_id).maybeSingle();
     if (!msg) return jr({ error: "Not found" }, 404);

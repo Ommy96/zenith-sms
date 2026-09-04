@@ -20,12 +20,22 @@ function normPhone(p: string, country = "KE"): string {
   return x.startsWith("+") ? x : "+" + x;
 }
 
+async function readBody(res: Response): Promise<any> {
+  const text = await res.text();
+  try { return JSON.parse(text); } catch { return { __raw: text }; }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  let messageId: string | null = null;
+  let adminRef: any = null;
   try {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    adminRef = admin;
     const { message_id } = await req.json();
+    messageId = message_id ?? null;
     if (!message_id) return jr({ error: "message_id required" }, 400);
+
 
     const { data: msg } = await admin.from("messages").select("*").eq("id", message_id).maybeSingle();
     if (!msg) return jr({ error: "Message not found" }, 404);
@@ -76,14 +86,15 @@ Deno.serve(async (req) => {
           },
           body: params.toString(),
         });
-        const data = await res.json();
+        const data = await readBody(res);
         const r = data?.SMSMessageData?.Recipients?.[0];
-        if (r && (r.status === "Success" || r.statusCode === 101 || r.statusCode === 102)) {
+        if (res.ok && r && (r.status === "Success" || r.statusCode === 101 || r.statusCode === 102)) {
           ok = true;
           providerId = r.messageId;
         } else {
-          errMsg = r?.status || data?.SMSMessageData?.Message || "Send failed";
+          errMsg = (r?.status || data?.SMSMessageData?.Message || data?.__raw || `Send failed (HTTP ${res.status})`).toString().slice(0, 300);
         }
+
       }
     } else if (cfg.sms_provider === "twilio") {
       if (!cfg.twilio_account_sid || !cfg.twilio_auth_token || !cfg.twilio_from_number) {
@@ -95,8 +106,9 @@ Deno.serve(async (req) => {
           headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/x-www-form-urlencoded" },
           body: new URLSearchParams({ To: phone, From: cfg.twilio_from_number, Body: msg.body }).toString(),
         });
-        const data = await res.json();
-        if (res.ok) { ok = true; providerId = data.sid; } else { errMsg = data?.message || "Twilio failed"; }
+        const data = await readBody(res);
+        if (res.ok) { ok = true; providerId = data.sid; } else { errMsg = (data?.message || data?.__raw || `Twilio failed (HTTP ${res.status})`).toString().slice(0, 300); }
+
       }
     } else {
       errMsg = "Unknown SMS provider";
@@ -117,6 +129,13 @@ Deno.serve(async (req) => {
 
     return jr({ ok, provider_id: providerId, error: errMsg });
   } catch (e) {
-    return jr({ error: (e as Error).message }, 500);
+    const emsg = (e as Error).message;
+    if (adminRef && messageId) {
+      await adminRef.from("messages").update({
+        status: "failed", failed_at: new Date().toISOString(), error: emsg.slice(0, 300),
+      }).eq("id", messageId);
+    }
+    return jr({ ok: false, error: emsg }, 500);
   }
+
 });
