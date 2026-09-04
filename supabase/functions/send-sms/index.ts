@@ -106,8 +106,9 @@ Deno.serve(async (req) => {
           headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/x-www-form-urlencoded" },
           body: new URLSearchParams({ To: phone, From: cfg.twilio_from_number, Body: msg.body }).toString(),
         });
-        const data = await res.json();
-        if (res.ok) { ok = true; providerId = data.sid; } else { errMsg = data?.message || "Twilio failed"; }
+        const data = await readBody(res);
+        if (res.ok) { ok = true; providerId = data.sid; } else { errMsg = (data?.message || data?.__raw || `Twilio failed (HTTP ${res.status})`).toString().slice(0, 300); }
+
       }
     } else {
       errMsg = "Unknown SMS provider";
