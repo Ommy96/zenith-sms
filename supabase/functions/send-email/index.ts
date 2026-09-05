@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
           : {}),
       }),
     });
-    const data = await res.json();
+    const data = await readBody(res);
     const ok = res.ok;
     await admin.from("messages").update({
       status: ok ? "sent" : "failed",
@@ -62,11 +62,16 @@ Deno.serve(async (req) => {
       failed_at: ok ? null : new Date().toISOString(),
       provider: "resend",
       provider_message_id: data?.id || null,
-      error: ok ? null : (data?.message || data?.error || "Send failed"),
+      error: ok ? null : String(data?.message || data?.error || data?.__raw || `Send failed (HTTP ${res.status})`).slice(0, 300),
     }).eq("id", message_id);
     if (ok) await admin.from("tenant_messaging_config").update({ email_sent_today: (cfg.email_sent_today || 0) + 1 }).eq("id", cfg.id);
     return jr({ ok, id: data?.id, error: ok ? null : data });
   } catch (e) {
-    return jr({ error: (e as Error).message }, 500);
+    const emsg = (e as Error).message;
+    if (adminRef && messageId) {
+      await adminRef.from("messages").update({ status: "failed", failed_at: new Date().toISOString(), error: emsg.slice(0, 300) }).eq("id", messageId);
+    }
+    return jr({ ok: false, error: emsg }, 500);
   }
+
 });
