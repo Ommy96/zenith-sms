@@ -29,9 +29,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import type { Tables } from "@/integrations/supabase/types";
 
-type Student = Tables<"students">;
+
+type Student = Record<string, any>;
 
 const PAGE_SIZE = 20;
 
