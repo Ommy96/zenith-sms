@@ -27,9 +27,9 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import type { Tables } from "@/integrations/supabase/types";
 
-type StaffMember = Tables<"staff">;
+
+type StaffMember = Record<string, any>;
 
 const PAGE_SIZE = 20;
 
