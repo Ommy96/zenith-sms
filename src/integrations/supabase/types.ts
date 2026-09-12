@@ -169,6 +169,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "classes_class_teacher_fkey"
+            columns: ["class_teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "classes_grade_level_id_fkey"
             columns: ["grade_level_id"]
             isOneToOne: false
@@ -183,7 +190,56 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "classes_teacher_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "classes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departments: {
+        Row: {
+          code: string | null
+          created_at: string
+          head_staff_id: string | null
+          id: string
+          name: string
+          tenant_id: string
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          head_staff_id?: string | null
+          id?: string
+          name: string
+          tenant_id: string
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          head_staff_id?: string | null
+          id?: string
+          name?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departments_head_staff_fkey"
+            columns: ["head_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "departments_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -399,6 +455,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          default_tenant_id: string | null
           email: string | null
           full_name: string | null
           id: string
@@ -409,6 +466,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          default_tenant_id?: string | null
           email?: string | null
           full_name?: string | null
           id: string
@@ -419,6 +477,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          default_tenant_id?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
@@ -427,6 +486,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_default_tenant_id_fkey"
+            columns: ["default_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -535,6 +601,162 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "rooms_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff: {
+        Row: {
+          alt_phone: string | null
+          bank_account_number: string | null
+          bank_name: string | null
+          basic_salary: number | null
+          contract_end_date: string | null
+          created_at: string
+          date_of_birth: string | null
+          department: string | null
+          department_id: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relation: string | null
+          employment_type:
+            | Database["public"]["Enums"]["employment_type_enum"]
+            | null
+          exit_date: string | null
+          exit_reason: string | null
+          first_name: string
+          gender: Database["public"]["Enums"]["gender_enum"] | null
+          hire_date: string | null
+          id: string
+          job_title: string | null
+          kra_pin: string | null
+          last_name: string
+          licence_number: string | null
+          middle_name: string | null
+          national_id_number: string | null
+          nhif_or_shif_number: string | null
+          notes: string | null
+          nssf_number: string | null
+          phone: string | null
+          photo_url: string | null
+          qualification: string | null
+          residential_address: string | null
+          role: string
+          specialization: string | null
+          staff_number: string | null
+          status: Database["public"]["Enums"]["staff_status_enum"]
+          tenant_id: string
+          tsc_number: string | null
+          updated_at: string
+          user_id: string | null
+          years_experience: number | null
+        }
+        Insert: {
+          alt_phone?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          basic_salary?: number | null
+          contract_end_date?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          department?: string | null
+          department_id?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
+          employment_type?:
+            | Database["public"]["Enums"]["employment_type_enum"]
+            | null
+          exit_date?: string | null
+          exit_reason?: string | null
+          first_name: string
+          gender?: Database["public"]["Enums"]["gender_enum"] | null
+          hire_date?: string | null
+          id?: string
+          job_title?: string | null
+          kra_pin?: string | null
+          last_name: string
+          licence_number?: string | null
+          middle_name?: string | null
+          national_id_number?: string | null
+          nhif_or_shif_number?: string | null
+          notes?: string | null
+          nssf_number?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          qualification?: string | null
+          residential_address?: string | null
+          role?: string
+          specialization?: string | null
+          staff_number?: string | null
+          status?: Database["public"]["Enums"]["staff_status_enum"]
+          tenant_id: string
+          tsc_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+          years_experience?: number | null
+        }
+        Update: {
+          alt_phone?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          basic_salary?: number | null
+          contract_end_date?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          department?: string | null
+          department_id?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
+          employment_type?:
+            | Database["public"]["Enums"]["employment_type_enum"]
+            | null
+          exit_date?: string | null
+          exit_reason?: string | null
+          first_name?: string
+          gender?: Database["public"]["Enums"]["gender_enum"] | null
+          hire_date?: string | null
+          id?: string
+          job_title?: string | null
+          kra_pin?: string | null
+          last_name?: string
+          licence_number?: string | null
+          middle_name?: string | null
+          national_id_number?: string | null
+          nhif_or_shif_number?: string | null
+          notes?: string | null
+          nssf_number?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          qualification?: string | null
+          residential_address?: string | null
+          role?: string
+          specialization?: string | null
+          staff_number?: string | null
+          status?: Database["public"]["Enums"]["staff_status_enum"]
+          tenant_id?: string
+          tsc_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+          years_experience?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -983,6 +1205,7 @@ export type Database = {
           curriculum: string | null
           email: string | null
           id: string
+          is_demo: boolean
           locale: string
           logo_url: string | null
           name: string
@@ -1006,6 +1229,7 @@ export type Database = {
           curriculum?: string | null
           email?: string | null
           id?: string
+          is_demo?: boolean
           locale?: string
           logo_url?: string | null
           name: string
@@ -1029,6 +1253,7 @@ export type Database = {
           curriculum?: string | null
           email?: string | null
           id?: string
+          is_demo?: boolean
           locale?: string
           logo_url?: string | null
           name?: string
@@ -1215,6 +1440,14 @@ export type Database = {
         | "AB-"
         | "unknown"
       document_owner_type_enum: "student" | "staff" | "guardian"
+      employment_type_enum:
+        | "permanent"
+        | "contract"
+        | "part_time"
+        | "intern"
+        | "volunteer"
+        | "bom"
+        | "tsc"
       enrollment_status_enum:
         | "active"
         | "alumni"
@@ -1259,6 +1492,13 @@ export type Database = {
         | "hall"
         | "office"
         | "other"
+      staff_status_enum:
+        | "active"
+        | "on_leave"
+        | "suspended"
+        | "inactive"
+        | "terminated"
+        | "retired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1398,6 +1638,15 @@ export const Constants = {
         "unknown",
       ],
       document_owner_type_enum: ["student", "staff", "guardian"],
+      employment_type_enum: [
+        "permanent",
+        "contract",
+        "part_time",
+        "intern",
+        "volunteer",
+        "bom",
+        "tsc",
+      ],
       enrollment_status_enum: [
         "active",
         "alumni",
@@ -1446,6 +1695,14 @@ export const Constants = {
         "hall",
         "office",
         "other",
+      ],
+      staff_status_enum: [
+        "active",
+        "on_leave",
+        "suspended",
+        "inactive",
+        "terminated",
+        "retired",
       ],
     },
   },
