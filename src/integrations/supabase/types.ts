@@ -1801,6 +1801,7 @@ export type Database = {
         | "o_level"
         | "a_level"
         | "other"
+        | "tertiary"
       guardian_relationship_enum:
         | "father"
         | "mother"
@@ -1822,6 +1823,8 @@ export type Database = {
         | "hall"
         | "office"
         | "other"
+        | "sports"
+        | "staffroom"
       staff_status_enum:
         | "active"
         | "on_leave"
@@ -2001,6 +2004,7 @@ export const Constants = {
         "o_level",
         "a_level",
         "other",
+        "tertiary",
       ],
       guardian_relationship_enum: [
         "father",
@@ -2025,6 +2029,8 @@ export const Constants = {
         "hall",
         "office",
         "other",
+        "sports",
+        "staffroom",
       ],
       staff_status_enum: [
         "active",
