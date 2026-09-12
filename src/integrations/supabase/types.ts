@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      academic_years: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          is_current: boolean
+          name: string
+          start_date: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          is_current?: boolean
+          name: string
+          start_date: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          is_current?: boolean
+          name?: string
+          start_date?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "academic_years_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -67,6 +108,242 @@ export type Database = {
           },
         ]
       }
+      classes: {
+        Row: {
+          academic_year: string | null
+          academic_year_id: string | null
+          capacity: number
+          class_teacher_id: string | null
+          created_at: string
+          current_enrollment: number
+          grade_level: string | null
+          grade_level_id: string | null
+          id: string
+          name: string
+          room_id: string | null
+          stream: string | null
+          teacher_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year?: string | null
+          academic_year_id?: string | null
+          capacity?: number
+          class_teacher_id?: string | null
+          created_at?: string
+          current_enrollment?: number
+          grade_level?: string | null
+          grade_level_id?: string | null
+          id?: string
+          name: string
+          room_id?: string | null
+          stream?: string | null
+          teacher_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string | null
+          academic_year_id?: string | null
+          capacity?: number
+          class_teacher_id?: string | null
+          created_at?: string
+          current_enrollment?: number
+          grade_level?: string | null
+          grade_level_id?: string | null
+          id?: string
+          name?: string
+          room_id?: string | null
+          stream?: string | null
+          teacher_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classes_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_grade_level_id_fkey"
+            columns: ["grade_level_id"]
+            isOneToOne: false
+            referencedRelation: "grade_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          created_at: string
+          doc_type: string
+          file_name: string
+          file_url: string
+          id: string
+          mime_type: string | null
+          notes: string | null
+          owner_id: string
+          owner_type: Database["public"]["Enums"]["document_owner_type_enum"]
+          size_bytes: number | null
+          tenant_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          doc_type: string
+          file_name: string
+          file_url: string
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          owner_id: string
+          owner_type: Database["public"]["Enums"]["document_owner_type_enum"]
+          size_bytes?: number | null
+          tenant_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          mime_type?: string | null
+          notes?: string | null
+          owner_id?: string
+          owner_type?: Database["public"]["Enums"]["document_owner_type_enum"]
+          size_bytes?: number | null
+          tenant_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grade_levels: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          stage: Database["public"]["Enums"]["grade_stage_enum"] | null
+          tenant_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          stage?: Database["public"]["Enums"]["grade_stage_enum"] | null
+          tenant_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          stage?: Database["public"]["Enums"]["grade_stage_enum"] | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grade_levels_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guardians: {
+        Row: {
+          created_at: string
+          email: string | null
+          employer: string | null
+          full_name: string
+          id: string
+          national_id_number: string | null
+          occupation: string | null
+          phone_primary: string | null
+          phone_secondary: string | null
+          photo_url: string | null
+          portal_user_id: string | null
+          residential_address: string | null
+          tenant_id: string
+          updated_at: string
+          whatsapp_number: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          employer?: string | null
+          full_name: string
+          id?: string
+          national_id_number?: string | null
+          occupation?: string | null
+          phone_primary?: string | null
+          phone_secondary?: string | null
+          photo_url?: string | null
+          portal_user_id?: string | null
+          residential_address?: string | null
+          tenant_id: string
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          employer?: string | null
+          full_name?: string
+          id?: string
+          national_id_number?: string | null
+          occupation?: string | null
+          phone_primary?: string | null
+          phone_secondary?: string | null
+          photo_url?: string | null
+          portal_user_id?: string | null
+          residential_address?: string | null
+          tenant_id?: string
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guardians_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           category: string | null
@@ -87,6 +364,77 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      portal_otps: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       role_permissions: {
         Row: {
@@ -152,6 +500,438 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "roles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          capacity: number | null
+          created_at: string
+          id: string
+          name: string
+          tenant_id: string
+          type: Database["public"]["Enums"]["room_type_enum"]
+        }
+        Insert: {
+          capacity?: number | null
+          created_at?: string
+          id?: string
+          name: string
+          tenant_id: string
+          type?: Database["public"]["Enums"]["room_type_enum"]
+        }
+        Update: {
+          capacity?: number | null
+          created_at?: string
+          id?: string
+          name?: string
+          tenant_id?: string
+          type?: Database["public"]["Enums"]["room_type_enum"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_activity: {
+        Row: {
+          actor_user_id: string | null
+          description: string | null
+          event_type: string
+          id: string
+          metadata: Json
+          occurred_at: string
+          student_id: string
+          tenant_id: string
+          title: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          description?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json
+          occurred_at?: string
+          student_id: string
+          tenant_id: string
+          title: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          description?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json
+          occurred_at?: string
+          student_id?: string
+          tenant_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_activity_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_activity_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_guardians: {
+        Row: {
+          created_at: string
+          guardian_id: string
+          has_financial_responsibility: boolean
+          has_pickup_authorization: boolean
+          id: string
+          is_primary_contact: boolean
+          receives_communications: boolean
+          relationship: Database["public"]["Enums"]["guardian_relationship_enum"]
+          student_id: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          guardian_id: string
+          has_financial_responsibility?: boolean
+          has_pickup_authorization?: boolean
+          id?: string
+          is_primary_contact?: boolean
+          receives_communications?: boolean
+          relationship?: Database["public"]["Enums"]["guardian_relationship_enum"]
+          student_id: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          guardian_id?: string
+          has_financial_responsibility?: boolean
+          has_pickup_authorization?: boolean
+          id?: string
+          is_primary_contact?: boolean
+          receives_communications?: boolean
+          relationship?: Database["public"]["Enums"]["guardian_relationship_enum"]
+          student_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_guardians_guardian_id_fkey"
+            columns: ["guardian_id"]
+            isOneToOne: false
+            referencedRelation: "guardians"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_guardians_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_guardians_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      students: {
+        Row: {
+          accommodations: string | null
+          address: string | null
+          admission_date: string | null
+          admission_grade: string | null
+          admission_number: string | null
+          allergies: string | null
+          birth_certificate_number: string | null
+          birth_certificate_serial: string | null
+          blood_group: Database["public"]["Enums"]["blood_group_enum"] | null
+          chronic_conditions: string | null
+          city: string | null
+          country: string | null
+          county_or_region: string | null
+          created_at: string
+          current_class_id: string | null
+          date_of_birth: string | null
+          doctor_name: string | null
+          doctor_phone: string | null
+          documents: Json
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relation: string | null
+          enrollment_status: Database["public"]["Enums"]["enrollment_status_enum"]
+          ethiopia_moe_id: string | null
+          ethiopian_birth_date: string | null
+          exit_date: string | null
+          exit_reason: string | null
+          expected_graduation_year: number | null
+          first_name: string
+          gender: Database["public"]["Enums"]["gender_enum"] | null
+          grade: string | null
+          guardian_email: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
+          guardian_relationship: string | null
+          has_special_needs: boolean
+          health_info: Json
+          house: string | null
+          huduma_number: string | null
+          id: string
+          iep_on_file: boolean
+          immunization_status: Json
+          insurance_policy_number: string | null
+          insurance_provider: string | null
+          is_repeater: boolean
+          kcpe_index_number: string | null
+          kcse_index_number: string | null
+          knec_assessment_number: string | null
+          last_medical_checkup: string | null
+          last_name: string
+          learner_category:
+            | Database["public"]["Enums"]["learner_category_enum"]
+            | null
+          lin: string | null
+          medications: string | null
+          middle_name: string | null
+          moe_student_id: string | null
+          national_id_number: string | null
+          nationality: string | null
+          necta_index_number: string | null
+          nemis_upi: string | null
+          nhif_or_shif_number: string | null
+          phone: string | null
+          photo_url: string | null
+          portal_user_id: string | null
+          postal_code: string | null
+          preferred_name: string | null
+          prems_number: string | null
+          previous_school: string | null
+          reb_student_id: string | null
+          residential_address: string | null
+          rwanda_national_id: string | null
+          rwanda_reb_id: string | null
+          sne_category: string | null
+          special_needs_details: string | null
+          status: string
+          stream: string | null
+          tanzania_prems_id: string | null
+          tenant_id: string
+          transfer_in_date: string | null
+          transfer_out_date: string | null
+          uganda_lin: string | null
+          une_index_number: string | null
+          uneb_index_number: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          accommodations?: string | null
+          address?: string | null
+          admission_date?: string | null
+          admission_grade?: string | null
+          admission_number?: string | null
+          allergies?: string | null
+          birth_certificate_number?: string | null
+          birth_certificate_serial?: string | null
+          blood_group?: Database["public"]["Enums"]["blood_group_enum"] | null
+          chronic_conditions?: string | null
+          city?: string | null
+          country?: string | null
+          county_or_region?: string | null
+          created_at?: string
+          current_class_id?: string | null
+          date_of_birth?: string | null
+          doctor_name?: string | null
+          doctor_phone?: string | null
+          documents?: Json
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
+          enrollment_status?: Database["public"]["Enums"]["enrollment_status_enum"]
+          ethiopia_moe_id?: string | null
+          ethiopian_birth_date?: string | null
+          exit_date?: string | null
+          exit_reason?: string | null
+          expected_graduation_year?: number | null
+          first_name: string
+          gender?: Database["public"]["Enums"]["gender_enum"] | null
+          grade?: string | null
+          guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          guardian_relationship?: string | null
+          has_special_needs?: boolean
+          health_info?: Json
+          house?: string | null
+          huduma_number?: string | null
+          id?: string
+          iep_on_file?: boolean
+          immunization_status?: Json
+          insurance_policy_number?: string | null
+          insurance_provider?: string | null
+          is_repeater?: boolean
+          kcpe_index_number?: string | null
+          kcse_index_number?: string | null
+          knec_assessment_number?: string | null
+          last_medical_checkup?: string | null
+          last_name: string
+          learner_category?:
+            | Database["public"]["Enums"]["learner_category_enum"]
+            | null
+          lin?: string | null
+          medications?: string | null
+          middle_name?: string | null
+          moe_student_id?: string | null
+          national_id_number?: string | null
+          nationality?: string | null
+          necta_index_number?: string | null
+          nemis_upi?: string | null
+          nhif_or_shif_number?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          portal_user_id?: string | null
+          postal_code?: string | null
+          preferred_name?: string | null
+          prems_number?: string | null
+          previous_school?: string | null
+          reb_student_id?: string | null
+          residential_address?: string | null
+          rwanda_national_id?: string | null
+          rwanda_reb_id?: string | null
+          sne_category?: string | null
+          special_needs_details?: string | null
+          status?: string
+          stream?: string | null
+          tanzania_prems_id?: string | null
+          tenant_id: string
+          transfer_in_date?: string | null
+          transfer_out_date?: string | null
+          uganda_lin?: string | null
+          une_index_number?: string | null
+          uneb_index_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          accommodations?: string | null
+          address?: string | null
+          admission_date?: string | null
+          admission_grade?: string | null
+          admission_number?: string | null
+          allergies?: string | null
+          birth_certificate_number?: string | null
+          birth_certificate_serial?: string | null
+          blood_group?: Database["public"]["Enums"]["blood_group_enum"] | null
+          chronic_conditions?: string | null
+          city?: string | null
+          country?: string | null
+          county_or_region?: string | null
+          created_at?: string
+          current_class_id?: string | null
+          date_of_birth?: string | null
+          doctor_name?: string | null
+          doctor_phone?: string | null
+          documents?: Json
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
+          enrollment_status?: Database["public"]["Enums"]["enrollment_status_enum"]
+          ethiopia_moe_id?: string | null
+          ethiopian_birth_date?: string | null
+          exit_date?: string | null
+          exit_reason?: string | null
+          expected_graduation_year?: number | null
+          first_name?: string
+          gender?: Database["public"]["Enums"]["gender_enum"] | null
+          grade?: string | null
+          guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          guardian_relationship?: string | null
+          has_special_needs?: boolean
+          health_info?: Json
+          house?: string | null
+          huduma_number?: string | null
+          id?: string
+          iep_on_file?: boolean
+          immunization_status?: Json
+          insurance_policy_number?: string | null
+          insurance_provider?: string | null
+          is_repeater?: boolean
+          kcpe_index_number?: string | null
+          kcse_index_number?: string | null
+          knec_assessment_number?: string | null
+          last_medical_checkup?: string | null
+          last_name?: string
+          learner_category?:
+            | Database["public"]["Enums"]["learner_category_enum"]
+            | null
+          lin?: string | null
+          medications?: string | null
+          middle_name?: string | null
+          moe_student_id?: string | null
+          national_id_number?: string | null
+          nationality?: string | null
+          necta_index_number?: string | null
+          nemis_upi?: string | null
+          nhif_or_shif_number?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          portal_user_id?: string | null
+          postal_code?: string | null
+          preferred_name?: string | null
+          prems_number?: string | null
+          previous_school?: string | null
+          reb_student_id?: string | null
+          residential_address?: string | null
+          rwanda_national_id?: string | null
+          rwanda_reb_id?: string | null
+          sne_category?: string | null
+          special_needs_details?: string | null
+          status?: string
+          stream?: string | null
+          tanzania_prems_id?: string | null
+          tenant_id?: string
+          transfer_in_date?: string | null
+          transfer_out_date?: string | null
+          uganda_lin?: string | null
+          une_index_number?: string | null
+          uneb_index_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_current_class_id_fkey"
+            columns: ["current_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -266,6 +1046,57 @@ export type Database = {
         }
         Relationships: []
       }
+      terms: {
+        Row: {
+          academic_year_id: string
+          created_at: string
+          end_date: string
+          id: string
+          is_current: boolean
+          name: string
+          start_date: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year_id: string
+          created_at?: string
+          end_date: string
+          id?: string
+          is_current?: boolean
+          name: string
+          start_date: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year_id?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          is_current?: boolean
+          name?: string
+          start_date?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "terms_academic_year_id_fkey"
+            columns: ["academic_year_id"]
+            isOneToOne: false
+            referencedRelation: "academic_years"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "terms_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -340,7 +1171,32 @@ export type Database = {
     }
     Functions: {
       auth_user_id: { Args: never; Returns: string }
+      has_perm: {
+        Args: { _permission: string; _tenant: string }
+        Returns: boolean
+      }
       is_super_admin: { Args: never; Returns: boolean }
+      is_tenant_member: { Args: { _tenant: string }; Returns: boolean }
+      portal_link_guardian_user: {
+        Args: { _phone: string; _user_id: string }
+        Returns: number
+      }
+      portal_link_student_user: {
+        Args: { _phone: string; _user_id: string }
+        Returns: number
+      }
+      portal_my_student_ids: {
+        Args: { _user?: string }
+        Returns: {
+          student_id: string
+        }[]
+      }
+      portal_my_tenants: {
+        Args: { _user?: string }
+        Returns: {
+          tenant_id: string
+        }[]
+      }
       user_has_permission: {
         Args: { p_permission: string; p_tenant_id: string }
         Returns: boolean
@@ -348,7 +1204,61 @@ export type Database = {
       user_tenant_ids: { Args: never; Returns: string[] }
     }
     Enums: {
-      [_ in never]: never
+      blood_group_enum:
+        | "A+"
+        | "A-"
+        | "B+"
+        | "B-"
+        | "O+"
+        | "O-"
+        | "AB+"
+        | "AB-"
+        | "unknown"
+      document_owner_type_enum: "student" | "staff" | "guardian"
+      enrollment_status_enum:
+        | "active"
+        | "alumni"
+        | "transferred"
+        | "dropped_out"
+        | "suspended"
+        | "deceased"
+        | "on_leave"
+        | "inactive"
+        | "graduated"
+        | "expelled"
+      gender_enum: "male" | "female" | "other" | "prefer_not_to_say"
+      grade_stage_enum:
+        | "pre_primary"
+        | "lower_primary"
+        | "upper_primary"
+        | "junior_secondary"
+        | "senior_secondary"
+        | "primary"
+        | "secondary"
+        | "o_level"
+        | "a_level"
+        | "other"
+      guardian_relationship_enum:
+        | "father"
+        | "mother"
+        | "guardian"
+        | "grandparent"
+        | "uncle"
+        | "aunt"
+        | "sibling"
+        | "other"
+      learner_category_enum:
+        | "day_scholar"
+        | "boarder"
+        | "weekly_boarder"
+        | "special_needs"
+      room_type_enum:
+        | "classroom"
+        | "lab"
+        | "library"
+        | "hall"
+        | "office"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -475,6 +1385,68 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      blood_group_enum: [
+        "A+",
+        "A-",
+        "B+",
+        "B-",
+        "O+",
+        "O-",
+        "AB+",
+        "AB-",
+        "unknown",
+      ],
+      document_owner_type_enum: ["student", "staff", "guardian"],
+      enrollment_status_enum: [
+        "active",
+        "alumni",
+        "transferred",
+        "dropped_out",
+        "suspended",
+        "deceased",
+        "on_leave",
+        "inactive",
+        "graduated",
+        "expelled",
+      ],
+      gender_enum: ["male", "female", "other", "prefer_not_to_say"],
+      grade_stage_enum: [
+        "pre_primary",
+        "lower_primary",
+        "upper_primary",
+        "junior_secondary",
+        "senior_secondary",
+        "primary",
+        "secondary",
+        "o_level",
+        "a_level",
+        "other",
+      ],
+      guardian_relationship_enum: [
+        "father",
+        "mother",
+        "guardian",
+        "grandparent",
+        "uncle",
+        "aunt",
+        "sibling",
+        "other",
+      ],
+      learner_category_enum: [
+        "day_scholar",
+        "boarder",
+        "weekly_boarder",
+        "special_needs",
+      ],
+      room_type_enum: [
+        "classroom",
+        "lab",
+        "library",
+        "hall",
+        "office",
+        "other",
+      ],
+    },
   },
 } as const
