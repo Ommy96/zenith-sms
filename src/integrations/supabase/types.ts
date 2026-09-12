@@ -55,6 +55,159 @@ export type Database = {
           },
         ]
       }
+      admission_documents: {
+        Row: {
+          admission_id: string
+          created_at: string
+          document_type: string
+          file_name: string | null
+          file_url: string
+          id: string
+          is_verified: boolean
+          tenant_id: string
+          uploaded_by: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          admission_id: string
+          created_at?: string
+          document_type: string
+          file_name?: string | null
+          file_url: string
+          id?: string
+          is_verified?: boolean
+          tenant_id: string
+          uploaded_by?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          admission_id?: string
+          created_at?: string
+          document_type?: string
+          file_name?: string | null
+          file_url?: string
+          id?: string
+          is_verified?: boolean
+          tenant_id?: string
+          uploaded_by?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_documents_admission_id_fkey"
+            columns: ["admission_id"]
+            isOneToOne: false
+            referencedRelation: "admissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_documents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admissions: {
+        Row: {
+          applicant_date_of_birth: string | null
+          applicant_full_name: string
+          applicant_gender: string | null
+          application_number: string
+          applied_for_academic_year: string | null
+          applied_for_class: string | null
+          assessment_notes: string | null
+          assessment_score: number | null
+          created_at: string
+          decision_at: string | null
+          decision_by: string | null
+          decision_notes: string | null
+          enrolled_student_id: string | null
+          guardian_email: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
+          id: string
+          metadata: Json
+          previous_class: string | null
+          previous_school: string | null
+          source: string | null
+          stage: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          applicant_date_of_birth?: string | null
+          applicant_full_name: string
+          applicant_gender?: string | null
+          application_number: string
+          applied_for_academic_year?: string | null
+          applied_for_class?: string | null
+          assessment_notes?: string | null
+          assessment_score?: number | null
+          created_at?: string
+          decision_at?: string | null
+          decision_by?: string | null
+          decision_notes?: string | null
+          enrolled_student_id?: string | null
+          guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          id?: string
+          metadata?: Json
+          previous_class?: string | null
+          previous_school?: string | null
+          source?: string | null
+          stage?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          applicant_date_of_birth?: string | null
+          applicant_full_name?: string
+          applicant_gender?: string | null
+          application_number?: string
+          applied_for_academic_year?: string | null
+          applied_for_class?: string | null
+          assessment_notes?: string | null
+          assessment_score?: number | null
+          created_at?: string
+          decision_at?: string | null
+          decision_by?: string | null
+          decision_notes?: string | null
+          enrolled_student_id?: string | null
+          guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          id?: string
+          metadata?: Json
+          previous_class?: string | null
+          previous_school?: string | null
+          source?: string | null
+          stage?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admissions_enrolled_student_id_fkey"
+            columns: ["enrolled_student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admissions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -345,12 +498,17 @@ export type Database = {
           employer: string | null
           full_name: string
           id: string
+          metadata: Json
           national_id_number: string | null
+          notes: string | null
           occupation: string | null
           phone_primary: string | null
           phone_secondary: string | null
           photo_url: string | null
           portal_user_id: string | null
+          preferred_channel: string
+          preferred_name: string | null
+          relationship_default: string | null
           residential_address: string | null
           tenant_id: string
           updated_at: string
@@ -362,12 +520,17 @@ export type Database = {
           employer?: string | null
           full_name: string
           id?: string
+          metadata?: Json
           national_id_number?: string | null
+          notes?: string | null
           occupation?: string | null
           phone_primary?: string | null
           phone_secondary?: string | null
           photo_url?: string | null
           portal_user_id?: string | null
+          preferred_channel?: string
+          preferred_name?: string | null
+          relationship_default?: string | null
           residential_address?: string | null
           tenant_id: string
           updated_at?: string
@@ -379,12 +542,17 @@ export type Database = {
           employer?: string | null
           full_name?: string
           id?: string
+          metadata?: Json
           national_id_number?: string | null
+          notes?: string | null
           occupation?: string | null
           phone_primary?: string | null
           phone_secondary?: string | null
           photo_url?: string | null
           portal_user_id?: string | null
+          preferred_channel?: string
+          preferred_name?: string | null
+          relationship_default?: string | null
           residential_address?: string | null
           tenant_id?: string
           updated_at?: string
@@ -636,6 +804,7 @@ export type Database = {
           kra_pin: string | null
           last_name: string
           licence_number: string | null
+          metadata: Json
           middle_name: string | null
           national_id_number: string | null
           nhif_or_shif_number: string | null
@@ -648,6 +817,7 @@ export type Database = {
           role: string
           specialization: string | null
           staff_number: string | null
+          staff_type: string | null
           status: Database["public"]["Enums"]["staff_status_enum"]
           tenant_id: string
           tsc_number: string | null
@@ -682,6 +852,7 @@ export type Database = {
           kra_pin?: string | null
           last_name: string
           licence_number?: string | null
+          metadata?: Json
           middle_name?: string | null
           national_id_number?: string | null
           nhif_or_shif_number?: string | null
@@ -694,6 +865,7 @@ export type Database = {
           role?: string
           specialization?: string | null
           staff_number?: string | null
+          staff_type?: string | null
           status?: Database["public"]["Enums"]["staff_status_enum"]
           tenant_id: string
           tsc_number?: string | null
@@ -728,6 +900,7 @@ export type Database = {
           kra_pin?: string | null
           last_name?: string
           licence_number?: string | null
+          metadata?: Json
           middle_name?: string | null
           national_id_number?: string | null
           nhif_or_shif_number?: string | null
@@ -740,6 +913,7 @@ export type Database = {
           role?: string
           specialization?: string | null
           staff_number?: string | null
+          staff_type?: string | null
           status?: Database["public"]["Enums"]["staff_status_enum"]
           tenant_id?: string
           tsc_number?: string | null
@@ -757,6 +931,141 @@ export type Database = {
           },
           {
             foreignKeyName: "staff_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_compensation: {
+        Row: {
+          bank_account: string | null
+          bank_name: string | null
+          base_salary: number
+          created_at: string
+          currency: string
+          deductions: Json
+          effective_from: string
+          effective_to: string | null
+          housing_allowance: number
+          id: string
+          mpesa_number: string | null
+          notes: string | null
+          other_allowances: Json
+          payment_frequency: string
+          staff_id: string
+          tenant_id: string
+          transport_allowance: number
+          updated_at: string
+        }
+        Insert: {
+          bank_account?: string | null
+          bank_name?: string | null
+          base_salary: number
+          created_at?: string
+          currency?: string
+          deductions?: Json
+          effective_from: string
+          effective_to?: string | null
+          housing_allowance?: number
+          id?: string
+          mpesa_number?: string | null
+          notes?: string | null
+          other_allowances?: Json
+          payment_frequency?: string
+          staff_id: string
+          tenant_id: string
+          transport_allowance?: number
+          updated_at?: string
+        }
+        Update: {
+          bank_account?: string | null
+          bank_name?: string | null
+          base_salary?: number
+          created_at?: string
+          currency?: string
+          deductions?: Json
+          effective_from?: string
+          effective_to?: string | null
+          housing_allowance?: number
+          id?: string
+          mpesa_number?: string | null
+          notes?: string | null
+          other_allowances?: Json
+          payment_frequency?: string
+          staff_id?: string
+          tenant_id?: string
+          transport_allowance?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_compensation_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_compensation_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_qualifications: {
+        Row: {
+          created_at: string
+          document_url: string | null
+          id: string
+          institution: string | null
+          is_verified: boolean
+          qualification_name: string
+          qualification_type: string
+          staff_id: string
+          tenant_id: string
+          updated_at: string
+          year_completed: number | null
+        }
+        Insert: {
+          created_at?: string
+          document_url?: string | null
+          id?: string
+          institution?: string | null
+          is_verified?: boolean
+          qualification_name: string
+          qualification_type: string
+          staff_id: string
+          tenant_id: string
+          updated_at?: string
+          year_completed?: number | null
+        }
+        Update: {
+          created_at?: string
+          document_url?: string | null
+          id?: string
+          institution?: string | null
+          is_verified?: boolean
+          qualification_name?: string
+          qualification_type?: string
+          staff_id?: string
+          tenant_id?: string
+          updated_at?: string
+          year_completed?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_qualifications_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_qualifications_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -910,6 +1219,7 @@ export type Database = {
           first_name: string
           gender: Database["public"]["Enums"]["gender_enum"] | null
           grade: string | null
+          graduation_date: string | null
           guardian_email: string | null
           guardian_name: string | null
           guardian_phone: string | null
@@ -934,6 +1244,7 @@ export type Database = {
             | null
           lin: string | null
           medications: string | null
+          metadata: Json
           middle_name: string | null
           moe_student_id: string | null
           national_id_number: string | null
@@ -941,6 +1252,7 @@ export type Database = {
           necta_index_number: string | null
           nemis_upi: string | null
           nhif_or_shif_number: string | null
+          notes: string | null
           phone: string | null
           photo_url: string | null
           portal_user_id: string | null
@@ -949,6 +1261,7 @@ export type Database = {
           prems_number: string | null
           previous_school: string | null
           reb_student_id: string | null
+          religion: string | null
           residential_address: string | null
           rwanda_national_id: string | null
           rwanda_reb_id: string | null
@@ -999,6 +1312,7 @@ export type Database = {
           first_name: string
           gender?: Database["public"]["Enums"]["gender_enum"] | null
           grade?: string | null
+          graduation_date?: string | null
           guardian_email?: string | null
           guardian_name?: string | null
           guardian_phone?: string | null
@@ -1023,6 +1337,7 @@ export type Database = {
             | null
           lin?: string | null
           medications?: string | null
+          metadata?: Json
           middle_name?: string | null
           moe_student_id?: string | null
           national_id_number?: string | null
@@ -1030,6 +1345,7 @@ export type Database = {
           necta_index_number?: string | null
           nemis_upi?: string | null
           nhif_or_shif_number?: string | null
+          notes?: string | null
           phone?: string | null
           photo_url?: string | null
           portal_user_id?: string | null
@@ -1038,6 +1354,7 @@ export type Database = {
           prems_number?: string | null
           previous_school?: string | null
           reb_student_id?: string | null
+          religion?: string | null
           residential_address?: string | null
           rwanda_national_id?: string | null
           rwanda_reb_id?: string | null
@@ -1088,6 +1405,7 @@ export type Database = {
           first_name?: string
           gender?: Database["public"]["Enums"]["gender_enum"] | null
           grade?: string | null
+          graduation_date?: string | null
           guardian_email?: string | null
           guardian_name?: string | null
           guardian_phone?: string | null
@@ -1112,6 +1430,7 @@ export type Database = {
             | null
           lin?: string | null
           medications?: string | null
+          metadata?: Json
           middle_name?: string | null
           moe_student_id?: string | null
           national_id_number?: string | null
@@ -1119,6 +1438,7 @@ export type Database = {
           necta_index_number?: string | null
           nemis_upi?: string | null
           nhif_or_shif_number?: string | null
+          notes?: string | null
           phone?: string | null
           photo_url?: string | null
           portal_user_id?: string | null
@@ -1127,6 +1447,7 @@ export type Database = {
           prems_number?: string | null
           previous_school?: string | null
           reb_student_id?: string | null
+          religion?: string | null
           residential_address?: string | null
           rwanda_national_id?: string | null
           rwanda_reb_id?: string | null
@@ -1396,6 +1717,15 @@ export type Database = {
     }
     Functions: {
       auth_user_id: { Args: never; Returns: string }
+      generate_admission_number: {
+        Args: { p_tenant_id: string }
+        Returns: string
+      }
+      generate_application_number: {
+        Args: { p_tenant_id: string }
+        Returns: string
+      }
+      generate_staff_number: { Args: { p_tenant_id: string }; Returns: string }
       has_perm: {
         Args: { _permission: string; _tenant: string }
         Returns: boolean
