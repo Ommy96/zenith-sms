@@ -268,7 +268,7 @@ export default function Staff() {
                   <TableCell className="text-sm">{s.hire_date || "—"}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`text-[11px] capitalize ${statusColors[s.status || "active"] || ""}`}>
-                      {s.status || "active"}
+                      {(s.status || "active").replace("_", " ")}
                     </Badge>
                   </TableCell>
                   <TableCell>
