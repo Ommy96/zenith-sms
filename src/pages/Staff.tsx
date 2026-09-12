@@ -35,7 +35,7 @@ const PAGE_SIZE = 20;
 
 const statusColors: Record<string, string> = {
   active: "bg-success/10 text-success border-success/20",
-  "on leave": "bg-warning/10 text-warning border-warning/20",
+  "on_leave": "bg-warning/10 text-warning border-warning/20",
   inactive: "bg-muted text-muted-foreground border-border",
   terminated: "bg-destructive/10 text-destructive border-destructive/20",
 };
@@ -212,7 +212,7 @@ export default function Staff() {
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="on leave">On Leave</SelectItem>
+            <SelectItem value="on_leave">On Leave</SelectItem>
             <SelectItem value="inactive">Inactive</SelectItem>
             <SelectItem value="terminated">Terminated</SelectItem>
           </SelectContent>
@@ -268,7 +268,7 @@ export default function Staff() {
                   <TableCell className="text-sm">{s.hire_date || "—"}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`text-[11px] capitalize ${statusColors[s.status || "active"] || ""}`}>
-                      {s.status || "active"}
+                      {(s.status || "active").replace("_", " ")}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -360,7 +360,7 @@ export default function Staff() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="on leave">On Leave</SelectItem>
+                    <SelectItem value="on_leave">On Leave</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
                     <SelectItem value="terminated">Terminated</SelectItem>
                   </SelectContent>
