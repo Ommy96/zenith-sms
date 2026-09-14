@@ -1,1 +1,37 @@
 project_id = "gtusmjeojyiijzvsfjxh"
+
+# Public webhooks and pre-auth endpoints: no JWT, validated in code.
+[functions.mpesa-c2b-callback]
+verify_jwt = false
+
+[functions.mpesa-stk-callback]
+verify_jwt = false
+
+[functions.portal-send-otp]
+verify_jwt = false
+
+[functions.portal-verify-otp]
+verify_jwt = false
+
+# Internal primitives: guarded by ZENITH_INTERNAL_SECRET / service role key.
+[functions.send-sms]
+verify_jwt = false
+
+[functions.send-whatsapp]
+verify_jwt = false
+
+[functions.send-email]
+verify_jwt = false
+
+[functions.dispatch-messages]
+verify_jwt = false
+
+# User-facing: guarded by authedUser() + requireOwnsResource().
+[functions.mpesa-stk-push]
+verify_jwt = false
+
+[functions.generate-receipt-pdf]
+verify_jwt = false
+
+[functions.email-receipt]
+verify_jwt = false

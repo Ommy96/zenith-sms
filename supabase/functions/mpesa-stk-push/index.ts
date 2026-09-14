@@ -1,133 +1,96 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { requireOwnsResource, EdgeAuthError } from "../_shared/auth.ts";
+// mpesa-stk-push — asks a parent's phone to approve a fee payment.
+//
+// verify_jwt: true. Staff need payments.record; portal parents may only push
+// for their own child's invoice.
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { adminClient, authErrorResponse, authedUser, EdgeAuthError } from "../_shared/auth.ts";
+import { requireOwnsResource } from "../_shared/ownership.ts";
+import { corsHeaders, jsonResponse, normalizePhone, readBody } from "../_shared/messaging.ts";
 
-const baseUrl = (env: string) =>
+const BASE = (env: string) =>
   env === "production" ? "https://api.safaricom.co.ke" : "https://sandbox.safaricom.co.ke";
-
-function ts() {
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
-}
-
-function normalizePhone(phone: string) {
-  let p = phone.replace(/\D/g, "");
-  if (p.startsWith("0")) p = "254" + p.slice(1);
-  if (p.startsWith("7") || p.startsWith("1")) p = "254" + p;
-  return p;
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const authHeader = req.headers.get("Authorization") ?? "";
-    if (!authHeader.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const user = await authedUser(req);
+    const { invoice_id, amount, phone, account_reference } = await req.json();
+    if (!invoice_id || !amount || !phone) {
+      return jsonResponse({ error: "invoice_id, amount and phone are required" }, 400);
     }
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const { data: claimsData, error: claimsErr } = await supabase.auth.getClaims(authHeader.replace("Bearer ", ""));
-    if (claimsErr || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    const { phone, amount, account_reference, invoice_id, student_id } = await req.json();
-    if (!phone || !amount) {
-      return new Response(JSON.stringify({ error: "phone and amount required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    const userId = claimsData.claims.sub as string;
+    if (!(Number(amount) > 0)) return jsonResponse({ error: "amount must be positive" }, 400);
 
-    // Resolve the tenant from the resource being paid for, and prove the caller
-    // owns it. Portal users have no staff profile/tenant role, so the invoice or
-    // student is the only trustworthy tenant source for them.
-    let schoolId: string | null = null;
-    if (invoice_id || student_id) {
-      const owned = await requireOwnsResource({
-        user: { userId },
-        resourceType: invoice_id ? "invoice" : "student",
-        resourceId: (invoice_id ?? student_id) as string,
-        functionName: "mpesa-stk-push",
-        req,
-      });
-      schoolId = owned.tenantId;
-      if (invoice_id && student_id && owned.studentId !== student_id) {
-        return new Response(JSON.stringify({ error: "Forbidden: student does not match invoice" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-    } else {
-      // Staff-initiated ad-hoc push with no resource — fall back to their tenant.
-      const { data: profile } = await supabase.from("profiles").select("default_tenant_id").eq("id", userId).maybeSingle();
-      schoolId = (profile as any)?.default_tenant_id ?? null;
-    }
-    if (!schoolId) return new Response(JSON.stringify({ error: "No school" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    const { data: cfg } = await supabase.from("mpesa_config").select("*").eq("tenant_id", schoolId).maybeSingle();
-    if (!cfg?.shortcode || !cfg?.passkey || !cfg?.consumer_key || !cfg?.consumer_secret) {
-      return new Response(JSON.stringify({ error: "M-Pesa not configured" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    // Get OAuth token
-    const tokenRes = await fetch(`${baseUrl(cfg.environment)}/oauth/v1/generate?grant_type=client_credentials`, {
-      headers: { Authorization: `Basic ${btoa(`${cfg.consumer_key}:${cfg.consumer_secret}`)}` },
+    const { tenantId, studentId } = await requireOwnsResource({
+      user, resourceType: "invoice", resourceId: invoice_id, functionName: "mpesa-stk-push", req,
     });
-    const tokenJson = await tokenRes.json();
-    if (!tokenJson.access_token) {
-      return new Response(JSON.stringify({ error: "Failed to get token", details: tokenJson }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!user.isSuperAdmin && user.tenantIds.includes(tenantId) &&
+        !user.permissions.includes("payments.record")) {
+      throw new EdgeAuthError(403, "Forbidden: missing permission payments.record");
     }
 
-    const timestamp = ts();
-    const password = btoa(`${cfg.shortcode}${cfg.passkey}${timestamp}`);
-    const callbackBase = Deno.env.get("SUPABASE_URL")!;
-    const callbackUrl = `${callbackBase}/functions/v1/mpesa-stk-callback?school=${schoolId}`;
-    const normalized = normalizePhone(String(phone));
+    const admin = adminClient();
+    const { data: cfg } = await admin.from("mpesa_config").select("*")
+      .eq("tenant_id", tenantId).eq("is_active", true).maybeSingle();
+    if (!cfg) return jsonResponse({ error: "M-Pesa is not set up for this school" }, 400);
 
-    const stkRes = await fetch(`${baseUrl(cfg.environment)}/mpesa/stkpush/v1/processrequest`, {
+    const key = cfg.consumer_key_encrypted;
+    const secret = cfg.consumer_secret_encrypted;
+    const passkey = cfg.passkey_encrypted;
+    if (!key || !secret || !passkey) return jsonResponse({ error: "M-Pesa credentials incomplete" }, 400);
+
+    const base = BASE(cfg.environment);
+    const tokenRes = await fetch(`${base}/oauth/v1/generate?grant_type=client_credentials`, {
+      headers: { Authorization: `Basic ${btoa(`${key}:${secret}`)}` },
+    });
+    const tokenData = await readBody(tokenRes);
+    if (!tokenRes.ok || !tokenData?.access_token) {
+      return jsonResponse({ error: "Could not reach M-Pesa (check credentials)" }, 502);
+    }
+
+    const stamp = new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0, 14);
+    const password = btoa(`${cfg.shortcode}${passkey}${stamp}`);
+    const msisdn = normalizePhone(String(phone)).replace("+", "");
+
+    const res = await fetch(`${base}/mpesa/stkpush/v1/processrequest`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${tokenJson.access_token}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${tokenData.access_token}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         BusinessShortCode: cfg.shortcode,
         Password: password,
-        Timestamp: timestamp,
+        Timestamp: stamp,
         TransactionType: cfg.shortcode_type === "till" ? "CustomerBuyGoodsOnline" : "CustomerPayBillOnline",
         Amount: Math.round(Number(amount)),
-        PartyA: normalized,
+        PartyA: msisdn,
         PartyB: cfg.shortcode,
-        PhoneNumber: normalized,
-        CallBackURL: callbackUrl,
-        AccountReference: account_reference ?? "Fees",
+        PhoneNumber: msisdn,
+        CallBackURL: `${Deno.env.get("SUPABASE_URL")}/functions/v1/mpesa-stk-callback`,
+        AccountReference: String(account_reference ?? invoice_id).slice(0, 12),
         TransactionDesc: "School fees",
       }),
     });
-    const stkJson = await stkRes.json();
+    const data = await readBody(res);
+    const ok = res.ok && data?.ResponseCode === "0";
 
-    // Service-role insert to bypass RLS for the log row
-    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     await admin.from("mpesa_stk_requests").insert({
-      tenant_id: schoolId,
-      invoice_id: invoice_id ?? null,
-      student_id: student_id ?? null,
-      phone: normalized,
+      tenant_id: tenantId,
+      student_id: studentId,
+      invoice_id,
       amount: Number(amount),
+      msisdn,
       account_reference: account_reference ?? null,
-      merchant_request_id: stkJson.MerchantRequestID ?? null,
-      checkout_request_id: stkJson.CheckoutRequestID ?? null,
-      status: stkJson.ResponseCode === "0" ? "pending" : "failed",
-      result_code: stkJson.ResponseCode ?? null,
-      result_desc: stkJson.ResponseDescription ?? stkJson.errorMessage ?? null,
+      transaction_desc: "School fees",
+      checkout_request_id: data?.CheckoutRequestID ?? null,
+      merchant_request_id: data?.MerchantRequestID ?? null,
+      status: ok ? "pending" : "failed",
+      result_desc: ok ? null : String(data?.errorMessage ?? data?.ResponseDescription ?? "Request failed"),
+      initiated_by: user.userId,
+      raw_response: data,
     });
 
-    return new Response(JSON.stringify({ ok: stkJson.ResponseCode === "0", response: stkJson }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return ok
+      ? jsonResponse({ ok: true, checkout_request_id: data.CheckoutRequestID })
+      : jsonResponse({ ok: false, error: data?.errorMessage ?? "M-Pesa rejected the request" }, 502);
   } catch (e) {
-    if (e instanceof EdgeAuthError) {
-      return new Response(JSON.stringify({ error: e.message }), { status: e.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return authErrorResponse(e, corsHeaders);
   }
 });

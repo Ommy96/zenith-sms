@@ -1,429 +1,134 @@
-// generate-receipt-pdf — render an A4 PDF receipt for a student_payments row,
-// store it in the private `receipts` bucket, and return a signed URL.
+// generate-receipt-pdf — renders a branded A4 fee receipt into the private
+// `receipts` bucket and returns a 30-day signed link.
 //
-// Auth model:
-//   * Admin/bursar (fees.view permission OR roles school_admin/super_admin) — any receipt in tenant
-//   * Parent / portal user — only receipts for students they guard
-//   * Anyone else — 403
-//
-// The PDF is cached: if `pdf_url` exists on the receipt row and `regenerate`
-// is not requested, we just sign and return.
+// verify_jwt: true for user calls; the internal secret is accepted for
+// service-to-service calls (e.g. the M-Pesa callback).
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1";
-import { requireAuth, EdgeAuthError, requireOwnsResource } from "../_shared/auth.ts";
+import { adminClient, authErrorResponse, authedUser } from "../_shared/auth.ts";
+import { requireOwnsResource } from "../_shared/ownership.ts";
+import { corsHeaders, jsonResponse } from "../_shared/messaging.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const SIGNED_URL_TTL = 60 * 60 * 24 * 30;
 
-const SIGNED_URL_TTL = 60 * 60 * 24 * 30; // 30 days
-const SHORT_TTL = 60 * 60 * 24 * 7;       // 7 days (share links)
-
-// ---------------------------------------------------------------------------
-// Logo handling
-//
-// NOTE ON REGENERATION: the logo is baked into the PDF at generation time.
-// If a school later changes its logo (or address / details), existing receipts
-// keep the old artwork until they are explicitly regenerated via
-// { receipt_id, force: true }. This is intentional — a receipt is a historical
-// document and must reflect the branding in force when it was issued.
-// ---------------------------------------------------------------------------
-
-type LogoAsset = { bytes: Uint8Array; kind: "png" | "jpg" } | null;
-
-// In-memory cache, keyed by logo_url. Survives for the lifetime of the isolate,
-// so a bulk ZIP of 500 receipts fetches the same logo once.
-const logoCache = new Map<string, LogoAsset>();
-
-async function loadLogo(admin: any, logoUrl: string | null | undefined): Promise<LogoAsset> {
-  if (!logoUrl) return null;
-  if (logoCache.has(logoUrl)) return logoCache.get(logoUrl)!;
-
-  let result: LogoAsset = null;
-  try {
-    const lower = logoUrl.split("?")[0].toLowerCase();
-    if (lower.endsWith(".svg")) {
-      console.warn("[receipt-pdf] SVG logos are not supported by pdf-lib — skipping logo");
-      logoCache.set(logoUrl, null);
-      return null;
-    }
-
-    let bytes: Uint8Array | null = null;
-    let contentType = "";
-
-    if (/^https?:\/\//i.test(logoUrl)) {
-      const res = await fetch(logoUrl);
-      if (res.ok) {
-        contentType = res.headers.get("content-type") || "";
-        bytes = new Uint8Array(await res.arrayBuffer());
-      } else {
-        console.warn("[receipt-pdf] logo fetch failed", res.status);
-      }
-    } else {
-      // Stored path inside the `tenant-logos` bucket (per project convention).
-      const path = logoUrl.replace(/^\/?tenant-logos\//, "");
-      const { data, error } = await admin.storage.from("tenant-logos").download(path);
-      if (error || !data) {
-        console.warn("[receipt-pdf] logo download failed", error?.message);
-      } else {
-        contentType = (data as Blob).type || "";
-        bytes = new Uint8Array(await (data as Blob).arrayBuffer());
-      }
-    }
-
-    if (bytes && bytes.length) {
-      if (contentType.includes("svg")) {
-        console.warn("[receipt-pdf] SVG logo content-type — skipping logo");
-      } else {
-        const isPng = bytes[0] === 0x89 && bytes[1] === 0x50;
-        const isJpg = bytes[0] === 0xff && bytes[1] === 0xd8;
-        if (isPng || contentType.includes("png")) result = { bytes, kind: "png" };
-        else if (isJpg || contentType.includes("jpeg") || contentType.includes("jpg")) result = { bytes, kind: "jpg" };
-        else console.warn("[receipt-pdf] unsupported logo format — skipping logo");
-      }
-    }
-  } catch (e) {
-    console.warn("[receipt-pdf] logo load error", (e as Error).message);
-    result = null;
-  }
-
-  logoCache.set(logoUrl, result);
-  return result;
-}
-
-function fmtMoney(n: number, ccy: string) {
-  const v = Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-  return `${ccy} ${v}`;
-}
-function maskPhone(p?: string | null) {
-  if (!p) return "";
-  const s = String(p).replace(/\s+/g, "");
-  if (s.length < 7) return s;
-  return `${s.slice(0, 4)}****${s.slice(-3)}`;
-}
-function fmtDateLong(d?: string | null) {
-  if (!d) return "";
-  const dt = new Date(d);
-  if (isNaN(+dt)) return d;
-  return dt.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
-}
-
-async function buildPdf(opts: {
-  tenant: any; student: any; payer: string | null; payerPhone: string | null;
-  invoices: any[]; allocations: any[]; payment: any; receipt: any;
-  issuedBy: string | null; currency: string;
-  termBefore: number; termAfter: number;
-  logo?: LogoAsset;
-}): Promise<Uint8Array> {
-  const { tenant, student, payer, payerPhone, allocations, payment, receipt, issuedBy, currency, termBefore, termAfter, logo } = opts;
-
-  const doc = await PDFDocument.create();
-  // A4 in points: 595.28 x 841.89
-  const page = doc.addPage([595.28, 841.89]);
-  const helv = await doc.embedFont(StandardFonts.Helvetica);
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  const serif = await doc.embedFont(StandardFonts.TimesRoman);
-
-  const ink = rgb(0.07, 0.09, 0.15);
-  const muted = rgb(0.42, 0.45, 0.52);
-  const accent = rgb(0.31, 0.27, 0.90); // indigo-600
-  const successFg = rgb(0.05, 0.45, 0.22);
-  const successBg = rgb(0.86, 0.96, 0.88);
-
-  const M = 51; // ~18mm
-  const W = 595.28;
-  let y = 841.89 - M;
-
-  // === HEADER ===
-  const schoolName = tenant?.name || "School";
-  let headerTextX = M;
-  let logoBottom = y;
-  if (logo) {
-    try {
-      const img = logo.kind === "png" ? await doc.embedPng(logo.bytes) : await doc.embedJpg(logo.bytes);
-      const maxH = 80;
-      const maxW = 160;
-      const scale = Math.min(maxH / img.height, maxW / img.width, 1);
-      const w = img.width * scale;
-      const h = img.height * scale;
-      page.drawImage(img, { x: M, y: y - h, width: w, height: h });
-      headerTextX = M + w + 14;
-      logoBottom = y - h;
-    } catch (e) {
-      // Corrupt/unsupported image — fall back to a text-only header.
-      console.warn("[receipt-pdf] logo embed failed", (e as Error).message);
-    }
-  }
-  page.drawText(schoolName, { x: headerTextX, y: y - 14, size: 18, font: bold, color: accent });
-  const headerLines = [
-    tenant?.address, tenant?.phone, tenant?.email,
-  ].filter(Boolean) as string[];
-  let hy = y - 32;
-  for (const line of headerLines) {
-    page.drawText(line, { x: headerTextX, y: hy, size: 9, font: helv, color: muted });
-    hy -= 11;
-  }
-  const meta2 = [
-    tenant?.registration_number ? `Reg. No: ${tenant.registration_number}` : null,
-    tenant?.nemis_code ? `NEMIS: ${tenant.nemis_code}` : null,
-  ].filter(Boolean).join("   ");
-  if (meta2) { page.drawText(meta2, { x: headerTextX, y: hy, size: 9, font: helv, color: muted }); hy -= 11; }
-
-  y = Math.min(hy, logoBottom, y - 64) - 6;
-  page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 0.6, color: muted });
-  y -= 22;
-
-  // === RECEIPT META ===
-  const label = "OFFICIAL RECEIPT";
-  const labelW = bold.widthOfTextAtSize(label, 11);
-  page.drawText(label, { x: (W - labelW) / 2, y, size: 11, font: bold, color: ink });
-  y -= 18;
-  const rcpNo = receipt?.receipt_number || "—";
-  const rcpW = bold.widthOfTextAtSize(rcpNo, 16);
-  page.drawText(rcpNo, { x: (W - rcpW) / 2, y: y - 4, size: 16, font: bold, color: ink });
-  y -= 22;
-  const dateStr = fmtDateLong(receipt?.issued_at || payment?.paid_at);
-  const dW = helv.widthOfTextAtSize(dateStr, 10);
-  page.drawText(dateStr, { x: (W - dW) / 2, y, size: 10, font: helv, color: muted });
-  y -= 18;
-  // Status badge
-  const badgeText = "PAID";
-  const bw = bold.widthOfTextAtSize(badgeText, 9) + 16;
-  const bx = (W - bw) / 2;
-  page.drawRectangle({ x: bx, y: y - 4, width: bw, height: 16, color: successBg });
-  page.drawText(badgeText, { x: bx + 8, y: y, size: 9, font: bold, color: successFg });
-  y -= 26;
-
-  // === STUDENT / PAYER ===
-  const colLeftX = M;
-  const colRightX = W / 2 + 8;
-  const studentName = [student?.first_name, student?.last_name].filter(Boolean).join(" ") || "—";
-  const drawKV = (x: number, yy: number, label: string, value: string, valueFont = bold) => {
-    page.drawText(label, { x, y: yy, size: 8, font: helv, color: muted });
-    page.drawText(value, { x, y: yy - 13, size: 11, font: valueFont, color: ink });
-  };
-  drawKV(colLeftX, y, "RECEIVED FROM", payer || "Walk-in");
-  drawKV(colRightX, y, "ON BEHALF OF", studentName);
-  if (payerPhone) page.drawText(payerPhone, { x: colLeftX, y: y - 26, size: 9, font: helv, color: muted });
-  const adm = student?.admission_number ? `Adm: ${student.admission_number}` : "";
-  if (adm) page.drawText(adm, { x: colRightX, y: y - 26, size: 9, font: helv, color: muted });
-  y -= 50;
-
-  // === PAYMENT DETAILS ===
-  page.drawText("PAYMENT DETAILS", { x: M, y, size: 9, font: bold, color: muted });
-  y -= 4;
-  page.drawLine({ start: { x: M, y: y - 2 }, end: { x: W - M, y: y - 2 }, thickness: 0.4, color: muted });
-  y -= 16;
-
-  const methodLabel = (payment?.method || "—").toUpperCase().replace("_", " ");
-  const detailRows: [string, string][] = [
-    ["Method", methodLabel],
-    ["Reference", payment?.reference || "—"],
-    ["Date received", fmtDateLong(payment?.paid_at)],
-  ];
-  if (payment?.method === "mpesa") {
-    detailRows.push(["Payer phone", maskPhone(payerPhone || payment?.payer_phone)]);
-  }
-  for (const [k, v] of detailRows) {
-    page.drawText(k, { x: M, y, size: 10, font: helv, color: muted });
-    page.drawText(String(v || "—"), { x: M + 130, y, size: 10, font: helv, color: ink });
-    y -= 14;
-  }
-  y -= 8;
-
-  // === AMOUNT BREAKDOWN ===
-  page.drawText("AMOUNT BREAKDOWN", { x: M, y, size: 9, font: bold, color: muted });
-  y -= 4;
-  page.drawLine({ start: { x: M, y: y - 2 }, end: { x: W - M, y: y - 2 }, thickness: 0.4, color: muted });
-  y -= 16;
-  page.drawText("Description", { x: M, y, size: 9, font: bold, color: muted });
-  page.drawText("Amount", { x: W - M - 80, y, size: 9, font: bold, color: muted });
-  y -= 14;
-
-  let subtotal = 0;
-  if (allocations.length === 0) {
-    page.drawText("Payment on account", { x: M, y, size: 11, font: serif, color: ink });
-    const amt = fmtMoney(Number(payment?.amount || 0), currency);
-    const aw = helv.widthOfTextAtSize(amt, 11);
-    page.drawText(amt, { x: W - M - aw, y, size: 11, font: helv, color: ink });
-    subtotal = Number(payment?.amount || 0);
-    y -= 16;
-  } else {
-    for (const a of allocations) {
-      const inv = a.invoice || {};
-      const desc = inv.invoice_number ? `Invoice ${inv.invoice_number}` : "Allocation";
-      page.drawText(desc, { x: M, y, size: 11, font: serif, color: ink });
-      const amt = fmtMoney(Number(a.amount || 0), currency);
-      const aw = helv.widthOfTextAtSize(amt, 11);
-      page.drawText(amt, { x: W - M - aw, y, size: 11, font: helv, color: ink });
-      subtotal += Number(a.amount || 0);
-      y -= 16;
-    }
-  }
-  page.drawLine({ start: { x: M, y: y + 4 }, end: { x: W - M, y: y + 4 }, thickness: 0.3, color: muted });
-  y -= 4;
-  const totalLabel = "TOTAL RECEIVED";
-  page.drawText(totalLabel, { x: M, y, size: 11, font: bold, color: ink });
-  const totalStr = fmtMoney(Number(payment?.amount || 0), currency);
-  const tw = bold.widthOfTextAtSize(totalStr, 12);
-  page.drawText(totalStr, { x: W - M - tw, y, size: 12, font: bold, color: accent });
-  y -= 24;
-
-  // === BALANCE CARD ===
-  const card = { x: M, y: y - 56, w: W - M * 2, h: 56 };
-  page.drawRectangle({ x: card.x, y: card.y, width: card.w, height: card.h, borderColor: muted, borderWidth: 0.4 });
-  const colW = card.w / 3;
-  const cardLine = (i: number, label: string, value: string, color = ink) => {
-    page.drawText(label, { x: card.x + colW * i + 10, y: card.y + 34, size: 8, font: helv, color: muted });
-    page.drawText(value, { x: card.x + colW * i + 10, y: card.y + 14, size: 12, font: bold, color });
-  };
-  cardLine(0, "BALANCE BEFORE", fmtMoney(termBefore, currency));
-  cardLine(1, "THIS PAYMENT", fmtMoney(Number(payment?.amount || 0), currency));
-  cardLine(2, "BALANCE AFTER", fmtMoney(termAfter, currency), termAfter <= 0 ? successFg : ink);
-  y = card.y - 24;
-
-  // === FOOTER ===
-  page.drawText(`Issued by: ${issuedBy || "—"}`, { x: M, y, size: 10, font: helv, color: ink });
-  y -= 30;
-  page.drawLine({ start: { x: M, y }, end: { x: M + 180, y }, thickness: 0.6, color: ink });
-  page.drawText("Authorized signature", { x: M, y: y - 12, size: 8, font: helv, color: muted });
-  page.drawRectangle({ x: W - M - 90, y: y - 24, width: 90, height: 64, borderColor: muted, borderWidth: 0.4 });
-  page.drawText("School stamp", { x: W - M - 88, y: y - 36, size: 7, font: helv, color: muted });
-
-  const genStr = `Generated by Zenith at ${new Date().toISOString().slice(0, 19).replace("T", " ")} UTC · Receipt ${receipt?.receipt_number || ""}`;
-  page.drawText(genStr, { x: M, y: M - 24, size: 7, font: helv, color: muted });
-  page.drawText("Page 1 of 1", { x: W - M - 50, y: M - 24, size: 7, font: helv, color: muted });
-
-  return await doc.save();
+function money(n: number, currency: string) {
+  return `${currency} ${Number(n || 0).toLocaleString("en-KE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const url = Deno.env.get("SUPABASE_URL")!;
-    const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    // Internal callers (M-Pesa callbacks, reconcile triggers) authenticate
-    // with the service-role key — skip auth/permission checks in that case.
-    const authHeader = req.headers.get("Authorization") ?? req.headers.get("authorization") ?? "";
-    const isInternal = authHeader === `Bearer ${service}`;
-    const auth = isInternal ? null : await requireAuth(req);
-    const admin = createClient(url, service);
+    const { receipt_id, force } = await req.json();
+    if (!receipt_id) return jsonResponse({ error: "receipt_id required" }, 400);
 
-    const body = await req.json().catch(() => ({}));
-    const receiptId = body?.receipt_id as string | undefined;
-    const regenerate = !!body?.regenerate || !!body?.force;
-    const ttl = body?.short_ttl ? SHORT_TTL : SIGNED_URL_TTL;
-    if (!receiptId) return new Response(JSON.stringify({ error: "receipt_id required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-
-    // Fetch receipt
-    const { data: receipt, error: rErr } = await admin
-      .from("student_receipts").select("*").eq("id", receiptId).maybeSingle();
-    if (rErr || !receipt) return new Response(JSON.stringify({ error: "Receipt not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-
+    const admin = adminClient();
+    const internalKey = req.headers.get("x-zenith-internal-key");
+    const isInternal = !!internalKey && internalKey === Deno.env.get("ZENITH_INTERNAL_SECRET");
     if (!isInternal) {
-    const a = auth!;
-    // Authorize
-    const isStaff = a.isSuperAdmin
-      || a.roles.some((r) => ["school_admin", "bursar", "finance"].includes(r))
-      || a.permissions.includes("fees.view");
-    const inTenant = a.tenantIds.includes(receipt.tenant_id);
-    if (!isStaff || !inTenant) {
-      // Portal path — live guardian/self linkage, audited. Throws 403/404.
+      const user = await authedUser(req);
       await requireOwnsResource({
-        user: a, resourceType: "receipt", resourceId: receiptId,
+        user, resourceType: "receipt", resourceId: receipt_id,
         functionName: "generate-receipt-pdf", req,
       });
     }
+
+    const { data: receipt } = await admin.from("student_receipts")
+      .select("*, students:student_id(first_name, middle_name, last_name, admission_number), payments:payment_id(method, reference, paid_at, payment_number)")
+      .eq("id", receipt_id).maybeSingle();
+    if (!receipt) return jsonResponse({ error: "Receipt not found" }, 404);
+
+    if (receipt.pdf_url && !force) {
+      return jsonResponse({ ok: true, url: receipt.pdf_url, cached: true });
     }
 
-    const tenantId = receipt.tenant_id;
+    const { data: tenant } = await admin.from("tenants")
+      .select("name, address, phone, email, currency_code, logo_url").eq("id", receipt.tenant_id).maybeSingle();
+    const currency = receipt.currency ?? tenant?.currency_code ?? "KES";
 
-    // Cached path
-    if (receipt.pdf_url && !regenerate) {
-      const { data: signed } = await admin.storage.from("receipts").createSignedUrl(receipt.pdf_url, ttl);
-      if (signed?.signedUrl) {
-        return new Response(JSON.stringify({ url: signed.signedUrl, path: receipt.pdf_url, cached: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-    }
+    const pdf = await PDFDocument.create();
+    const page = pdf.addPage([595.28, 841.89]);
+    const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+    const regular = await pdf.embedFont(StandardFonts.Helvetica);
+    const ink = rgb(0.07, 0.09, 0.15);
+    const muted = rgb(0.42, 0.45, 0.5);
+    let y = 790;
 
-    // Gather data
-    const [{ data: tenant }, { data: payment }] = await Promise.all([
-      admin.from("tenants").select("id, name, address, phone, email, logo_url, registration_number, nemis_code, currency_code").eq("id", tenantId).maybeSingle(),
-      admin.from("student_payments").select("*").eq("id", receipt.payment_id).maybeSingle(),
-    ]);
-    if (!payment) return new Response(JSON.stringify({ error: "Payment missing" }), { status: 404, headers: corsHeaders });
-
-    const [{ data: student }, { data: allocations }, { data: receivedBy }, { data: guardianLinks }] = await Promise.all([
-      admin.from("students").select("id, first_name, last_name, admission_number, current_class_id").eq("id", payment.student_id).maybeSingle(),
-      admin.from("payment_allocations").select("amount, invoice:invoice_id(id, invoice_number, term_id, status)").eq("payment_id", payment.id),
-      payment.received_by ? admin.from("profiles").select("full_name").eq("user_id", payment.received_by).maybeSingle() : Promise.resolve({ data: null }),
-      admin.from("student_guardians").select("guardian:guardian_id(full_name, phone, is_primary)").eq("student_id", payment.student_id),
-    ]);
-
-    const primary = (guardianLinks || []).map((l: any) => l.guardian).find((g: any) => g?.is_primary) || (guardianLinks || [])[0]?.guardian;
-    const currency = tenant?.currency_code || "KES";
-
-    // Term balance computation: sum balances on invoices for this student before/after this payment.
-    const { data: openInvoices } = await admin
-      .from("student_invoices").select("balance").eq("student_id", payment.student_id);
-    const balanceAfter = (openInvoices || []).reduce((s: number, r: any) => s + Number(r.balance || 0), 0);
-    const balanceBefore = balanceAfter + Number(payment.amount || 0);
-
-    const logo = await loadLogo(admin, tenant?.logo_url);
-
-    const pdfBytes = await buildPdf({
-      tenant, student, payer: primary?.full_name || null, payerPhone: primary?.phone || payment.payer_phone || null,
-      invoices: [], allocations: allocations || [], payment, receipt,
-      issuedBy: receivedBy?.full_name || null, currency,
-      termBefore: balanceBefore, termAfter: balanceAfter,
-      logo,
-    });
-
-    const year = new Date(receipt.issued_at || Date.now()).getFullYear();
-    const safeNo = String(receipt.receipt_number || receipt.id).replace(/[^A-Za-z0-9_-]/g, "_");
-    const path = `${tenantId}/${year}/${safeNo}.pdf`;
-
-    const { error: upErr } = await admin.storage.from("receipts").upload(path, pdfBytes, {
-      contentType: "application/pdf", upsert: true,
-    });
-    if (upErr) {
-      console.error("upload failed", upErr);
-      return new Response(JSON.stringify({ error: "Upload failed", detail: upErr.message }), { status: 500, headers: corsHeaders });
-    }
-    await admin.from("student_receipts").update({ pdf_url: path }).eq("id", receipt.id);
-
-    // --- Scheduled auto-email (Fix 5) -------------------------------------
-    // Fires only on FIRST generation (never on regenerate) and only when the
-    // school has opted in via tenant_settings.auto_email_receipts. Entirely
-    // fire-and-forget: a failed email must never break receipt generation.
-    if (!regenerate) {
+    // Optional school logo from the tenant-logos bucket.
+    if (tenant?.logo_url) {
       try {
-        const { data: setting } = await admin
-          .from("tenant_settings").select("value").eq("tenant_id", tenantId)
-          .eq("key", "auto_email_receipts").maybeSingle();
-        const enabled = setting?.value === true || (setting?.value as any)?.enabled === true;
-        if (enabled) {
-          fetch(`${url}/functions/v1/email-receipt`, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${service}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ receipt_id: receipt.id }),
-          }).catch(() => {});
+        const path = tenant.logo_url.includes("/tenant-logos/")
+          ? tenant.logo_url.split("/tenant-logos/")[1].split("?")[0]
+          : tenant.logo_url;
+        const { data: blob } = await admin.storage.from("tenant-logos").download(path);
+        if (blob) {
+          const bytes = new Uint8Array(await blob.arrayBuffer());
+          const img = path.toLowerCase().endsWith(".png")
+            ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
+          const dims = img.scale(48 / img.height);
+          page.drawImage(img, { x: 50, y: y - dims.height + 14, width: dims.width, height: dims.height });
         }
-      } catch { /* non-blocking */ }
+      } catch (e) { console.warn("[receipt] logo skipped", (e as Error).message); }
     }
 
-    const { data: signed } = await admin.storage.from("receipts").createSignedUrl(path, ttl);
-    return new Response(JSON.stringify({ url: signed?.signedUrl, path, cached: false }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (e) {
-    if (e instanceof EdgeAuthError) {
-      return new Response(JSON.stringify({ error: e.message }), { status: e.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const text = (s: string, x: number, yy: number, size = 10, font = regular, color = ink) =>
+      page.drawText(s ?? "", { x, y: yy, size, font, color });
+
+    text(tenant?.name ?? "School", 120, y, 16, bold);
+    y -= 16;
+    text([tenant?.address, tenant?.phone, tenant?.email].filter(Boolean).join("  •  "), 120, y, 9, regular, muted);
+    y -= 40;
+
+    text("OFFICIAL FEE RECEIPT", 50, y, 13, bold);
+    text(receipt.receipt_number ?? "", 420, y, 13, bold);
+    y -= 10;
+    page.drawLine({ start: { x: 50, y }, end: { x: 545, y }, thickness: 1, color: muted });
+    y -= 28;
+
+    const s = receipt.students as any;
+    const p = receipt.payments as any;
+    const rows: [string, string][] = [
+      ["Student", [s?.first_name, s?.middle_name, s?.last_name].filter(Boolean).join(" ")],
+      ["Admission No.", s?.admission_number ?? "—"],
+      ["Payment No.", p?.payment_number ?? "—"],
+      ["Method", (p?.method ?? "—").toUpperCase()],
+      ["Reference", p?.reference ?? "—"],
+      ["Date", new Date(p?.paid_at ?? receipt.issued_at ?? Date.now()).toLocaleString("en-KE")],
+    ];
+    for (const [label, value] of rows) {
+      text(label, 50, y, 10, regular, muted);
+      text(String(value), 200, y, 10, bold);
+      y -= 20;
     }
-    console.error("generate-receipt-pdf error", e);
-    return new Response(JSON.stringify({ error: String((e as Error).message || e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    y -= 14;
+    page.drawRectangle({ x: 50, y: y - 34, width: 495, height: 44, color: rgb(0.96, 0.96, 0.98) });
+    text("AMOUNT RECEIVED", 66, y - 12, 10, regular, muted);
+    text(money(receipt.amount, currency), 380, y - 16, 16, bold);
+    y -= 70;
+
+    if (receipt.is_regenerated) text("DUPLICATE COPY", 50, y, 10, bold, muted);
+    text("This is a computer-generated receipt and is valid without a signature.", 50, 60, 8, regular, muted);
+    text(`Generated ${new Date().toLocaleString("en-KE")} • Zenith OS`, 50, 48, 8, regular, muted);
+
+    const bytes = await pdf.save();
+    const year = new Date(receipt.issued_at ?? Date.now()).getFullYear();
+    const path = `${receipt.tenant_id}/${year}/${String(receipt.receipt_number ?? receipt.id).replace(/[^\w.-]/g, "-")}.pdf`;
+
+    const { error: upErr } = await admin.storage.from("receipts")
+      .upload(path, bytes, { contentType: "application/pdf", upsert: true });
+    if (upErr) return jsonResponse({ error: upErr.message }, 500);
+
+    const { data: signed } = await admin.storage.from("receipts").createSignedUrl(path, SIGNED_URL_TTL);
+
+    await admin.from("student_receipts").update({
+      pdf_url: signed?.signedUrl ?? null,
+      pdf_generated_at: new Date().toISOString(),
+      ...(force ? { is_regenerated: true, regenerated_at: new Date().toISOString() } : {}),
+      metadata: { ...(receipt.metadata ?? {}), storage_path: path },
+    }).eq("id", receipt_id);
+
+    return jsonResponse({ ok: true, url: signed?.signedUrl, path });
+  } catch (e) {
+    return authErrorResponse(e, corsHeaders);
   }
 });
