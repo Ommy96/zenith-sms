@@ -117,7 +117,7 @@ export default function SchoolSetup() {
           description: "Please sign in again to finish setting up your school.",
           variant: "destructive",
         });
-        navigate("/login");
+        navigate("/auth/login");
         return;
       }
 

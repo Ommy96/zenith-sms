@@ -100,7 +100,7 @@ export default function PortalLogin() {
             </>
           )}
           <p className="text-xs text-center text-muted-foreground pt-2">
-            For staff sign-in, go to <a href="/login" className="text-primary underline">staff login</a>
+            For staff sign-in, go to <a href="/auth/login" className="text-primary underline">staff login</a>
           </p>
         </CardContent>
       </Card>
