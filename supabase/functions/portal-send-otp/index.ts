@@ -1,83 +1,105 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
+// portal-send-otp — issues a login code to a parent/student phone number.
+//
+// verify_jwt: false (pre-auth). Always returns 200 so the endpoint cannot be
+// used to discover which numbers exist.
+// Env: MESSAGING_DRY_RUN, ZENITH_INTERNAL_SECRET
 
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-const jr = (b: unknown, s = 200) =>
-  new Response(JSON.stringify(b), { status: s, headers: { ...cors, "Content-Type": "application/json" } });
+import { adminClient, requestIp } from "../_shared/auth.ts";
+import {
+  callInternal, corsHeaders, jsonResponse, logQueuedMessage, normalizePhone, renderTemplate,
+} from "../_shared/messaging.ts";
 
-function normPhone(p: string): string {
-  let x = (p || "").replace(/[^\d+]/g, "");
-  if (x.startsWith("+")) return x;
-  if (x.startsWith("0")) return "+254" + x.slice(1);
-  if (x.startsWith("254")) return "+" + x;
-  if (x.length === 9) return "+254" + x;
-  return x.startsWith("+") ? x : "+" + x;
-}
+const WINDOW_MINUTES = 15;
+const MAX_HITS = 5;
 
 async function sha256(s: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+async function rateLimited(key: string, endpoint: string): Promise<boolean> {
+  const admin = adminClient();
+  const bucket = new Date(Math.floor(Date.now() / (WINDOW_MINUTES * 60000)) * WINDOW_MINUTES * 60000).toISOString();
+  const { data } = await admin.from("portal_auth_ratelimit")
+    .select("id, hit_count").eq("key", key).eq("endpoint", endpoint).eq("window_start", bucket).maybeSingle();
+  if (!data) {
+    await admin.from("portal_auth_ratelimit").insert({ key, endpoint, window_start: bucket, hit_count: 1 });
+    return false;
+  }
+  await admin.from("portal_auth_ratelimit").update({ hit_count: data.hit_count + 1 }).eq("id", data.id);
+  return data.hit_count + 1 > MAX_HITS;
+}
+
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const generic = (phone: string) => jsonResponse({
+    ok: true,
+    masked: phone ? phone.slice(0, -4).replace(/\d/g, "*") + phone.slice(-4) : null,
+  });
+
   try {
-    const { phone } = await req.json();
-    if (!phone) return jr({ error: "phone required" }, 400);
-    const normalized = normPhone(phone);
-    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { phone } = await req.json().catch(() => ({ phone: "" }));
+    const normalized = normalizePhone(String(phone ?? ""));
+    if (!normalized || normalized.length < 10) return generic("");
 
-    // Find a guardian with this phone to determine tenant (match on last 9 digits)
-    const digits = normalized.replace(/[^0-9]/g, "");
-    const tail = digits.slice(-9);
-    const { data: guardians } = await admin
-      .from("guardians")
-      .select("id, tenant_id, phone_primary, whatsapp_number, full_name")
-      .or(`phone_primary.ilike.%${tail},whatsapp_number.ilike.%${tail}`)
-      .limit(5);
-    const match = (guardians || [])[0];
-    if (!match) return jr({ error: "No parent account found for this phone number" }, 404);
+    const ip = requestIp(req) ?? "unknown";
+    if (await rateLimited(normalized, "portal-send-otp") || await rateLimited(ip, "portal-send-otp-ip")) {
+      console.warn("[portal-send-otp] rate limited", normalized);
+      return generic(normalized);
+    }
 
-    // Generate 6-digit code
+    const admin = adminClient();
+    const tail = normalized.replace(/\D/g, "").slice(-9);
+
+    const [{ data: guardians }, { data: students }] = await Promise.all([
+      admin.from("guardians").select("id, tenant_id, full_name, phone_primary, whatsapp_number")
+        .or(`phone_primary.ilike.%${tail},whatsapp_number.ilike.%${tail}`).limit(1),
+      admin.from("students").select("id, tenant_id, first_name, last_name, phone")
+        .ilike("phone", `%${tail}`).limit(1),
+    ]);
+    const guardian = guardians?.[0];
+    const student = students?.[0];
+    if (!guardian && !student) {
+      console.log("[portal-send-otp] no match for", normalized);
+      return generic(normalized);
+    }
+
+    const tenantId = guardian?.tenant_id ?? student!.tenant_id;
+    const name = guardian?.full_name ?? `${student?.first_name ?? ""} ${student?.last_name ?? ""}`.trim();
+
     const code = String(Math.floor(100000 + Math.random() * 900000));
-    const code_hash = await sha256(code);
-    const expires_at = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-    await admin.from("portal_otps").insert({ phone: normalized, code_hash, expires_at });
+    await admin.from("portal_otps").insert({
+      phone: normalized,
+      code_hash: await sha256(code),
+      expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      tenant_id: tenantId,
+      guardian_id: guardian?.id ?? null,
+      student_id: student?.id ?? null,
+      purpose: "portal_login",
+    });
 
-    // Queue an SMS via existing messaging pipeline
-    const { data: msg, error: msgErr } = await admin
-      .from("messages")
-      .insert({
-        tenant_id: match.tenant_id,
-        channel: "sms",
-        direction: "outbound",
-        recipient_type: "guardian",
-        recipient_id: match.id,
-        recipient_phone: normalized,
-        recipient_address: normalized,
-        recipient_name: match.full_name || null,
-        template_key: "portal_otp",
-        body: `Your Zenith parent portal code is ${code}. It expires in 10 minutes.`,
-        status: "queued",
-      })
-      .select("id")
-      .single();
-    if (msgErr) return jr({ error: msgErr.message }, 500);
+    const { data: tpl } = await admin.from("message_templates")
+      .select("body_template").eq("key", "portal_otp").eq("language", "en")
+      .or(`tenant_id.eq.${tenantId},tenant_id.is.null`).order("tenant_id", { nullsFirst: false })
+      .limit(1).maybeSingle();
+    const body = renderTemplate(
+      tpl?.body_template ?? "Your Zenith code is {{code}}. It expires in 10 minutes.",
+      { code, minutes: "10", name },
+    );
 
-    // Fire and forget dispatch
-    fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ message_id: msg.id }),
-    }).catch(() => {});
+    const messageId = await logQueuedMessage({
+      tenantId, channel: "sms", body,
+      recipientPhone: normalized, recipientName: name || null,
+      recipientType: guardian ? "guardian" : "student",
+      recipientId: guardian?.id ?? student?.id ?? null,
+      studentId: student?.id ?? null,
+      templateKey: "portal_otp",
+    });
+    callInternal("send-sms", { message_id: messageId, tenant_id: tenantId }).catch(() => {});
 
-    return jr({ ok: true, phone: normalized, masked: normalized.slice(0, -4).replace(/\d/g, "*") + normalized.slice(-4) });
+    return generic(normalized);
   } catch (e) {
-    return jr({ error: (e as Error).message }, 500);
+    console.error("[portal-send-otp]", (e as Error).message);
+    return jsonResponse({ ok: true, masked: null });
   }
 });
