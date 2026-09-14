@@ -1,63 +1,90 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+// mpesa-stk-callback — Safaricom result for a payment prompt we initiated.
+//
+// verify_jwt: false. Because we initiated the prompt against a known invoice,
+// a successful result auto-creates the payment, allocation and receipt.
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { adminClient } from "../_shared/auth.ts";
+import { callInternal, corsHeaders } from "../_shared/messaging.ts";
+
+const ack = (desc = "Accepted") =>
+  new Response(JSON.stringify({ ResultCode: 0, ResultDesc: desc }), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const payload = await req.json().catch(() => ({}));
     const stk = payload?.Body?.stkCallback;
-    if (!stk) return new Response(JSON.stringify({ ResultCode: 0, ResultDesc: "no-op" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!stk) return ack("No callback body");
 
+    const admin = adminClient();
     const checkoutId = stk.CheckoutRequestID;
-    const resultCode = String(stk.ResultCode);
-    const resultDesc = stk.ResultDesc;
-    let receipt: string | null = null;
-    if (Array.isArray(stk?.CallbackMetadata?.Item)) {
-      for (const it of stk.CallbackMetadata.Item) {
-        if (it.Name === "MpesaReceiptNumber") receipt = String(it.Value);
-      }
-    }
+    const resultCode = Number(stk.ResultCode);
+    const items: any[] = stk?.CallbackMetadata?.Item ?? [];
+    const meta: Record<string, any> = {};
+    for (const it of items) meta[it.Name] = it.Value;
 
-    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data: reqRow } = await admin.from("mpesa_stk_requests").select("*")
+      .eq("checkout_request_id", checkoutId).maybeSingle();
+    if (!reqRow) return ack("Unknown checkout request");
+
+    const status = resultCode === 0 ? "success" : (resultCode === 1032 ? "cancelled" : "failed");
     await admin.from("mpesa_stk_requests").update({
-      status: resultCode === "0" ? "success" : (resultCode === "1032" ? "cancelled" : "failed"),
+      status,
       result_code: resultCode,
-      result_desc: resultDesc,
-      mpesa_receipt: receipt,
-    }).eq("checkout_request_id", checkoutId);
+      result_desc: stk.ResultDesc,
+      mpesa_receipt_number: meta.MpesaReceiptNumber ?? null,
+      completed_at: new Date().toISOString(),
+      raw_response: payload,
+    }).eq("id", reqRow.id);
 
-    // Fire-and-forget receipt PDF generation on success. The C2B/transaction
-    // trigger creates the student_receipts row; we just kick off rendering.
-    if (resultCode === "0" && receipt) {
-      try {
-        const { data: txn } = await admin
-          .from("mpesa_transactions").select("matched_payment_id").eq("mpesa_receipt", receipt).maybeSingle();
-        const paymentId = txn?.matched_payment_id;
-        const { data: rcp } = paymentId
-          ? await admin.from("student_receipts").select("id").eq("payment_id", paymentId).maybeSingle()
-          : { data: null };
-        if (rcp?.id) {
-          fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-receipt-pdf`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-            },
-            body: JSON.stringify({ receipt_id: rcp.id }),
-          }).catch(() => {});
-        }
-      } catch { /* non-blocking */ }
+    if (resultCode !== 0 || reqRow.payment_id) return ack();
+
+    const receiptNo = String(meta.MpesaReceiptNumber ?? checkoutId);
+    const amount = Number(meta.Amount ?? reqRow.amount);
+
+    const { data: payment, error: payErr } = await admin.from("payments").insert({
+      tenant_id: reqRow.tenant_id,
+      student_id: reqRow.student_id,
+      amount,
+      method: "mpesa",
+      reference: receiptNo,
+      payer_phone: String(meta.PhoneNumber ?? reqRow.msisdn),
+      status: "confirmed",
+      paid_at: new Date().toISOString(),
+      idempotency_key: `stk:${checkoutId}`,
+      metadata: { source: "stk_push", checkout_request_id: checkoutId },
+    }).select("id").single();
+
+    if (payErr) {
+      console.error("[mpesa-stk-callback] payment insert failed", payErr.message);
+      return ack();
     }
 
-    return new Response(JSON.stringify({ ResultCode: 0, ResultDesc: "Accepted" }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    if (reqRow.invoice_id) {
+      await admin.from("payment_allocations").insert({
+        tenant_id: reqRow.tenant_id,
+        payment_id: payment.id,
+        invoice_id: reqRow.invoice_id,
+        amount,
+      });
+    }
+
+    const { data: receipt } = await admin.from("student_receipts").insert({
+      tenant_id: reqRow.tenant_id,
+      payment_id: payment.id,
+      student_id: reqRow.student_id,
+      amount,
+    }).select("id").single();
+
+    await admin.from("mpesa_stk_requests").update({ payment_id: payment.id }).eq("id", reqRow.id);
+
+    if (receipt?.id) callInternal("generate-receipt-pdf", { receipt_id: receipt.id }).catch(() => {});
+
+    return ack();
   } catch (e) {
-    console.error("mpesa-stk-callback error", e);
-    return new Response(JSON.stringify({ ResultCode: 0, ResultDesc: "err" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    console.error("[mpesa-stk-callback]", (e as Error).message);
+    return ack();
   }
 });
