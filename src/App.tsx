@@ -288,7 +288,8 @@ function AppRoutes() {
       <Route path="/compliance/exam-bodies" element={<ProtectedRoute><DashboardLayout><ExamBodies /></DashboardLayout></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/settings/security/2fa" element={<ProtectedRoute><DashboardLayout><TwoFactorPage /></DashboardLayout></ProtectedRoute>} />
-      <Route path="/setup" element={<ProtectedRoute><DashboardLayout><SchoolSetup /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/setup" element={<ProtectedRoute><DashboardLayout><SetupWizard /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/setup/school" element={<ProtectedRoute><DashboardLayout><SchoolSetup /></DashboardLayout></ProtectedRoute>} />
       <Route path="/onboarding" element={<RequireAuth requireTenant={false}><Onboarding /></RequireAuth>} />
       <Route path="/billing" element={<ProtectedRoute><DashboardLayout><Billing /></DashboardLayout></ProtectedRoute>} />
       <Route path="/admin/tenants" element={<ProtectedRoute><DashboardLayout><SuperAdminTenants /></DashboardLayout></ProtectedRoute>} />
