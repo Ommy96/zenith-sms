@@ -7243,6 +7243,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ai_cost_this_month: { Args: { p_tenant_id: string }; Returns: number }
+      ai_usage_this_month: { Args: { p_tenant_id: string }; Returns: number }
       auth_user_id: { Args: never; Returns: string }
       calc_kenya_paye: { Args: { p_gross: number }; Returns: number }
       calc_kenya_payroll: {
@@ -7316,6 +7318,10 @@ export type Database = {
       }
       recompute_invoice_totals: {
         Args: { p_invoice_id: string }
+        Returns: undefined
+      }
+      recompute_setup_progress: {
+        Args: { p_tenant_id: string }
         Returns: undefined
       }
       user_has_permission: {
