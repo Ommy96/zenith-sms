@@ -1,62 +1,44 @@
-// AI Study Buddy — homework helper chat for students/parents in the portal.
-// Streaming SSE response. Verifies caller is linked to the studentId via portal RPC.
-
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { createClient } from "npm:@supabase/supabase-js@2";
-import { authedUser, aiStream, checkQuota } from "../_shared/ai-service.ts";
-import { requireOwnsResource, EdgeAuthError } from "../_shared/auth.ts";
-
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-}
+// Student learning assistant. Streams the answer back over SSE.
+import { adminClient, authedUser, authErrorResponse } from "../_shared/auth.ts";
+import { requireOwnsResource } from "../_shared/ownership.ts";
+import { streamAnthropic, corsHeaders, jsonResponse } from "../_shared/ai.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const user = await authedUser(req);
-    if (!user) return json({ error: "Unauthorized" }, 401);
-    const body = await req.json();
-    const { tenantId, studentId, subject, messages } = body ?? {};
-    if (!tenantId || !studentId || !Array.isArray(messages) || messages.length === 0) {
-      return json({ error: "tenantId, studentId, messages required" }, 400);
-    }
+    const { student_id, question, subject_id } = await req.json();
+    if (!student_id || !question) return jsonResponse({ error: "student_id and question required" }, 400);
 
-    const svc = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-
-    // Ownership is resolved live (guardian link / staff tenant membership) and audited.
-    const owned = await requireOwnsResource({
-      user, resourceType: "student", resourceId: studentId,
-      functionName: "ai-study-buddy", req,
+    await requireOwnsResource({
+      user,
+      resourceType: "student",
+      resourceId: student_id,
+      functionName: "ai-study-buddy",
+      req,
     });
-    if (owned.tenantId !== tenantId) return json({ error: "Forbidden: tenant mismatch" }, 403);
 
-    const { data: stu } = await svc.from("students")
-      .select("first_name, last_name, classes(name, grade_levels(name, stage))")
-      .eq("id", studentId).maybeSingle();
-    const gradeLevel = (stu as any)?.classes?.grade_levels?.name ?? "";
-    const stage = (stu as any)?.classes?.grade_levels?.stage ?? "";
+    const admin = adminClient();
+    const { data: student } = await admin.from("students")
+      .select("tenant_id, first_name, current_class_id").eq("id", student_id).maybeSingle();
+    const { data: subject } = subject_id
+      ? await admin.from("subjects").select("name").eq("id", subject_id).maybeSingle()
+      : { data: null };
 
-    const system = `You are Study Buddy — a patient, encouraging homework helper.
-You are helping ${stu?.first_name ?? "the student"}, who is in ${gradeLevel || "school"} (${stage || ""}).
-${subject ? `Today they are working on: ${subject}.` : ""}
-Rules:
-- Explain step-by-step and use examples appropriate for their grade level.
-- Never just give the final answer to a homework question without showing reasoning. Guide them to think it through.
-- If asked for inappropriate help (cheating on a graded exam, harmful content), politely decline.
-- Keep tone warm, supportive, and short — 3-6 sentences per turn unless a worked example is needed.
-- Use simple markdown (lists, bold) when it helps.`;
-
-    const quota = await checkQuota(tenantId);
-    if (quota.state === "hard_stop") return json({ error: "AI_QUOTA_EXCEEDED" }, 429);
-
-    return await aiStream({
-      tenantId, userId: user.userId, feature: "study_buddy",
-      system, messages, temperature: 0.6, maxTokens: 800,
-      cache: false,
-      requestMeta: { studentId, subject },
-    }, corsHeaders);
+    return await streamAnthropic({
+      tenantId: student?.tenant_id ?? null,
+      userId: user.userId,
+      functionName: "ai-study-buddy",
+      purpose: "study_help",
+      system:
+        "You are a patient study buddy for a school learner. Explain step by step in simple language, " +
+        "use local examples where helpful, and never simply hand over homework answers — guide the learner to them." +
+        (subject?.name ? ` The subject is ${subject.name}.` : ""),
+      prompt: question,
+      maxTokens: 1500,
+      metadata: { student_id, subject_id: subject_id ?? null },
+    });
   } catch (e) {
-    if (e instanceof EdgeAuthError) return json({ error: e.message }, e.status);
-    return json({ error: e instanceof Error ? e.message : String(e) }, 500);
+    return authErrorResponse(e, corsHeaders);
   }
 });
