@@ -163,7 +163,7 @@ export default function Landing() {
                     ))}
                   </ul>
                   <Button asChild className="mt-6 w-full" variant={plan.highlight ? "default" : "outline"}>
-                    <Link to={plan.name === "Enterprise" ? "#contact" : "/signup"}>{plan.cta}</Link>
+                    <Link to={plan.name === "Enterprise" ? "#contact" : "/auth/signup"}>{plan.cta}</Link>
                   </Button>
                 </CardContent>
               </Card>
