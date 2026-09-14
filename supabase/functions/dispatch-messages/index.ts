@@ -16,8 +16,15 @@ const MAX_RETRIES = 3;
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    requireInternalSecret(req);
     const admin = adminClient();
+    // pg_cron authenticates with a key held in the encrypted vault.
+    const cronKey = req.headers.get("x-zenith-cron-key");
+    let cronOk = false;
+    if (cronKey) {
+      const { data } = await admin.rpc("verify_cron_key", { _key: cronKey });
+      cronOk = data === true;
+    }
+    if (!cronOk) requireInternalSecret(req);
     const body = await req.json().catch(() => ({}));
     const limit = Math.min(Number(body?.limit) || 100, 200);
     const nowIso = new Date().toISOString();
