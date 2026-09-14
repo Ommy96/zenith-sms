@@ -136,8 +136,8 @@ function TenantErrorScreen({ error }: { error: string }) {
             Retry
           </button>
           <a
-            href="/login"
-            onClick={async (e) => { e.preventDefault(); const { supabase } = await import("@/integrations/supabase/client"); await supabase.auth.signOut(); window.location.href = "/login"; }}
+            href="/auth/login"
+            onClick={async (e) => { e.preventDefault(); const { supabase } = await import("@/integrations/supabase/client"); await supabase.auth.signOut(); window.location.href = "/auth/login"; }}
             className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
           >
             Sign out
@@ -153,11 +153,11 @@ function RequireAuth({ children, requireTenant = true }: { children: React.React
   const { tenant, loading: tenantLoading, error: tenantError } = useTenant();
 
   if (authLoading) return <FullPageSpinner />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/auth/login" replace />;
   if (!requireTenant) return <>{children}</>;
   if (tenantLoading) return <FullPageSpinner />;
   if (tenantError) return <TenantErrorScreen error={tenantError} />;
-  if (!tenant) return <Navigate to="/onboarding" replace />;
+  if (!tenant) return <Navigate to="/setup/provisioning" replace />;
   return <>{children}</>;
 }
 
@@ -179,7 +179,7 @@ function PortalProtectedRoute({ children }: { children: React.ReactNode }) {
 function PublicAuthRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <FullPageSpinner />;
-  if (user) return <Navigate to="/app" replace />;
+  if (user) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -189,7 +189,7 @@ function RootRoute() {
   if (authLoading) return <FullPageSpinner />;
   if (!user) return <Landing />;
   if (tenantLoading) return <FullPageSpinner />;
-  if (!tenant) return <Navigate to="/onboarding" replace />;
+  if (!tenant) return <Navigate to="/setup/provisioning" replace />;
   return <Navigate to="/app" replace />;
 }
 
@@ -200,10 +200,18 @@ function AppRoutes() {
       {/* Root — landing for guests, /app for authed-with-tenant, /onboarding otherwise */}
       <Route path="/" element={<RootRoute />} />
 
-      {/* Public routes */}
-      <Route path="/login" element={<PublicAuthRoute><Login /></PublicAuthRoute>} />
-      <Route path="/signup" element={<PublicAuthRoute><Signup /></PublicAuthRoute>} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
+      {/* Public auth routes */}
+      <Route path="/auth/login" element={<PublicAuthRoute><Login /></PublicAuthRoute>} />
+      <Route path="/auth/signup" element={<PublicAuthRoute><Signup /></PublicAuthRoute>} />
+      <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+      <Route path="/auth/reset-password" element={<ResetPassword />} />
+      <Route path="/auth/verify-email" element={<VerifyEmail />} />
+      <Route path="/setup/provisioning" element={<Provisioning />} />
+
+      {/* Legacy paths */}
+      <Route path="/login" element={<Navigate to="/auth/login" replace />} />
+      <Route path="/signup" element={<Navigate to="/auth/signup" replace />} />
+      <Route path="/forgot-password" element={<Navigate to="/auth/forgot-password" replace />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Parent Portal */}
