@@ -413,6 +413,83 @@ export type Database = {
           },
         ]
       }
+      broadcast_campaigns: {
+        Row: {
+          actual_cost: number | null
+          audience_query: Json
+          body_template: string
+          channel: string
+          created_at: string
+          created_by: string | null
+          delivered_count: number
+          estimated_cost: number | null
+          failed_count: number
+          id: string
+          metadata: Json
+          name: string
+          scheduled_for: string | null
+          sent_at: string | null
+          sent_count: number
+          status: string
+          subject: string | null
+          tenant_id: string
+          total_recipients: number
+          updated_at: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          audience_query?: Json
+          body_template: string
+          channel: string
+          created_at?: string
+          created_by?: string | null
+          delivered_count?: number
+          estimated_cost?: number | null
+          failed_count?: number
+          id?: string
+          metadata?: Json
+          name: string
+          scheduled_for?: string | null
+          sent_at?: string | null
+          sent_count?: number
+          status?: string
+          subject?: string | null
+          tenant_id: string
+          total_recipients?: number
+          updated_at?: string
+        }
+        Update: {
+          actual_cost?: number | null
+          audience_query?: Json
+          body_template?: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          delivered_count?: number
+          estimated_cost?: number | null
+          failed_count?: number
+          id?: string
+          metadata?: Json
+          name?: string
+          scheduled_for?: string | null
+          sent_at?: string | null
+          sent_count?: number
+          status?: string
+          subject?: string | null
+          tenant_id?: string
+          total_recipients?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broadcast_campaigns_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cbc_values: {
         Row: {
           code: string
@@ -1912,6 +1989,305 @@ export type Database = {
           },
         ]
       }
+      message_templates: {
+        Row: {
+          body_template: string
+          channel: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_system: boolean
+          key: string
+          language: string
+          name: string
+          notes: string | null
+          subject: string | null
+          tenant_id: string | null
+          updated_at: string
+          variables: string[]
+        }
+        Insert: {
+          body_template: string
+          channel: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          key: string
+          language?: string
+          name: string
+          notes?: string | null
+          subject?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          variables?: string[]
+        }
+        Update: {
+          body_template?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          key?: string
+          language?: string
+          name?: string
+          notes?: string | null
+          subject?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          variables?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_templates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          body: string
+          campaign_id: string | null
+          channel: string
+          cost: number | null
+          cost_currency: string | null
+          created_at: string
+          delivered_at: string | null
+          direction: string
+          error: string | null
+          failed_at: string | null
+          id: string
+          metadata: Json
+          provider: string | null
+          provider_message_id: string | null
+          read_at: string | null
+          receipt_id: string | null
+          recipient_email: string | null
+          recipient_id: string | null
+          recipient_name: string | null
+          recipient_phone: string | null
+          recipient_type: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          retry_count: number
+          scheduled_for: string | null
+          sender_user_id: string | null
+          sent_at: string | null
+          status: string
+          student_id: string | null
+          subject: string | null
+          template_id: string | null
+          template_key: string | null
+          template_variables: Json
+          tenant_id: string
+          thread_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          campaign_id?: string | null
+          channel: string
+          cost?: number | null
+          cost_currency?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          direction?: string
+          error?: string | null
+          failed_at?: string | null
+          id?: string
+          metadata?: Json
+          provider?: string | null
+          provider_message_id?: string | null
+          read_at?: string | null
+          receipt_id?: string | null
+          recipient_email?: string | null
+          recipient_id?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          recipient_type?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          retry_count?: number
+          scheduled_for?: string | null
+          sender_user_id?: string | null
+          sent_at?: string | null
+          status?: string
+          student_id?: string | null
+          subject?: string | null
+          template_id?: string | null
+          template_key?: string | null
+          template_variables?: Json
+          tenant_id: string
+          thread_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          campaign_id?: string | null
+          channel?: string
+          cost?: number | null
+          cost_currency?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          direction?: string
+          error?: string | null
+          failed_at?: string | null
+          id?: string
+          metadata?: Json
+          provider?: string | null
+          provider_message_id?: string | null
+          read_at?: string | null
+          receipt_id?: string | null
+          recipient_email?: string | null
+          recipient_id?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          recipient_type?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          retry_count?: number
+          scheduled_for?: string | null
+          sender_user_id?: string | null
+          sent_at?: string | null
+          status?: string
+          student_id?: string | null
+          subject?: string | null
+          template_id?: string | null
+          template_key?: string | null
+          template_variables?: Json
+          tenant_id?: string
+          thread_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "broadcast_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "student_receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "message_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "messaging_inbox_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messaging_inbox_threads: {
+        Row: {
+          assigned_to: string | null
+          channel: string
+          contact_name: string | null
+          contact_phone: string
+          created_at: string
+          guardian_id: string | null
+          id: string
+          last_message_at: string
+          notes: string | null
+          status: string
+          student_id: string | null
+          tenant_id: string
+          unread_count: number
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          channel: string
+          contact_name?: string | null
+          contact_phone: string
+          created_at?: string
+          guardian_id?: string | null
+          id?: string
+          last_message_at?: string
+          notes?: string | null
+          status?: string
+          student_id?: string | null
+          tenant_id: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          channel?: string
+          contact_name?: string | null
+          contact_phone?: string
+          created_at?: string
+          guardian_id?: string | null
+          id?: string
+          last_message_at?: string
+          notes?: string | null
+          status?: string
+          student_id?: string | null
+          tenant_id?: string
+          unread_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messaging_inbox_threads_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messaging_inbox_threads_guardian_id_fkey"
+            columns: ["guardian_id"]
+            isOneToOne: false
+            referencedRelation: "guardians"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messaging_inbox_threads_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messaging_inbox_threads_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mpesa_c2b_transactions: {
         Row: {
           amount: number
@@ -2565,6 +2941,30 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_auth_ratelimit: {
+        Row: {
+          endpoint: string
+          hit_count: number
+          id: string
+          key: string
+          window_start: string
+        }
+        Insert: {
+          endpoint: string
+          hit_count?: number
+          id?: string
+          key: string
+          window_start?: string
+        }
+        Update: {
+          endpoint?: string
+          hit_count?: number
+          id?: string
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       portal_otps: {
         Row: {
           attempts: number
@@ -2572,8 +2972,14 @@ export type Database = {
           consumed_at: string | null
           created_at: string
           expires_at: string
+          guardian_id: string | null
           id: string
+          is_consumed: boolean
+          max_attempts: number
           phone: string
+          purpose: string
+          student_id: string | null
+          tenant_id: string | null
         }
         Insert: {
           attempts?: number
@@ -2581,8 +2987,14 @@ export type Database = {
           consumed_at?: string | null
           created_at?: string
           expires_at: string
+          guardian_id?: string | null
           id?: string
+          is_consumed?: boolean
+          max_attempts?: number
           phone: string
+          purpose?: string
+          student_id?: string | null
+          tenant_id?: string | null
         }
         Update: {
           attempts?: number
@@ -2590,10 +3002,38 @@ export type Database = {
           consumed_at?: string | null
           created_at?: string
           expires_at?: string
+          guardian_id?: string | null
           id?: string
+          is_consumed?: boolean
+          max_attempts?: number
           phone?: string
+          purpose?: string
+          student_id?: string | null
+          tenant_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "portal_otps_guardian_id_fkey"
+            columns: ["guardian_id"]
+            isOneToOne: false
+            referencedRelation: "guardians"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_otps_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_otps_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
