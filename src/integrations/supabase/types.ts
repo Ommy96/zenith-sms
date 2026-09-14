@@ -5110,6 +5110,7 @@ export type Database = {
         Returns: boolean
       }
       user_tenant_ids: { Args: never; Returns: string[] }
+      verify_cron_key: { Args: { _key: string }; Returns: boolean }
     }
     Enums: {
       blood_group_enum:
