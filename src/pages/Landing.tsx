@@ -78,8 +78,8 @@ export default function Landing() {
               <Button asChild size="sm"><Link to="/app">Open dashboard <ArrowRight className="ml-1 h-4 w-4" /></Link></Button>
             ) : (
               <>
-                <Button asChild variant="ghost" size="sm"><Link to="/login">Sign in</Link></Button>
-                <Button asChild size="sm"><Link to="/signup">Get started</Link></Button>
+                <Button asChild variant="ghost" size="sm"><Link to="/auth/login">Sign in</Link></Button>
+                <Button asChild size="sm"><Link to="/auth/signup">Get started</Link></Button>
               </>
             )}
           </div>
@@ -101,9 +101,9 @@ export default function Landing() {
               fast, multi-tenant platform — built for CBC, 8-4-4, UNEB, and NECTA.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Button asChild size="lg" className="h-12 px-6"><Link to="/signup">Start free <ArrowRight className="ml-1.5 h-4 w-4" /></Link></Button>
+              <Button asChild size="lg" className="h-12 px-6"><Link to="/auth/signup">Start free <ArrowRight className="ml-1.5 h-4 w-4" /></Link></Button>
               <Button asChild size="lg" variant="outline" className="h-12 px-6">
-                <Link to="/signup?demo=1"><Sparkles className="mr-1.5 h-4 w-4" />Try a live demo</Link>
+                <Link to="/auth/signup?demo=1"><Sparkles className="mr-1.5 h-4 w-4" />Try a live demo</Link>
               </Button>
             </div>
             <div className="mt-6 flex items-center gap-4 text-xs text-muted-foreground">
@@ -163,7 +163,7 @@ export default function Landing() {
                     ))}
                   </ul>
                   <Button asChild className="mt-6 w-full" variant={plan.highlight ? "default" : "outline"}>
-                    <Link to={plan.name === "Enterprise" ? "#contact" : "/signup"}>{plan.cta}</Link>
+                    <Link to={plan.name === "Enterprise" ? "#contact" : "/auth/signup"}>{plan.cta}</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -236,7 +236,7 @@ export default function Landing() {
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight relative">Ready to put the spreadsheet down?</h2>
           <p className="mt-3 text-primary-foreground/80 max-w-xl mx-auto relative">Set up your school in under 15 minutes. The onboarding wizard handles the rest.</p>
           <div className="mt-7 flex justify-center gap-3 relative">
-            <Button asChild size="lg" variant="secondary" className="h-12 px-6"><Link to="/signup">Create my school <ArrowRight className="ml-1.5 h-4 w-4" /></Link></Button>
+            <Button asChild size="lg" variant="secondary" className="h-12 px-6"><Link to="/auth/signup">Create my school <ArrowRight className="ml-1.5 h-4 w-4" /></Link></Button>
             <Button asChild size="lg" variant="outline" className="h-12 px-6 bg-transparent text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/10 hover:text-primary-foreground">
               <a href={WHATSAPP_URL} target="_blank" rel="noreferrer"><Phone className="mr-1.5 h-4 w-4" />Talk to us</a>
             </Button>

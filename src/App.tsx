@@ -8,10 +8,12 @@ import { TenantProvider, useTenant } from "@/contexts/TenantContext";
 import { DashboardLayout } from "./components/DashboardLayout";
 import { lazy, Suspense } from "react";
 import { ConsentBanner } from "@/components/ConsentBanner";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import ForgotPassword from "./pages/ForgotPassword";
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import VerifyEmail from "./pages/auth/VerifyEmail";
 import ResetPassword from "./pages/ResetPassword";
+import Provisioning from "./pages/setup/Provisioning";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 import { PortalProvider } from "@/contexts/PortalContext";
@@ -69,6 +71,7 @@ const RwandaPage = lazy(() => import("./pages/integrations/Rwanda"));
 const EthiopiaPage = lazy(() => import("./pages/integrations/Ethiopia"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
 const SchoolSetup = lazy(() => import("./pages/SchoolSetup"));
+const SetupWizard = lazy(() => import("./pages/setup/SetupWizard"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const DataProtection = lazy(() => import("./pages/dpa/DataProtection"));
 const SubjectRequests = lazy(() => import("./pages/dpa/SubjectRequests"));
@@ -134,8 +137,8 @@ function TenantErrorScreen({ error }: { error: string }) {
             Retry
           </button>
           <a
-            href="/login"
-            onClick={async (e) => { e.preventDefault(); const { supabase } = await import("@/integrations/supabase/client"); await supabase.auth.signOut(); window.location.href = "/login"; }}
+            href="/auth/login"
+            onClick={async (e) => { e.preventDefault(); const { supabase } = await import("@/integrations/supabase/client"); await supabase.auth.signOut(); window.location.href = "/auth/login"; }}
             className="rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
           >
             Sign out
@@ -151,11 +154,11 @@ function RequireAuth({ children, requireTenant = true }: { children: React.React
   const { tenant, loading: tenantLoading, error: tenantError } = useTenant();
 
   if (authLoading) return <FullPageSpinner />;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/auth/login" replace />;
   if (!requireTenant) return <>{children}</>;
   if (tenantLoading) return <FullPageSpinner />;
   if (tenantError) return <TenantErrorScreen error={tenantError} />;
-  if (!tenant) return <Navigate to="/onboarding" replace />;
+  if (!tenant) return <Navigate to="/setup/provisioning" replace />;
   return <>{children}</>;
 }
 
@@ -177,7 +180,7 @@ function PortalProtectedRoute({ children }: { children: React.ReactNode }) {
 function PublicAuthRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <FullPageSpinner />;
-  if (user) return <Navigate to="/app" replace />;
+  if (user) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -187,7 +190,7 @@ function RootRoute() {
   if (authLoading) return <FullPageSpinner />;
   if (!user) return <Landing />;
   if (tenantLoading) return <FullPageSpinner />;
-  if (!tenant) return <Navigate to="/onboarding" replace />;
+  if (!tenant) return <Navigate to="/setup/provisioning" replace />;
   return <Navigate to="/app" replace />;
 }
 
@@ -198,10 +201,18 @@ function AppRoutes() {
       {/* Root — landing for guests, /app for authed-with-tenant, /onboarding otherwise */}
       <Route path="/" element={<RootRoute />} />
 
-      {/* Public routes */}
-      <Route path="/login" element={<PublicAuthRoute><Login /></PublicAuthRoute>} />
-      <Route path="/signup" element={<PublicAuthRoute><Signup /></PublicAuthRoute>} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
+      {/* Public auth routes */}
+      <Route path="/auth/login" element={<PublicAuthRoute><Login /></PublicAuthRoute>} />
+      <Route path="/auth/signup" element={<PublicAuthRoute><Signup /></PublicAuthRoute>} />
+      <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+      <Route path="/auth/reset-password" element={<ResetPassword />} />
+      <Route path="/auth/verify-email" element={<VerifyEmail />} />
+      <Route path="/setup/provisioning" element={<Provisioning />} />
+
+      {/* Legacy paths */}
+      <Route path="/login" element={<Navigate to="/auth/login" replace />} />
+      <Route path="/signup" element={<Navigate to="/auth/signup" replace />} />
+      <Route path="/forgot-password" element={<Navigate to="/auth/forgot-password" replace />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Parent Portal */}
@@ -277,7 +288,8 @@ function AppRoutes() {
       <Route path="/compliance/exam-bodies" element={<ProtectedRoute><DashboardLayout><ExamBodies /></DashboardLayout></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/settings/security/2fa" element={<ProtectedRoute><DashboardLayout><TwoFactorPage /></DashboardLayout></ProtectedRoute>} />
-      <Route path="/setup" element={<ProtectedRoute><DashboardLayout><SchoolSetup /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/setup" element={<ProtectedRoute><DashboardLayout><SetupWizard /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/setup/school" element={<ProtectedRoute><DashboardLayout><SchoolSetup /></DashboardLayout></ProtectedRoute>} />
       <Route path="/onboarding" element={<RequireAuth requireTenant={false}><Onboarding /></RequireAuth>} />
       <Route path="/billing" element={<ProtectedRoute><DashboardLayout><Billing /></DashboardLayout></ProtectedRoute>} />
       <Route path="/admin/tenants" element={<ProtectedRoute><DashboardLayout><SuperAdminTenants /></DashboardLayout></ProtectedRoute>} />

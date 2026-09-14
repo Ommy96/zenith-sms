@@ -17,61 +17,106 @@ export interface Tenant {
   subscription_plan: string;
   subscription_status: string;
   is_demo: boolean;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
 }
 
+const TENANT_COLUMNS =
+  "id, name, slug, logo_url, primary_color, country_code, currency_code, timezone, locale, school_type, curriculum, subscription_plan, subscription_status, is_demo, address, phone, email";
+
+const LAST_TENANT_KEY = "zenith.last_tenant_id";
+
 interface TenantContextType {
+  /** Active tenant (null while loading or when the user has none). */
   tenant: Tenant | null;
+  current_tenant: Tenant | null;
+  available_tenants: Tenant[];
+  switch_tenant: (tenantId: string) => void;
+  user_permissions: string[];
   permissions: string[];
+  roles: string[];
+  has_permission: (permission: string) => boolean;
+  can: (permission: string) => boolean;
+  is_loading: boolean;
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
-  can: (perm: string) => boolean;
 }
 
+const noop = () => {};
+
 const TenantContext = createContext<TenantContextType>({
-  tenant: null, permissions: [], loading: true, error: null, refresh: async () => {}, can: () => false,
+  tenant: null,
+  current_tenant: null,
+  available_tenants: [],
+  switch_tenant: noop,
+  user_permissions: [],
+  permissions: [],
+  roles: [],
+  has_permission: () => false,
+  can: () => false,
+  is_loading: true,
+  loading: true,
+  error: null,
+  refresh: async () => {},
 });
 
 export const useTenant = () => useContext(TenantContext);
 
 export function TenantProvider({ children }: { children: ReactNode }) {
-  const { user, profile, role, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const [tenants, setTenants] = useState<Tenant[]>([]);
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
+  const [roles, setRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async () => {
     if (!user) {
-      setTenant(null); setPermissions([]); setError(null); setLoading(false);
-      return;
-    }
-    if (!profile?.tenant_id) {
-      // User authenticated but no tenant assigned — RequireAuth will route to /onboarding.
-      setTenant(null); setPermissions([]); setError(null); setLoading(false);
+      setTenants([]); setTenant(null); setPermissions([]); setRoles([]); setError(null); setLoading(false);
       return;
     }
     try {
-      const tenantId = profile.tenant_id;
-      const [{ data: t, error: tErr }, { data: perms, error: pErr }] = await Promise.all([
-        supabase.from("tenants").select(
-          "id, name, slug, logo_url, primary_color, country_code, currency_code, timezone, locale, school_type, curriculum, subscription_plan, subscription_status, is_demo"
-        ).eq("id", tenantId).maybeSingle(),
-        supabase.from("user_roles")
-          .select("roles!inner(role_permissions(permissions(key)))")
+      const [{ data: memberships, error: mErr }, { data: roleRows, error: rErr }] = await Promise.all([
+        supabase
+          .from("user_tenants")
+          .select(`tenant_id, is_active, tenants!inner(${TENANT_COLUMNS})`)
+          .eq("user_id", user.id),
+        supabase
+          .from("user_roles")
+          .select("tenant_id, roles!inner(name, role_permissions(permissions(name)))")
           .eq("user_id", user.id),
       ]);
-      if (tErr) throw tErr;
-      if (pErr) throw pErr;
-      setTenant(t as any);
-      const keys = new Set<string>();
-      (perms as any[] | null)?.forEach((ur) => {
-        ur.roles?.role_permissions?.forEach((rp: any) => {
-          if (rp.permissions?.key) keys.add(rp.permissions.key);
+      if (mErr) throw mErr;
+      if (rErr) throw rErr;
+
+      const list: Tenant[] = ((memberships as any[]) ?? [])
+        .filter((m) => m.is_active !== false && m.tenants)
+        .map((m) => m.tenants as Tenant);
+      setTenants(list);
+
+      const stored = typeof window !== "undefined" ? window.localStorage.getItem(LAST_TENANT_KEY) : null;
+      const active = list.find((t) => t.id === stored) ?? list[0] ?? null;
+      setTenant(active);
+      if (active && typeof window !== "undefined") window.localStorage.setItem(LAST_TENANT_KEY, active.id);
+
+      const roleNames = new Set<string>();
+      const permKeys = new Set<string>();
+      ((roleRows as any[]) ?? []).forEach((ur) => {
+        const scoped = !ur.tenant_id || !active || ur.tenant_id === active.id;
+        if (!ur.roles) return;
+        if (ur.roles.name === "super_admin") roleNames.add("super_admin");
+        if (!scoped) return;
+        roleNames.add(ur.roles.name);
+        (ur.roles.role_permissions ?? []).forEach((rp: any) => {
+          if (rp.permissions?.name) permKeys.add(rp.permissions.name);
         });
       });
-      setPermissions(Array.from(keys));
+      setRoles(Array.from(roleNames));
+      setPermissions(Array.from(permKeys));
       setError(null);
     } catch (err: any) {
       console.error("[Tenant] load failed:", err);
@@ -81,34 +126,22 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
     }
-  }, [user, profile?.tenant_id]);
+  }, [user]);
 
   useEffect(() => {
-    // Invariant 1: wait until auth has resolved before doing anything.
     if (authLoading) return;
-
-    // If unauthenticated, resolve immediately — no tenant fetch.
     if (!user) {
-      setTenant(null); setPermissions([]); setError(null); setLoading(false);
+      setTenants([]); setTenant(null); setPermissions([]); setRoles([]); setError(null); setLoading(false);
       return;
     }
+    setLoading(true);
+    load();
 
-    // Authed but profile not yet fetched — wait (auth context will populate it).
-    if (!profile) {
-      setLoading(true);
-    } else {
-      setLoading(true);
-      load();
-    }
-
-    // Invariant 2: 5s hard timeout matching AuthContext.
+    // Hard 5s timeout — never hang on a spinner.
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       setLoading((prev) => {
-        if (prev) {
-          console.warn("[Tenant] load timed out after 5s");
-          setError((e) => e ?? "Workspace load timed out. Please try again.");
-        }
+        if (prev) console.warn("[Tenant] load timed out after 5s");
         return false;
       });
     }, 5000);
@@ -116,15 +149,39 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     return () => {
       if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
     };
-  }, [authLoading, user, profile, load]);
+  }, [authLoading, user, load]);
 
-  const can = useCallback((perm: string) => {
-    if (role === "super_admin" || role === "school_admin") return true;
+  const switch_tenant = useCallback((tenantId: string) => {
+    const next = tenants.find((t) => t.id === tenantId);
+    if (!next) return;
+    if (typeof window !== "undefined") window.localStorage.setItem(LAST_TENANT_KEY, tenantId);
+    setTenant(next);
+    load();
+  }, [tenants, load]);
+
+  const has_permission = useCallback((perm: string) => {
+    if (roles.includes("super_admin") || roles.includes("school_admin")) return true;
     return permissions.includes(perm);
-  }, [permissions, role]);
+  }, [permissions, roles]);
 
   return (
-    <TenantContext.Provider value={{ tenant, permissions, loading, error, refresh: load, can }}>
+    <TenantContext.Provider
+      value={{
+        tenant,
+        current_tenant: tenant,
+        available_tenants: tenants,
+        switch_tenant,
+        user_permissions: permissions,
+        permissions,
+        roles,
+        has_permission,
+        can: has_permission,
+        is_loading: loading,
+        loading,
+        error,
+        refresh: load,
+      }}
+    >
       {children}
     </TenantContext.Provider>
   );
