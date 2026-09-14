@@ -1,70 +1,41 @@
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
-
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+// Generates a CBC-format lesson plan.
+import { adminClient, authedUser, requirePermission, authErrorResponse } from "../_shared/auth.ts";
+import { callAnthropic, corsHeaders, jsonResponse } from "../_shared/ai.ts";
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const body = await req.json();
-    const { subject, class_name, date, objectives, learning_outcomes } = body || {};
-    if (!subject) {
-      return new Response(JSON.stringify({ error: 'subject required' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const user = await authedUser(req);
+    const { subject_id, grade_level_id, topic, duration_minutes, lesson_number, tenant_id } = await req.json();
+    if (!topic) return jsonResponse({ error: "topic required" }, 400);
+    const tenantId = tenant_id ?? user.tenantIds[0];
+    if (!user.isSuperAdmin) requirePermission(user, tenantId, "ai.use");
 
-    const outcomes = Array.isArray(learning_outcomes) && learning_outcomes.length
-      ? `\nTarget learning outcomes:\n- ${learning_outcomes.join('\n- ')}` : '';
+    const admin = adminClient();
+    const { data: subject } = subject_id
+      ? await admin.from("subjects").select("name").eq("id", subject_id).maybeSingle()
+      : { data: null };
+    const { data: grade } = grade_level_id
+      ? await admin.from("grade_levels").select("name").eq("id", grade_level_id).maybeSingle()
+      : { data: null };
 
-    const prompt = `You are an experienced East African teacher drafting a single 40-minute lesson plan.
-Subject: ${subject}
-Class: ${class_name || 'not specified'}
-Date: ${date || 'today'}
-Teacher notes: ${objectives || 'none provided'}${outcomes}
-
-Return ONLY valid JSON with these keys (no markdown, no commentary):
-{
-  "objectives": "2-4 SMART learning objectives, bulleted",
-  "materials": "list of materials needed",
-  "introduction": "5-minute hook/intro activity",
-  "development": "25-minute main lesson with teacher and learner activities",
-  "conclusion": "5-minute recap and check for understanding",
-  "assessment": "formative assessment for the lesson",
-  "homework": "short follow-up task"
-}`;
-
-    const aiRes = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' },
-      }),
+    const result = await callAnthropic({
+      tenantId,
+      userId: user.userId,
+      functionName: "draft-lesson-plan",
+      purpose: "lesson_plan",
+      system:
+        "You write CBC lesson plans. Use these headings: Strand, Sub-strand, Specific learning outcomes, " +
+        "Key inquiry question, Learning resources, Organisation of learning (introduction, lesson development " +
+        "in steps, conclusion), Core competencies, Values, Assessment, Teacher self-evaluation.",
+      prompt:
+        `Subject: ${subject?.name ?? "unspecified"}\nGrade: ${grade?.name ?? "unspecified"}\n` +
+        `Topic: ${topic}\nDuration: ${duration_minutes ?? 40} minutes\nLesson number: ${lesson_number ?? 1}`,
+      maxTokens: 2500,
     });
 
-    if (!aiRes.ok) {
-      const text = await aiRes.text();
-      return new Response(JSON.stringify({ error: 'ai_failed', detail: text }), {
-        status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const aiJson = await aiRes.json();
-    const content = aiJson?.choices?.[0]?.message?.content || '{}';
-    let plan: any = {};
-    try { plan = JSON.parse(content); } catch { plan = { development: content }; }
-
-    return new Response(JSON.stringify({ plan }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return jsonResponse({ ok: true, lesson_plan: result.text });
+  } catch (e) {
+    return authErrorResponse(e, corsHeaders);
   }
 });
