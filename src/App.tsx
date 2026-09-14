@@ -71,6 +71,7 @@ const RwandaPage = lazy(() => import("./pages/integrations/Rwanda"));
 const EthiopiaPage = lazy(() => import("./pages/integrations/Ethiopia"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
 const SchoolSetup = lazy(() => import("./pages/SchoolSetup"));
+const SetupWizard = lazy(() => import("./pages/setup/SetupWizard"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const DataProtection = lazy(() => import("./pages/dpa/DataProtection"));
 const SubjectRequests = lazy(() => import("./pages/dpa/SubjectRequests"));
