@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
     const user = await authedUser(req);
     const { academic_year_id, term_id, constraints, tenant_id } = await req.json();
     const tenantId = tenant_id ?? user.tenantIds[0];
-    if (!user.isSuperAdmin) requirePermission(user, tenantId, "timetable.manage");
+    if (!user.isSuperAdmin) requirePermission(user, tenantId, "timetable.edit");
 
     const admin = adminClient();
     const [{ data: classes }, { data: periods }, { data: classSubjects }] = await Promise.all([
