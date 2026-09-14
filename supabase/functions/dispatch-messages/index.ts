@@ -1,71 +1,74 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
+// dispatch-messages — drains the queued message outbox. Runs every minute via cron.
+//
+// verify_jwt: false. Requires the internal shared secret.
+// Env: ZENITH_INTERNAL_SECRET
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-const jr = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+import { adminClient, authErrorResponse, requireInternalSecret } from "../_shared/auth.ts";
+import { callInternal, corsHeaders, jsonResponse, readBody } from "../_shared/messaging.ts";
 
 const FN_BY_CHANNEL: Record<string, string> = {
   sms: "send-sms",
-  email: "send-email",
   whatsapp: "send-whatsapp",
+  email: "send-email",
 };
+const MAX_RETRIES = 3;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const SUPA_URL = Deno.env.get("SUPABASE_URL")!;
-    const SR_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const admin = createClient(SUPA_URL, SR_KEY);
+    requireInternalSecret(req);
+    const admin = adminClient();
     const body = await req.json().catch(() => ({}));
-    const limit = Math.min(Number(body?.limit) || 50, 200);
+    const limit = Math.min(Number(body?.limit) || 100, 200);
+    const nowIso = new Date().toISOString();
 
-    const { data: claimed, error } = await admin.rpc("claim_due_messages", { _limit: limit });
-    if (error) return jr({ error: error.message }, 500);
-    const rows: any[] = claimed || [];
-    if (!rows.length) return jr({ processed: 0 });
+    const { data: due, error } = await admin
+      .from("messages")
+      .select("id, channel, tenant_id, retry_count")
+      .eq("status", "queued")
+      .or(`scheduled_for.is.null,scheduled_for.lte.${nowIso}`)
+      .order("created_at", { ascending: true })
+      .limit(limit);
+    if (error) return jsonResponse({ error: error.message }, 500);
+    const rows = due ?? [];
+    if (!rows.length) return jsonResponse({ processed: 0, sent: 0 });
 
-    const results = await Promise.allSettled(
-      rows.map(async (m) => {
-        const fn = FN_BY_CHANNEL[m.channel];
-        if (!fn) {
-          await admin.from("messages").update({ status: "failed", failed_at: new Date().toISOString(), error: `Unsupported channel ${m.channel}` }).eq("id", m.id);
-          return { id: m.id, ok: false };
+    const results = await Promise.allSettled(rows.map(async (m: any) => {
+      const fn = FN_BY_CHANNEL[m.channel];
+      if (!fn) {
+        await admin.from("messages").update({
+          status: "failed", failed_at: new Date().toISOString(),
+          error: `Unsupported channel ${m.channel}`,
+        }).eq("id", m.id);
+        return false;
+      }
+      let ok = false;
+      let errText = "Dispatch failed";
+      try {
+        const res = await callInternal(fn, { message_id: m.id, tenant_id: m.tenant_id });
+        const data = await readBody(res);
+        ok = res.ok && data?.ok !== false;
+        if (!ok) errText = String(data?.error ?? data?.__raw ?? `HTTP ${res.status}`);
+      } catch (e) {
+        errText = (e as Error).message;
+      }
+      if (!ok) {
+        const retry = (m.retry_count ?? 0) + 1;
+        const { data: cur } = await admin.from("messages").select("status").eq("id", m.id).maybeSingle();
+        const patch: Record<string, unknown> = { retry_count: retry };
+        if (cur?.status !== "sent" && cur?.status !== "dry_run") {
+          patch.status = retry >= MAX_RETRIES ? "failed" : "queued";
+          patch.failed_at = new Date().toISOString();
+          patch.error = errText.slice(0, 500);
         }
-        let ok = false;
-        let errText = "Dispatch failed";
-        try {
-          const res = await fetch(`${SUPA_URL}/functions/v1/${fn}`, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${SR_KEY}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ message_id: m.id }),
-          });
-          const raw = await res.text();
-          let data: any = {};
-          try { data = JSON.parse(raw); } catch { data = { __raw: raw }; }
-          ok = res.ok && data?.ok !== false;
-          if (!ok) errText = String(data?.error?.message || data?.error || data?.__raw || `HTTP ${res.status}`);
-        } catch (e) {
-          errText = (e as Error).message;
-        }
-        if (!ok) {
-          // Safety net: never leave a claimed row stuck in "sending"
-          const { data: cur } = await admin.from("messages").select("status").eq("id", m.id).maybeSingle();
-          if (cur && cur.status !== "failed" && cur.status !== "sent") {
-            await admin.from("messages").update({
-              status: "failed", failed_at: new Date().toISOString(), error: errText.slice(0, 300),
-            }).eq("id", m.id);
-          }
-        }
-        return { id: m.id, ok };
-      })
-    );
+        await admin.from("messages").update(patch).eq("id", m.id);
+      }
+      return ok;
+    }));
 
-
-    const sent = results.filter((r) => r.status === "fulfilled" && (r.value as any).ok).length;
-    return jr({ processed: rows.length, sent });
+    const sent = results.filter((r) => r.status === "fulfilled" && r.value).length;
+    return jsonResponse({ processed: rows.length, sent });
   } catch (e) {
-    return jr({ error: (e as Error).message }, 500);
+    return authErrorResponse(e, corsHeaders);
   }
 });

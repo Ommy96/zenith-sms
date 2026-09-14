@@ -1,141 +1,75 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
+// send-sms — internal SMS primitive (Africa's Talking).
+//
+// verify_jwt: false. Requires the internal shared secret.
+// Env: MESSAGING_DRY_RUN, ZENITH_INTERNAL_SECRET,
+//      AFRICASTALKING_API_KEY, AFRICASTALKING_USERNAME, AFRICASTALKING_SENDER_ID
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-function jr(b: unknown, s = 200) {
-  return new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-}
-
-function normPhone(p: string, country = "KE"): string {
-  let x = (p || "").replace(/[^\d+]/g, "");
-  if (x.startsWith("+")) return x;
-  if (country === "KE") {
-    if (x.startsWith("0")) return "+254" + x.slice(1);
-    if (x.startsWith("254")) return "+" + x;
-    if (x.length === 9) return "+254" + x;
-  }
-  return x.startsWith("+") ? x : "+" + x;
-}
-
-async function readBody(res: Response): Promise<any> {
-  const text = await res.text();
-  try { return JSON.parse(text); } catch { return { __raw: text }; }
-}
+import { adminClient, authErrorResponse, requireInternalSecret } from "../_shared/auth.ts";
+import {
+  corsHeaders, jsonResponse, isDryRun, markDryRun, markFailed, markSent,
+  normalizePhone, readBody, updateMessageStatus,
+} from "../_shared/messaging.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   let messageId: string | null = null;
-  let adminRef: any = null;
   try {
-    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    adminRef = admin;
-    const { message_id } = await req.json();
+    requireInternalSecret(req);
+    const { tenant_id, recipient_phone, body, message_id } = await req.json();
     messageId = message_id ?? null;
-    if (!message_id) return jr({ error: "message_id required" }, 400);
+    if (!message_id) return jsonResponse({ error: "message_id required" }, 400);
 
-
+    const admin = adminClient();
     const { data: msg } = await admin.from("messages").select("*").eq("id", message_id).maybeSingle();
-    if (!msg) return jr({ error: "Message not found" }, 404);
-
-    const { data: cfg } = await admin.from("tenant_messaging_config").select("*").eq("tenant_id", msg.tenant_id).maybeSingle();
-    if (!cfg) {
-      await admin.from("messages").update({ status: "failed", failed_at: new Date().toISOString(), error: "No messaging config" }).eq("id", message_id);
-      return jr({ error: "No messaging config" }, 400);
+    if (!msg) return jsonResponse({ error: "Message not found" }, 404);
+    if (msg.status === "sent" || msg.status === "delivered") {
+      return jsonResponse({ ok: true, idempotent: true });
     }
 
-    // Daily reset
-    const today = new Date().toISOString().slice(0, 10);
-    if (cfg.last_reset_date !== today) {
-      await admin.from("tenant_messaging_config").update({ sms_sent_today: 0, email_sent_today: 0, last_reset_date: today }).eq("id", cfg.id);
-      cfg.sms_sent_today = 0;
-    }
-    if (cfg.sms_sent_today >= cfg.sms_daily_limit) {
-      await admin.from("messages").update({ status: "failed", failed_at: new Date().toISOString(), error: "SMS daily limit reached" }).eq("id", message_id);
-      return jr({ error: "Daily limit" }, 429);
-    }
+    const tenantId = tenant_id ?? msg.tenant_id;
+    const phone = normalizePhone(recipient_phone ?? msg.recipient_phone ?? "");
+    const text = body ?? msg.body;
+    if (!phone) { await markFailed(message_id, "No recipient phone"); return jsonResponse({ ok: false, error: "No recipient phone" }, 400); }
 
-    // Opt-out check
-    const phone = normPhone(msg.recipient_address || "", cfg.country_code);
-    const { data: opt } = await admin.from("message_opt_outs").select("id").eq("tenant_id", msg.tenant_id).eq("address", phone).eq("channel", "sms").maybeSingle();
-    if (opt) {
-      await admin.from("messages").update({ status: "failed", failed_at: new Date().toISOString(), error: "Recipient opted out" }).eq("id", message_id);
-      return jr({ error: "Opted out" }, 400);
+    if (await isDryRun(tenantId)) {
+      await markDryRun(message_id, "africastalking");
+      console.log(`[send-sms] DRY RUN -> ${phone}: ${text}`);
+      return jsonResponse({ ok: true, dry_run: true });
     }
 
-    let ok = false, providerId: string | null = null, errMsg: string | null = null, providerName = cfg.sms_provider;
-
-    if (cfg.sms_provider === "africastalking") {
-      if (!cfg.at_username || !cfg.at_api_key) {
-        errMsg = "Africa's Talking not configured";
-      } else {
-        const params = new URLSearchParams({
-          username: cfg.at_username,
-          to: phone,
-          message: msg.body,
-        });
-        if (cfg.at_sender_id) params.set("from", cfg.at_sender_id);
-        const res = await fetch("https://api.africastalking.com/version1/messaging", {
-          method: "POST",
-          headers: {
-            apiKey: cfg.at_api_key,
-            "Content-Type": "application/x-www-form-urlencoded",
-            Accept: "application/json",
-          },
-          body: params.toString(),
-        });
-        const data = await readBody(res);
-        const r = data?.SMSMessageData?.Recipients?.[0];
-        if (res.ok && r && (r.status === "Success" || r.statusCode === 101 || r.statusCode === 102)) {
-          ok = true;
-          providerId = r.messageId;
-        } else {
-          errMsg = (r?.status || data?.SMSMessageData?.Message || data?.__raw || `Send failed (HTTP ${res.status})`).toString().slice(0, 300);
-        }
-
-      }
-    } else if (cfg.sms_provider === "twilio") {
-      if (!cfg.twilio_account_sid || !cfg.twilio_auth_token || !cfg.twilio_from_number) {
-        errMsg = "Twilio not configured";
-      } else {
-        const auth = btoa(`${cfg.twilio_account_sid}:${cfg.twilio_auth_token}`);
-        const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${cfg.twilio_account_sid}/Messages.json`, {
-          method: "POST",
-          headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ To: phone, From: cfg.twilio_from_number, Body: msg.body }).toString(),
-        });
-        const data = await readBody(res);
-        if (res.ok) { ok = true; providerId = data.sid; } else { errMsg = (data?.message || data?.__raw || `Twilio failed (HTTP ${res.status})`).toString().slice(0, 300); }
-
-      }
-    } else {
-      errMsg = "Unknown SMS provider";
+    const apiKey = Deno.env.get("AFRICASTALKING_API_KEY");
+    const username = Deno.env.get("AFRICASTALKING_USERNAME");
+    if (!apiKey || !username) {
+      await markFailed(message_id, "SMS provider not configured", "africastalking");
+      return jsonResponse({ ok: false, error: "SMS provider not configured" }, 400);
     }
 
-    await admin.from("messages").update({
-      status: ok ? "sent" : "failed",
-      sent_at: ok ? new Date().toISOString() : null,
-      failed_at: ok ? null : new Date().toISOString(),
-      provider: providerName,
-      provider_message_id: providerId,
-      error: errMsg,
-    }).eq("id", message_id);
+    await updateMessageStatus(message_id, { status: "sending" });
+
+    const form = new URLSearchParams({ username, to: phone, message: text });
+    const sender = Deno.env.get("AFRICASTALKING_SENDER_ID");
+    if (sender) form.set("from", sender);
+
+    const res = await fetch("https://api.africastalking.com/version1/messaging", {
+      method: "POST",
+      headers: { apiKey, "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+      body: form.toString(),
+    });
+    const data = await readBody(res);
+    const recipient = data?.SMSMessageData?.Recipients?.[0];
+    const ok = res.ok && recipient?.statusCode >= 100 && recipient?.statusCode < 200;
 
     if (ok) {
-      await admin.from("tenant_messaging_config").update({ sms_sent_today: (cfg.sms_sent_today || 0) + 1 }).eq("id", cfg.id);
+      const cost = Number(String(recipient.cost || "").split(" ")[1] || 0) || null;
+      const currency = String(recipient.cost || "").split(" ")[0] || null;
+      await markSent(message_id, "africastalking", recipient.messageId ?? null, cost, currency);
+      return jsonResponse({ ok: true, provider_message_id: recipient.messageId });
     }
-
-    return jr({ ok, provider_id: providerId, error: errMsg });
+    const err = recipient?.status || data?.SMSMessageData?.Message || data?.__raw || `HTTP ${res.status}`;
+    await markFailed(message_id, String(err), "africastalking");
+    return jsonResponse({ ok: false, error: String(err) }, 502);
   } catch (e) {
-    const emsg = (e as Error).message;
-    if (adminRef && messageId) {
-      await adminRef.from("messages").update({
-        status: "failed", failed_at: new Date().toISOString(), error: emsg.slice(0, 300),
-      }).eq("id", messageId);
-    }
-    return jr({ ok: false, error: emsg }, 500);
+    if (messageId) await markFailed(messageId, (e as Error).message).catch(() => {});
+    return authErrorResponse(e, corsHeaders);
   }
-
 });
