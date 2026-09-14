@@ -2,6 +2,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
 import { DemoDataBanner } from "./DemoDataBanner";
+import { SetupBanner } from "./SetupBanner";
 
 /**
  * App shell — per design system §5 + §7.
@@ -18,7 +19,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <AppHeader />
           <DemoDataBanner />
           <main className="flex-1">
-            <div className="mx-auto w-full max-w-[1440px] px-4 md:px-8 py-6">
+            <div className="mx-auto w-full max-w-[1440px] px-4 md:px-8 py-6 space-y-6">
+              <SetupBanner />
               {children}
             </div>
           </main>
