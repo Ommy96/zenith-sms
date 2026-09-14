@@ -35,3 +35,10 @@ verify_jwt = false
 
 [functions.email-receipt]
 verify_jwt = false
+
+# AI: dual caller (signed-in staff OR the WhatsApp webhook internal secret).
+[functions.ai-parent-bot]
+verify_jwt = false
+
+# All other AI functions keep the platform default verify_jwt = true.
+
