@@ -1,300 +1,102 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { ArrowRight, BarChart3, BookOpenCheck, Check, MessageSquareText, ReceiptText, Smartphone, WalletCards } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Wallet, MessageCircle, GraduationCap, Check, X, Sparkles,
-  ShieldCheck, ArrowRight, Phone, MessageSquare, Quote, Globe2,
-} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { PublicThemeToggle, TopographicBackdrop, usePublicTheme, ZenithMark } from "@/components/public/PublicExperience";
+import { cn } from "@/lib/utils";
 
-const WHATSAPP_NUMBER = "254700000000"; // TODO: replace with real support line
-const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hi! I'd like to learn more about Zenith OS.")}`;
-
-const PILLARS = [
+const features = [
   {
-    icon: Wallet,
-    title: "Fees that collect themselves",
-    body:
-      "M-Pesa STK push, automatic reconciliation by admission number, scheduled reminders on WhatsApp & SMS, and clean PDF statements parents actually open.",
+    eyebrow: "FEES & PAYMENTS",
+    title: "Fee management that works with M-Pesa",
+    description: "Match payments automatically, send clear reminders, and give every family a reliable account history without chasing spreadsheets.",
+    points: ["Automatic M-Pesa matching", "Accurate balances in real time", "Receipts ready to download"],
+    icon: WalletCards,
+    preview: "fees",
   },
   {
-    icon: MessageCircle,
-    title: "Parents who stay informed",
-    body:
-      "Two-way WhatsApp inbox, absence alerts the moment a register is marked, report-card delivery in one click, and a self-service portal in their pocket.",
+    eyebrow: "ACADEMICS",
+    title: "CBC-native curriculum and reporting",
+    description: "Run teaching, assessment, and reporting around the curriculum your school actually uses—from early years through junior secondary.",
+    points: ["CBC competencies and values", "Clear learner progress", "Report cards without rework"],
+    icon: BookOpenCheck,
+    preview: "academics",
   },
   {
-    icon: GraduationCap,
-    title: "Academics with real intelligence",
-    body:
-      "CBC & 8-4-4 ready. Auto-generated timetables, OCR exam grading, AI report-card comments, and a Copilot that answers what your principal actually asks.",
+    eyebrow: "COMMUNICATION",
+    title: "Parent communication in three taps",
+    description: "Reach the right families quickly with fee updates, school notices, and useful information in channels they already understand.",
+    points: ["Targeted school updates", "Parent portal access", "Simple message history"],
+    icon: MessageSquareText,
+    preview: "messages",
   },
+] as const;
+
+const plans = [
+  { name: "Starter", description: "For growing schools establishing one reliable system.", features: ["Student records", "Fees and receipts", "Attendance", "Parent portal"] },
+  { name: "Standard", description: "For established schools connecting academics and operations.", features: ["Everything in Starter", "Exams and report cards", "M-Pesa reconciliation", "School messaging"], featured: true },
+  { name: "Pro", description: "For larger schools ready for advanced automation and insight.", features: ["Everything in Standard", "AI-assisted workflows", "Multi-department reporting", "Priority support"] },
 ];
 
-const PLANS = [
-  { name: "Free", price: "KES 0", note: "Up to 50 students", features: ["Students & guardians", "Manual fees & receipts", "Basic attendance", "1 admin user"], cta: "Start free", highlight: false },
-  { name: "Starter", price: "KES 4,000", note: "per term · up to 250 students", features: ["Everything in Free", "M-Pesa STK + reconciliation", "WhatsApp reminders (500/mo)", "Parent portal"], cta: "Start trial", highlight: false },
-  { name: "Standard", price: "KES 12,000", note: "per term · up to 800 students", features: ["Everything in Starter", "Examinations + report cards", "Transport & hostel", "5,000 WhatsApp msgs/mo"], cta: "Start trial", highlight: true },
-  { name: "Pro", price: "KES 25,000", note: "per term · up to 2,000 students", features: ["Everything in Standard", "AI Copilot + OCR grader", "Payroll (KE statutory)", "Priority support"], cta: "Start trial", highlight: false },
-  { name: "Enterprise", price: "Custom", note: "Multi-campus & MOE pilots", features: ["Unlimited students", "Dedicated success engineer", "SSO & DPO assistance", "Custom integrations"], cta: "Talk to sales", highlight: false },
-];
-
-const COMPARE = [
-  { feature: "M-Pesa Paybill + STK auto-match", us: true, zeraki: true, shulesoft: true },
-  { feature: "WhatsApp Cloud API (official)", us: true, zeraki: false, shulesoft: false },
-  { feature: "CBC competencies + values", us: true, zeraki: true, shulesoft: true },
-  { feature: "AI report-card comments", us: true, zeraki: false, shulesoft: false },
-  { feature: "OCR exam-paper grading", us: true, zeraki: false, shulesoft: false },
-  { feature: "Parent self-service portal (PWA)", us: true, zeraki: true, shulesoft: true },
-  { feature: "Real-time bus GPS tracking", us: true, zeraki: false, shulesoft: false },
-  { feature: "NEMIS / UNEB / NECTA imports", us: true, zeraki: true, shulesoft: true },
-  { feature: "Native mobile apps (iOS/Android)", us: false, zeraki: true, shulesoft: true },
-  { feature: "On-premise / offline-first deployment", us: false, zeraki: false, shulesoft: true },
-  { feature: "10+ years of installed base", us: false, zeraki: true, shulesoft: true },
-];
+function ProductPreview({ type }: { type: "fees" | "academics" | "messages" }) {
+  return (
+    <div className="relative min-h-[330px] overflow-hidden rounded-xl border border-border bg-card p-5 shadow-md sm:p-7">
+      <div className="flex items-center justify-between border-b border-border pb-4">
+        <div><div className="h-2.5 w-24 rounded-full bg-muted" /><div className="mt-2 h-2 w-16 rounded-full bg-primary/30" /></div>
+        <span className="rounded-md border border-border bg-background px-2 py-1 font-mono text-xs text-muted-foreground">LIVE</span>
+      </div>
+      {type === "fees" && <div className="grid gap-3 pt-5 sm:grid-cols-2"><div className="rounded-lg border border-border bg-background p-4"><ReceiptText className="text-primary" /><p className="mt-7 text-xs text-muted-foreground">COLLECTED THIS TERM</p><p className="mt-1 font-mono text-2xl font-medium">KES 2.48M</p></div><div className="rounded-lg border border-border bg-background p-4"><BarChart3 className="text-success" /><div className="mt-8 flex h-20 items-end gap-2">{[45, 72, 58, 90, 76].map((height) => <span key={height} className="flex-1 rounded-t-sm bg-primary/70" style={{ height: `${height}%` }} />)}</div></div><div className="rounded-lg border border-border bg-background p-4 sm:col-span-2"><div className="flex items-center justify-between text-sm"><span>M-Pesa payment matched</span><span className="font-mono text-success">+24,000</span></div></div></div>}
+      {type === "academics" && <div className="space-y-3 pt-5">{["Communication & collaboration", "Critical thinking", "Digital literacy"].map((item, index) => <div key={item} className="rounded-lg border border-border bg-background p-4"><div className="flex items-center justify-between text-sm"><span>{item}</span><span className="font-mono text-primary">{[82, 74, 88][index]}%</span></div><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: `${[82, 74, 88][index]}%` }} /></div></div>)}</div>}
+      {type === "messages" && <div className="space-y-3 pt-5"><div className="mr-12 rounded-lg border border-border bg-background p-4 text-sm">Your Term 2 fee statement is ready to view.</div><div className="ml-12 rounded-lg border border-primary/30 bg-primary/10 p-4 text-sm">Thank you. Payment will be made tomorrow.</div><div className="flex items-center gap-3 rounded-lg border border-border bg-background p-3"><Smartphone className="text-primary" /><span className="text-xs text-muted-foreground">Delivered to 428 parents</span></div></div>}
+    </div>
+  );
+}
 
 export default function Landing() {
   const { user } = useAuth();
+  const { theme, toggleTheme } = usePublicTheme();
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Nav */}
-      <header className="border-b border-border/60 backdrop-blur sticky top-0 z-30 bg-background/80">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 font-semibold text-lg">
-            <span className="h-8 w-8 rounded-lg bg-primary text-primary-foreground grid place-items-center font-bold">S</span>
-            Zenith OS
-          </Link>
-          <nav className="hidden md:flex items-center gap-7 text-sm text-muted-foreground">
-            <a href="#pillars" className="hover:text-foreground">Product</a>
-            <a href="#pricing" className="hover:text-foreground">Pricing</a>
-            <a href="#compare" className="hover:text-foreground">Comparison</a>
-            <Link to="/portal/login" className="hover:text-foreground">Parent portal</Link>
-          </nav>
-          <div className="flex items-center gap-2">
-            {user ? (
-              <Button asChild size="sm"><Link to="/app">Open dashboard <ArrowRight className="ml-1 h-4 w-4" /></Link></Button>
-            ) : (
-              <>
-                <Button asChild variant="ghost" size="sm"><Link to="/auth/login">Sign in</Link></Button>
-                <Button asChild size="sm"><Link to="/auth/signup">Get started</Link></Button>
-              </>
-            )}
-          </div>
+    <div className="zenith-public min-h-screen bg-background text-foreground" data-theme={theme}>
+      <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 sm:px-8">
+          <ZenithMark compact />
+          <nav className="hidden items-center gap-7 text-sm text-muted-foreground lg:flex"><a href="#schools">For Schools</a><Link to="/portal/login">Parents</Link><a href="#pricing">Pricing</a><a href="#about">About</a></nav>
+          <div className="flex items-center gap-1"><PublicThemeToggle theme={theme} onToggle={toggleTheme} />{user ? <Button asChild size="sm"><Link to="/app">Open workspace</Link></Button> : <><Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex"><Link to="/auth/login">Sign in</Link></Button><Button asChild size="sm"><Link to="/auth/signup">Get started</Link></Button></>}</div>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-accent/40 via-background to-background pointer-events-none" />
-        <div className="container mx-auto px-4 py-20 md:py-28 relative">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="max-w-3xl">
-            <Badge variant="secondary" className="mb-5 gap-1.5"><Globe2 className="h-3.5 w-3.5" />Built in Nairobi · Made for African schools</Badge>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-[1.05]">
-              School management for African schools.
-              <span className="block text-primary mt-2">Modern fees, parents, and academics in one place.</span>
-            </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-2xl">
-              Zenith OS replaces the spreadsheet, the WhatsApp group, and the dusty fee book with one calm,
-              fast, multi-tenant platform — built for CBC, 8-4-4, UNEB, and NECTA.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Button asChild size="lg" className="h-12 px-6"><Link to="/auth/signup">Start free <ArrowRight className="ml-1.5 h-4 w-4" /></Link></Button>
-              <Button asChild size="lg" variant="outline" className="h-12 px-6">
-                <Link to="/auth/signup?demo=1"><Sparkles className="mr-1.5 h-4 w-4" />Try a live demo</Link>
-              </Button>
-            </div>
-            <div className="mt-6 flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1"><ShieldCheck className="h-3.5 w-3.5 text-success" /> Kenya DPA 2019 aligned</span>
-              <span>·</span>
-              <span>No card required</span>
-              <span>·</span>
-              <span>Free up to 50 students</span>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Pillars */}
-      <section id="pillars" className="container mx-auto px-4 py-20">
-        <div className="max-w-2xl mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Three things schools actually need.</h2>
-          <p className="mt-3 text-muted-foreground">Everything else is built around these.</p>
-        </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          {PILLARS.map((p, i) => (
-            <motion.div key={p.title} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-              <Card className="h-full border-border/70 hover:border-primary/40 hover:shadow-md transition-all">
-                <CardContent className="p-6">
-                  <div className="h-11 w-11 rounded-lg bg-accent text-accent-foreground grid place-items-center mb-4">
-                    <p.icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">{p.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{p.body}</p>
-                </CardContent>
-              </Card>
+      <main>
+        <section className="relative min-h-[calc(100vh-4rem)] overflow-hidden border-b border-border">
+          <TopographicBackdrop />
+          <div className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] max-w-[1440px] flex-col items-center justify-center px-4 py-20 text-center sm:px-8">
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="max-w-5xl">
+              <span className="inline-flex rounded-full border border-primary/30 bg-primary/10 px-3 py-1 font-mono text-xs text-primary">BUILT IN AFRICA · FOR AFRICAN SCHOOLS</span>
+              <h1 className="mt-7 text-4xl font-semibold leading-tight sm:text-6xl lg:text-7xl">The Operating System<br className="hidden sm:block" /> for African Schools</h1>
+              <p className="mx-auto mt-6 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">Manage students, fees, attendance, and parent communication—all in one place. Built for schools in Kenya, Uganda, Tanzania, and beyond.</p>
+              <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row"><Button asChild size="lg" className="h-12 px-6"><Link to="/auth/signup">Get started <ArrowRight /></Link></Button><Button asChild size="lg" variant="outline" className="h-12 px-6"><a href="mailto:hello@zenith-os.app?subject=Zenith%20demo">Book a demo</a></Button></div>
+              <p className="mt-8 text-xs text-muted-foreground">Trusted by schools coming soon</p>
             </motion.div>
-          ))}
-        </div>
-      </section>
+          </div>
+        </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="bg-muted/30 border-y border-border/60 py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-2xl mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Honest pricing in shillings.</h2>
-            <p className="mt-3 text-muted-foreground">No per-message gotchas. No surprise dollar bills.</p>
+        <section id="schools" className="border-b border-border py-20 sm:py-28">
+          <div className="mx-auto max-w-[1200px] space-y-24 px-4 sm:px-8">
+            {features.map((feature, index) => <div key={feature.title} className="grid items-center gap-10 lg:grid-cols-2 lg:gap-20"><div className={cn(index % 2 === 1 && "lg:order-2")}><span className="font-mono text-xs text-primary">{feature.eyebrow}</span><feature.icon className="mt-6 h-9 w-9 text-primary" /><h2 className="mt-5 text-3xl font-semibold leading-tight sm:text-4xl">{feature.title}</h2><p className="mt-4 text-md leading-relaxed text-muted-foreground">{feature.description}</p><ul className="mt-7 space-y-3">{feature.points.map((point) => <li key={point} className="flex items-center gap-3 text-sm"><Check className="h-4 w-4 text-success" />{point}</li>)}</ul></div><div className={cn(index % 2 === 1 && "lg:order-1")}><ProductPreview type={feature.preview} /></div></div>)}
           </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-            {PLANS.map((plan) => (
-              <Card key={plan.name} className={`relative ${plan.highlight ? "border-primary shadow-lg ring-1 ring-primary/30" : "border-border/70"}`}>
-                {plan.highlight && (
-                  <Badge className="absolute -top-2.5 left-4">Most popular</Badge>
-                )}
-                <CardContent className="p-6 flex flex-col h-full">
-                  <div className="text-sm font-medium text-muted-foreground">{plan.name}</div>
-                  <div className="mt-2 text-3xl font-bold">{plan.price}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{plan.note}</div>
-                  <ul className="mt-5 space-y-2 text-sm flex-1">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex gap-2"><Check className="h-4 w-4 text-success shrink-0 mt-0.5" />{f}</li>
-                    ))}
-                  </ul>
-                  <Button asChild className="mt-6 w-full" variant={plan.highlight ? "default" : "outline"}>
-                    <Link to={plan.name === "Enterprise" ? "#contact" : "/auth/signup"}>{plan.cta}</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Comparison */}
-      <section id="compare" className="container mx-auto px-4 py-20">
-        <div className="max-w-2xl mb-10">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">How we compare.</h2>
-          <p className="mt-3 text-muted-foreground">We won't lie to win. Zeraki and Shulesoft are real products with real strengths — here's the honest line-by-line.</p>
-        </div>
-        <div className="border border-border/70 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/40 text-left">
-              <tr>
-                <th className="px-4 py-3 font-medium">Feature</th>
-                <th className="px-4 py-3 font-medium text-primary">Zenith OS</th>
-                <th className="px-4 py-3 font-medium">Zeraki</th>
-                <th className="px-4 py-3 font-medium">Shulesoft</th>
-              </tr>
-            </thead>
-            <tbody>
-              {COMPARE.map((row, i) => (
-                <tr key={row.feature} className={i % 2 ? "bg-muted/20" : ""}>
-                  <td className="px-4 py-3">{row.feature}</td>
-                  <td className="px-4 py-3">{row.us ? <Check className="h-4 w-4 text-success" /> : <X className="h-4 w-4 text-muted-foreground" />}</td>
-                  <td className="px-4 py-3">{row.zeraki ? <Check className="h-4 w-4 text-success" /> : <X className="h-4 w-4 text-muted-foreground" />}</td>
-                  <td className="px-4 py-3">{row.shulesoft ? <Check className="h-4 w-4 text-success" /> : <X className="h-4 w-4 text-muted-foreground" />}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+        <section className="border-b border-border bg-card/40 py-16">
+          <div className="mx-auto grid max-w-[1200px] gap-10 px-4 text-center sm:px-8 lg:grid-cols-2"><div><p className="font-mono text-xs text-primary">BUILT FOR</p><div className="mt-5 flex flex-wrap justify-center gap-3">{["KE", "UG", "TZ", "RW"].map((item) => <span key={item} className="rounded-md border border-border bg-background px-5 py-3 font-mono text-sm">{item}</span>)}</div></div><div><p className="font-mono text-xs text-primary">CURRICULA SUPPORTED</p><div className="mt-5 flex flex-wrap justify-center gap-3">{["CBC", "8-4-4", "IGCSE", "Cambridge", "IB"].map((item) => <span key={item} className="rounded-md border border-border bg-background px-4 py-3 text-sm">{item}</span>)}</div></div></div>
+        </section>
 
-      {/* Testimonials placeholder */}
-      <section className="bg-muted/30 border-y border-border/60 py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-2xl mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Schools shipping with us.</h2>
-            <p className="mt-3 text-muted-foreground">Pilot programme open. Quotes from our first three schools land here.</p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="border-dashed">
-                <CardContent className="p-6">
-                  <Quote className="h-6 w-6 text-muted-foreground/50 mb-3" />
-                  <p className="text-sm text-muted-foreground italic">Testimonial pending — pilot school {i}.</p>
-                  <div className="mt-4 flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-muted" />
-                    <div className="flex-1">
-                      <div className="h-3 w-24 bg-muted rounded mb-1.5" />
-                      <div className="h-2 w-32 bg-muted/60 rounded" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+        <section id="pricing" className="py-20 sm:py-28"><div className="mx-auto max-w-[1200px] px-4 sm:px-8"><div className="max-w-2xl"><span className="font-mono text-xs text-primary">SIMPLE PRICING</span><h2 className="mt-4 text-3xl font-semibold sm:text-4xl">A plan for every stage of growth.</h2></div><div className="mt-12 grid gap-4 lg:grid-cols-3">{plans.map((plan) => <div key={plan.name} className={cn("rounded-xl border bg-card p-6", plan.featured ? "border-primary" : "border-border")}><div className="flex items-center justify-between"><h3 className="text-xl font-semibold">{plan.name}</h3>{plan.featured && <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary">Most popular</span>}</div><p className="mt-3 text-sm text-muted-foreground">{plan.description}</p><ul className="mt-6 space-y-3 text-sm">{plan.features.map((item) => <li key={item} className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" />{item}</li>)}</ul><Button asChild className="mt-8 w-full" variant={plan.featured ? "default" : "outline"}><Link to="/auth/signup">Get started</Link></Button></div>)}</div><div className="mt-8 text-center"><Link to="/auth/signup" className="text-sm text-primary hover:underline">See full pricing <ArrowRight className="inline h-4 w-4" /></Link></div></div></section>
 
-      {/* CTA */}
-      <section className="container mx-auto px-4 py-20">
-        <div className="rounded-2xl bg-primary text-primary-foreground p-10 md:p-14 text-center relative overflow-hidden">
-          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_white,_transparent_60%)]" />
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight relative">Ready to put the spreadsheet down?</h2>
-          <p className="mt-3 text-primary-foreground/80 max-w-xl mx-auto relative">Set up your school in under 15 minutes. The onboarding wizard handles the rest.</p>
-          <div className="mt-7 flex justify-center gap-3 relative">
-            <Button asChild size="lg" variant="secondary" className="h-12 px-6"><Link to="/auth/signup">Create my school <ArrowRight className="ml-1.5 h-4 w-4" /></Link></Button>
-            <Button asChild size="lg" variant="outline" className="h-12 px-6 bg-transparent text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/10 hover:text-primary-foreground">
-              <a href={WHATSAPP_URL} target="_blank" rel="noreferrer"><Phone className="mr-1.5 h-4 w-4" />Talk to us</a>
-            </Button>
-          </div>
-        </div>
-      </section>
+        <section id="about" className="border-y border-border bg-card/40 py-20"><div className="mx-auto max-w-3xl px-4 text-center sm:px-8"><h2 className="text-3xl font-semibold sm:text-4xl">Run your school with clarity.</h2><p className="mt-4 text-muted-foreground">Bring your team, families, and school records into one dependable workspace.</p><Button asChild size="lg" className="mt-8 h-12 px-6"><Link to="/auth/signup">Create your school account <ArrowRight /></Link></Button></div></section>
+      </main>
 
-      {/* Footer */}
-      <footer id="contact" className="border-t border-border/60 py-12">
-        <div className="container mx-auto px-4 grid gap-8 md:grid-cols-4 text-sm">
-          <div>
-            <div className="flex items-center gap-2 font-semibold mb-3">
-              <span className="h-7 w-7 rounded-md bg-primary text-primary-foreground grid place-items-center font-bold">S</span>
-              Zenith OS
-            </div>
-            <p className="text-muted-foreground text-xs leading-relaxed">A unified operating system for modern schools across East Africa.</p>
-          </div>
-          <div>
-            <div className="font-medium mb-3">Product</div>
-            <ul className="space-y-2 text-muted-foreground">
-              <li><a href="#pillars" className="hover:text-foreground">Features</a></li>
-              <li><a href="#pricing" className="hover:text-foreground">Pricing</a></li>
-              <li><Link to="/portal/login" className="hover:text-foreground">Parent portal</Link></li>
-            </ul>
-          </div>
-          <div>
-            <div className="font-medium mb-3">Company</div>
-            <ul className="space-y-2 text-muted-foreground">
-              <li><a href="mailto:hello@zenith-os.app" className="hover:text-foreground">Contact</a></li>
-              <li><a href="https://status.zenith-os.app" className="hover:text-foreground" target="_blank" rel="noreferrer">Status</a></li>
-              <li><a href={WHATSAPP_URL} className="hover:text-foreground" target="_blank" rel="noreferrer">WhatsApp support</a></li>
-            </ul>
-          </div>
-          <div>
-            <div className="font-medium mb-3">Legal</div>
-            <ul className="space-y-2 text-muted-foreground">
-              <li><Link to="/dpa/policies" className="hover:text-foreground">Privacy Policy</Link></li>
-              <li><a href="/terms" className="hover:text-foreground">Terms of Service</a></li>
-              <li><Link to="/dpa" className="hover:text-foreground">Data protection</Link></li>
-            </ul>
-          </div>
-        </div>
-        <div className="container mx-auto px-4 mt-8 pt-6 border-t border-border/60 flex flex-col md:flex-row md:justify-between gap-2 text-xs text-muted-foreground">
-          <div>© {new Date().getFullYear()} Zenith OS. All rights reserved.</div>
-          <div>Made with care in Nairobi 🇰🇪</div>
-        </div>
-      </footer>
-
-      {/* WhatsApp floating button */}
-      <a
-        href={WHATSAPP_URL}
-        target="_blank"
-        rel="noreferrer"
-        aria-label="Chat with us on WhatsApp"
-        className="fixed bottom-6 right-6 z-40 h-14 w-14 rounded-full bg-success text-success-foreground shadow-xl grid place-items-center hover:scale-105 transition-transform"
-      >
-        <MessageSquare className="h-6 w-6" />
-      </a>
+      <footer className="py-12"><div className="mx-auto max-w-[1200px] px-4 sm:px-8"><div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4"><div><ZenithMark /><p className="mt-4 max-w-xs text-xs text-muted-foreground">One calm, connected system for the work that keeps a school moving.</p></div><div><p className="text-sm font-medium">Product</p><div className="mt-3 space-y-2 text-sm text-muted-foreground"><a className="block" href="#schools">For schools</a><Link className="block" to="/portal/login">Parent portal</Link><a className="block" href="#pricing">Pricing</a></div></div><div><p className="text-sm font-medium">Company</p><div className="mt-3 space-y-2 text-sm text-muted-foreground"><a className="block" href="mailto:hello@zenith-os.app">Contact</a><a className="block" href="#about">About</a></div></div><div><p className="text-sm font-medium">Legal</p><div className="mt-3 space-y-2 text-sm text-muted-foreground"><span className="block">Privacy Policy</span><span className="block">Terms</span></div></div></div><div className="mt-10 flex flex-col justify-between gap-2 border-t border-border pt-6 text-xs text-muted-foreground sm:flex-row"><span>A product of Infera Tech Solutions</span><span>© {new Date().getFullYear()} Zenith OS</span></div></div></footer>
     </div>
   );
 }
