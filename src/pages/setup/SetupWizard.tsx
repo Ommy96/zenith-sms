@@ -175,6 +175,7 @@ export default function SetupWizard() {
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: [tenantId, "academic_years"] });
+      await refreshProgress();
       toast.success("Academic year created", { duration: 3000 });
       goto(3);
     },
@@ -206,6 +207,7 @@ export default function SetupWizard() {
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: [tenantId, "terms"] });
+      await refreshProgress();
       toast.success("Terms created", { duration: 3000 });
       goto(4);
     },
@@ -223,6 +225,7 @@ export default function SetupWizard() {
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: [tenantId, "grade_levels"] });
+      await refreshProgress();
       toast.success("CBC grade levels added", { duration: 3000 });
     },
     onError: (e: any) => toast.error("Couldn't add the grade levels", { description: e.message }),
@@ -233,7 +236,10 @@ export default function SetupWizard() {
       const { error } = await supabase.from("grade_levels").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: [tenantId, "grade_levels"] }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: [tenantId, "grade_levels"] });
+      await refreshProgress();
+    },
     onError: (e: any) => toast.error("Couldn't remove that grade level", { description: e.message }),
   });
 
@@ -259,6 +265,7 @@ export default function SetupWizard() {
     onSuccess: async () => {
       customForm.reset({ code: "", name: "", sort_order: 120 });
       await qc.invalidateQueries({ queryKey: [tenantId, "grade_levels"] });
+      await refreshProgress();
       toast.success("Grade level added", { duration: 3000 });
     },
     onError: (e: any) => toast.error("Couldn't add that grade level", { description: e.message }),
