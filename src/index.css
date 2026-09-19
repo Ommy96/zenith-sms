@@ -102,10 +102,10 @@
     --chart-6: 188 86% 53%;
   }
 
-  .dark {
-    color-scheme: dark;
-  }
-
+  /* The authenticated app's legacy toggle adds `.dark`; with dark now the
+     default, treat that class as its light-mode switch until the toggle is
+     migrated to the shared data-theme preference. */
+  .dark,
   [data-theme="light"] {
     --background: 60 23% 97%;
     --surface: 0 0% 100%;
