@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { clearDemoData, seedDemoData } from "@/lib/demoSeed";
 import { AiSettingsTab } from "@/components/settings/AiSettingsTab";
+import { SchoolInfoTab } from "@/components/settings/SchoolInfoTab";
 
 /** Persisted school-level toggle: auto-email every new receipt to the guardian. */
 function AutoEmailReceiptsCard() {
@@ -196,36 +197,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="school" className="mt-6">
-          <div className="rounded-xl border border-border bg-card p-6 space-y-6">
-            <div>
-              <h3 className="text-sm font-semibold text-card-foreground mb-4">School Information</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm">School Name</Label>
-                  <Input defaultValue="Green Valley Academy" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">School Code</Label>
-                  <Input defaultValue="GVA-2024" disabled className="bg-muted" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">Email</Label>
-                  <Input defaultValue="admin@greenvalley.edu" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">Phone</Label>
-                  <Input defaultValue="+1 555-0100" />
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label className="text-sm">Address</Label>
-                  <Input defaultValue="123 Education Lane, Springfield, IL 62701" />
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <Button size="sm">Save Changes</Button>
-            </div>
-          </div>
+          <SchoolInfoTab />
         </TabsContent>
 
         <TabsContent value="academic" className="mt-6">
