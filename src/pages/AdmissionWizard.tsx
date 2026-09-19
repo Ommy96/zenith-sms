@@ -45,7 +45,7 @@ export default function AdmissionWizard() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { tenant } = useTenant();
-  const tenantId = profile?.tenant_id;
+  const tenantId = tenant?.id ?? profile?.tenant_id;
   const country = tenant?.country_code ?? "KE";
   const govFields = getStudentGovIdFields(country);
 
