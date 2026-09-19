@@ -147,6 +147,9 @@ export default function SetupWizard() {
     onError: (e: any) => toast.error("Couldn't save", { description: e.message }),
   });
 
+  /** Setup progress is recomputed by database triggers — just refresh the cached copy. */
+  const refreshProgress = () => qc.invalidateQueries({ queryKey: [tenantId, "setup_progress"] });
+
   /* ---------- Step 2 ---------- */
   const yearSchema = z.object({
     name: z.string().trim().min(2, "Give the year a name").max(40),
