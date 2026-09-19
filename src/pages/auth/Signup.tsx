@@ -7,6 +7,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { GoogleScaffoldButton, PasswordStrength, PublicAuthShell } from "@/components/public/PublicExperience";
+import { PasswordInput } from "@/components/public/PasswordInput";
 import { useZodForm, ZodForm, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/forms/Form";
 
 const schema = z.object({
@@ -15,13 +18,14 @@ const schema = z.object({
   phone: z.string().trim().min(7, "Enter a valid phone number").max(20),
   school_name: z.string().trim().min(2, "Enter your school name").max(120),
   password: z.string().min(8, "Use at least 8 characters").max(72),
+  terms: z.literal(true, { errorMap: () => ({ message: "Accept the terms to continue" }) }),
 });
 
 export default function Signup() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const form = useZodForm(schema, {
-    defaultValues: { full_name: "", email: "", phone: "", school_name: "", password: "" },
+    defaultValues: { full_name: "", email: "", phone: "", school_name: "", password: "", terms: false as never },
   });
 
   const onSubmit = async (values: z.infer<typeof schema>) => {
@@ -67,17 +71,14 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm space-y-6">
-        <div className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">Z</div>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Create your account</h1>
-          <p className="text-sm text-muted-foreground mt-1">Start managing your school with Zenith</p>
-        </div>
+    <PublicAuthShell title="Already have a school account?" description="Return to your school's workspace and pick up exactly where you left off." action={{ label: "Sign in", to: "/auth/login" }}>
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="zenith-panel rounded-xl border border-border bg-card p-6 sm:p-8">
+        <h1 className="text-3xl font-semibold">Create your school account</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Set up your workspace in a few minutes.</p>
+        <div className="mt-6"><GoogleScaffoldButton /></div>
+        <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" /><span>OR CONTINUE WITH EMAIL</span><span className="h-px flex-1 bg-border" /></div>
 
-        <ZodForm form={form} onSubmit={onSubmit} className="space-y-4">
+        <ZodForm form={form} onSubmit={onSubmit} className="space-y-3.5">
           <FormField control={form.control} name="full_name" render={({ field }) => (
             <FormItem>
               <FormLabel>Full name</FormLabel>
@@ -109,19 +110,26 @@ export default function Signup() {
           <FormField control={form.control} name="password" render={({ field }) => (
             <FormItem>
               <FormLabel>Password</FormLabel>
-              <FormControl><Input type="password" autoComplete="new-password" placeholder="At least 8 characters" {...field} /></FormControl>
+              <FormControl><PasswordInput autoComplete="new-password" placeholder="At least 8 characters" {...field} /></FormControl>
+              <PasswordStrength password={field.value} />
               <FormMessage />
             </FormItem>
           )} />
-          <Button type="submit" className="w-full" disabled={submitting}>
+          <FormField control={form.control} name="terms" render={({ field }) => (
+            <FormItem>
+              <label className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground"><Checkbox checked={field.value} onCheckedChange={field.onChange} />I agree to the Terms of Service and Privacy Policy.</label>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <Button type="submit" className="h-11 w-full" disabled={submitting}>
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Account"}
           </Button>
         </ZodForm>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="mt-5 text-center text-sm text-muted-foreground">
           Already have an account? <Link to="/auth/login" className="text-primary font-medium hover:underline">Sign in</Link>
         </p>
       </motion.div>
-    </div>
+    </PublicAuthShell>
   );
 }
