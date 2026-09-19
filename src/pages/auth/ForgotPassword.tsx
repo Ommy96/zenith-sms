@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useZodForm, ZodForm, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/forms/Form";
+import { PublicAuthShell } from "@/components/public/PublicExperience";
 
 const schema = z.object({ email: z.string().trim().email("Enter a valid email address") });
 
@@ -31,17 +32,14 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm space-y-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Reset password</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+    <PublicAuthShell single>
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="zenith-panel rounded-xl border border-border bg-card p-6 sm:p-8">
+          <h1 className="text-3xl font-semibold">Reset your password</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             {sent ? "Check your email for the reset link" : "Enter your email to receive a reset link"}
           </p>
-        </div>
-
         {!sent && (
-          <ZodForm form={form} onSubmit={onSubmit} className="space-y-4">
+          <ZodForm form={form} onSubmit={onSubmit} className="mt-7 space-y-4">
             <FormField control={form.control} name="email" render={({ field }) => (
               <FormItem>
                 <FormLabel>Email</FormLabel>
@@ -49,16 +47,16 @@ export default function ForgotPassword() {
                 <FormMessage />
               </FormItem>
             )} />
-            <Button type="submit" className="w-full" disabled={submitting}>
+            <Button type="submit" className="h-11 w-full" disabled={submitting}>
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send reset link"}
             </Button>
           </ZodForm>
         )}
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           <Link to="/auth/login" className="text-primary font-medium hover:underline">Back to sign in</Link>
         </p>
       </motion.div>
-    </div>
+    </PublicAuthShell>
   );
 }

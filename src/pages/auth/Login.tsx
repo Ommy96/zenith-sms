@@ -7,6 +7,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { GoogleScaffoldButton, PublicAuthShell } from "@/components/public/PublicExperience";
+import { PasswordInput } from "@/components/public/PasswordInput";
 import { useZodForm, ZodForm, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/forms/Form";
 
 const schema = z.object({
@@ -47,15 +50,12 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm space-y-6">
-        <div className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">Z</div>
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome back</h1>
-          <p className="text-sm text-muted-foreground mt-1">Sign in to Zenith</p>
-        </div>
+    <PublicAuthShell title="New to Zenith?" description="Set up your school's account and start managing students, fees, and communication in minutes." action={{ label: "Create school account", to: "/auth/signup" }}>
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="zenith-panel rounded-xl border border-border bg-card p-6 sm:p-8">
+        <h1 className="text-3xl font-semibold">Sign in</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Welcome back. Access your school's workspace.</p>
+        <div className="mt-7"><GoogleScaffoldButton /></div>
+        <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" /><span>OR CONTINUE WITH EMAIL</span><span className="h-px flex-1 bg-border" /></div>
 
         <ZodForm form={form} onSubmit={onSubmit} className="space-y-4">
           <FormField control={form.control} name="email" render={({ field }) => (
@@ -67,26 +67,21 @@ export default function Login() {
           )} />
           <FormField control={form.control} name="password" render={({ field }) => (
             <FormItem>
-              <div className="flex items-center justify-between">
-                <FormLabel>Password</FormLabel>
-                <Link to="/auth/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
-              </div>
-              <FormControl><Input type="password" autoComplete="current-password" placeholder="••••••••" {...field} /></FormControl>
+              <FormLabel>Password</FormLabel>
+              <FormControl><PasswordInput autoComplete="current-password" placeholder="••••••••" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
-          <Button type="submit" className="w-full" disabled={submitting}>
+          <div className="flex items-center justify-between text-xs">
+            <label className="flex items-center gap-2 text-muted-foreground"><Checkbox />Remember me</label>
+            <Link to="/auth/forgot-password" className="text-primary hover:underline">Forgot password?</Link>
+          </div>
+          <Button type="submit" className="h-11 w-full" disabled={submitting}>
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
           </Button>
         </ZodForm>
-
-        <p className="text-center text-sm text-muted-foreground">
-          Don't have an account? <Link to="/auth/signup" className="text-primary font-medium hover:underline">Create one</Link>
-        </p>
-        <p className="text-center text-xs text-muted-foreground">
-          Parent or student? <Link to="/portal/login" className="text-primary hover:underline">Use the portal sign-in</Link>
-        </p>
+        <p className="mt-6 text-center text-xs text-muted-foreground">For parent sign-in, go to the <Link to="/portal/login" className="text-primary hover:underline">parent portal</Link>.</p>
       </motion.div>
-    </div>
+    </PublicAuthShell>
   );
 }

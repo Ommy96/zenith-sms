@@ -4,9 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, Phone, ShieldCheck } from "lucide-react";
+import { PublicAuthShell } from "@/components/public/PublicExperience";
 
 export default function PortalLogin() {
   const [phone, setPhone] = useState("");
@@ -49,18 +49,18 @@ export default function PortalLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4">
-      <Card className="w-full max-w-md shadow-xl border-2">
-        <CardHeader className="text-center space-y-2">
-          <div className="mx-auto h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+    <PublicAuthShell eyebrow="PARENT PORTAL" title="Stay close to every school day." description="Your secure window into fees, school updates, and downloadable receipts." benefits={["View fee balances and payment history", "Receive school announcements", "Download receipts when you need them"]}>
+      <div className="zenith-panel rounded-xl border border-border bg-card p-6 sm:p-8">
+        <div className="space-y-2">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-primary/30 bg-primary/10">
             {step === "phone" ? <Phone className="h-7 w-7 text-primary" /> : <ShieldCheck className="h-7 w-7 text-primary" />}
           </div>
-          <CardTitle className="text-2xl">Portal Sign-in</CardTitle>
+          <h1 className="pt-3 text-3xl font-semibold">Parent Portal</h1>
           <p className="text-sm text-muted-foreground">
-            {step === "phone" ? "Parents and students — sign in with your registered phone number" : `Enter the 6-digit code sent to ${maskedPhone}`}
+            {step === "phone" ? "Sign in with your registered phone number." : `Enter the 6-digit code sent to ${maskedPhone}`}
           </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        </div>
+        <div className="mt-7 space-y-4">
           {step === "phone" ? (
             <>
               <div className="space-y-2">
@@ -73,8 +73,8 @@ export default function PortalLogin() {
                   onKeyDown={(e) => e.key === "Enter" && sendCode()}
                 />
               </div>
-              <Button className="w-full h-12" onClick={sendCode} disabled={sending}>
-                {sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Send code
+              <Button className="h-11 w-full" onClick={sendCode} disabled={sending}>
+                {sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Send verification code
               </Button>
             </>
           ) : (
@@ -84,14 +84,14 @@ export default function PortalLogin() {
                 <Input
                   inputMode="numeric"
                   maxLength={6}
-                  className="text-center text-2xl tracking-[0.5em] h-14"
+                  className="h-14 text-center font-mono text-2xl tracking-[0.35em]"
                   placeholder="000000"
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                   onKeyDown={(e) => e.key === "Enter" && verify()}
                 />
               </div>
-              <Button className="w-full h-12" onClick={verify} disabled={verifying}>
+              <Button className="h-11 w-full" onClick={verify} disabled={verifying}>
                 {verifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Verify & sign in
               </Button>
               <Button variant="ghost" className="w-full" onClick={() => { setStep("phone"); setCode(""); }}>
@@ -100,10 +100,10 @@ export default function PortalLogin() {
             </>
           )}
           <p className="text-xs text-center text-muted-foreground pt-2">
-            For staff sign-in, go to <a href="/auth/login" className="text-primary underline">staff login</a>
+            Not a parent? <a href="/auth/login" className="text-primary hover:underline">Staff sign in →</a>
           </p>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </div>
+    </PublicAuthShell>
   );
 }
