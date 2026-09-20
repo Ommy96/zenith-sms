@@ -145,11 +145,11 @@ Deno.serve(async (req: Request) => {
 
     const bytes = await pdf.save();
     const path = `${student.tenant_id}/statements/${student.admission_number || student.id}-${Date.now()}.pdf`;
-    const { error: upErr } = await admin.storage.from('documents').upload(path, bytes, {
+    const { error: upErr } = await admin.storage.from('receipts').upload(path, bytes, {
       contentType: 'application/pdf', upsert: true,
     });
     if (upErr) throw upErr;
-    const { data: signed } = await admin.storage.from('documents').createSignedUrl(path, 300);
+    const { data: signed } = await admin.storage.from('receipts').createSignedUrl(path, 300);
 
     return new Response(JSON.stringify({ url: signed?.signedUrl, path }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200,
