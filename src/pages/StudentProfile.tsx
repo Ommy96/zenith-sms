@@ -265,13 +265,22 @@ export default function StudentProfile() {
       const { data, error } = await supabase.functions.invoke("generate-statement-pdf", {
         body: { student_id: student.id },
       });
-      if (error) throw error;
+      if (error) {
+        let detail = error.message;
+        const res = (error as any)?.context;
+        if (res && typeof res.json === "function") {
+          const payload = await res.json().catch(() => null);
+          if (payload?.error) detail = payload.error;
+        }
+        throw new Error(detail);
+      }
       // edge function returns { url }
       const url = (data as any)?.url;
       if (url) window.open(url, "_blank");
       else toast({ title: "Statement generated", description: "Saved to documents." });
     } catch (e: any) {
-      toast({ title: "Failed", description: e.message, variant: "destructive" });
+      toast({ title: "Could not print statement", description: e.message, variant: "destructive" });
+
     } finally {
       setStmtBusy(false);
     }
