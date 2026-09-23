@@ -39,9 +39,12 @@ Deno.serve(async (req) => {
     if (upsertError) throw new Error("Could not prepare invitation");
     // Supabase creates the auth account before sending its invite email. The new-user hook consumes
     // this server-issued token at account creation, not on first login.
+    const requestedOrigin = req.headers.get("origin") || "";
+    const allowedOrigin = requestedOrigin === "http://localhost:8080" || /^https:\/\/([a-z0-9-]+\.)?lovable\.app$/.test(requestedOrigin)
+      ? requestedOrigin : "https://zenith-sms.lovable.app";
     const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
       data: { full_name: `${staff.first_name} ${staff.last_name}`.trim(), zenith_staff_invite_token: token },
-      redirectTo: `${new URL(req.headers.get("origin") || "https://zenith-sms.lovable.app").origin}/auth/reset-password`,
+      redirectTo: `${allowedOrigin}/auth/reset-password`,
     });
     if (inviteError) {
       await admin.from("staff_invitations").delete().eq("staff_id", staff_id).eq("token_hash", token_hash);
