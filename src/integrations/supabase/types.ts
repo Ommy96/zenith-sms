@@ -5376,6 +5376,7 @@ export type Database = {
           gender: Database["public"]["Enums"]["gender_enum"] | null
           hire_date: string | null
           id: string
+          invited_at: string | null
           job_title: string | null
           kra_pin: string | null
           last_name: string
@@ -5386,6 +5387,7 @@ export type Database = {
           nhif_or_shif_number: string | null
           notes: string | null
           nssf_number: string | null
+          pending_role_id: string | null
           phone: string | null
           photo_url: string | null
           qualification: string | null
@@ -5424,6 +5426,7 @@ export type Database = {
           gender?: Database["public"]["Enums"]["gender_enum"] | null
           hire_date?: string | null
           id?: string
+          invited_at?: string | null
           job_title?: string | null
           kra_pin?: string | null
           last_name: string
@@ -5434,6 +5437,7 @@ export type Database = {
           nhif_or_shif_number?: string | null
           notes?: string | null
           nssf_number?: string | null
+          pending_role_id?: string | null
           phone?: string | null
           photo_url?: string | null
           qualification?: string | null
@@ -5472,6 +5476,7 @@ export type Database = {
           gender?: Database["public"]["Enums"]["gender_enum"] | null
           hire_date?: string | null
           id?: string
+          invited_at?: string | null
           job_title?: string | null
           kra_pin?: string | null
           last_name?: string
@@ -5482,6 +5487,7 @@ export type Database = {
           nhif_or_shif_number?: string | null
           notes?: string | null
           nssf_number?: string | null
+          pending_role_id?: string | null
           phone?: string | null
           photo_url?: string | null
           qualification?: string | null
@@ -5503,6 +5509,13 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_pending_role_id_fkey"
+            columns: ["pending_role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
             referencedColumns: ["id"]
           },
           {
