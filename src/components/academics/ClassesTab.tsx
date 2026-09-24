@@ -192,7 +192,7 @@ function ClassCard({ c, grade, teachers, rooms, enrolled, onOpen, onRemove }: an
         <div className="space-y-1">
           <div className="flex items-center gap-1 text-muted-foreground"><Users className="h-3 w-3" />Enrol</div>
           <div>{enrolled} / {capacity || "–"}</div>
-          {capacity > 0 && <div className="h-1 bg-muted rounded overflow-hidden"><div className={`h-full ${over90 ? "bg-amber-500" : "bg-primary"}`} style={{ width: `${pct}%` }} /></div>}
+          {capacity > 0 && <div className="h-1 bg-muted rounded overflow-hidden"><div className={`h-full ${over90 ? "bg-warning" : "bg-primary"}`} style={{ width: `${pct}%` }} /></div>}
         </div>
         <div className="space-y-1 min-w-0">
           <div className="flex items-center gap-1 text-muted-foreground"><Home className="h-3 w-3" />Room</div>
@@ -203,8 +203,8 @@ function ClassCard({ c, grade, teachers, rooms, enrolled, onOpen, onRemove }: an
       </div>
       {(over90 || noTeacher) && (
         <div className="flex flex-wrap gap-1 pt-2 border-t">
-          {over90 && <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50"><AlertTriangle className="h-3 w-3 mr-1" />Near capacity</Badge>}
-          {noTeacher && <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50"><AlertTriangle className="h-3 w-3 mr-1" />No class teacher</Badge>}
+          {over90 && <Badge variant="outline" className="text-warning border-warning/30 bg-warning/10"><AlertTriangle className="h-3 w-3 mr-1" />Near capacity</Badge>}
+          {noTeacher && <Badge variant="outline" className="text-warning border-warning/30 bg-warning/10"><AlertTriangle className="h-3 w-3 mr-1" />No class teacher</Badge>}
         </div>
       )}
     </div>

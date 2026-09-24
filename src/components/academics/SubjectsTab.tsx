@@ -14,57 +14,6 @@ const CATEGORIES = ["core", "elective", "co_curricular", "life_skills"] as const
 const CATEGORY_ORDER: Record<string, number> = { core: 1, elective: 2, co_curricular: 3, life_skills: 4 };
 const ASSESS = ["continuous", "exam", "both"] as const;
 
-const PRESETS: Record<string, { code: string; name: string; category: string; assessment_type: string }[]> = {
-  cbc_primary: [
-    { code: "ENG", name: "English", category: "core", assessment_type: "both" },
-    { code: "KIS", name: "Kiswahili", category: "core", assessment_type: "both" },
-    { code: "MATH", name: "Mathematics", category: "core", assessment_type: "both" },
-    { code: "SCI", name: "Science & Technology", category: "core", assessment_type: "both" },
-    { code: "SST", name: "Social Studies", category: "core", assessment_type: "both" },
-    { code: "CRE", name: "Religious Education", category: "core", assessment_type: "both" },
-    { code: "ART", name: "Creative Arts", category: "co_curricular", assessment_type: "continuous" },
-    { code: "PHE", name: "Physical & Health Education", category: "co_curricular", assessment_type: "continuous" },
-  ],
-  cbc_jss: [
-    { code: "ENG", name: "English", category: "core", assessment_type: "both" },
-    { code: "KIS", name: "Kiswahili", category: "core", assessment_type: "both" },
-    { code: "MATH", name: "Mathematics", category: "core", assessment_type: "both" },
-    { code: "ISCI", name: "Integrated Science", category: "core", assessment_type: "both" },
-    { code: "SST", name: "Social Studies", category: "core", assessment_type: "both" },
-    { code: "PRTE", name: "Pre-Technical Studies", category: "core", assessment_type: "both" },
-    { code: "AGRI", name: "Agriculture", category: "core", assessment_type: "both" },
-    { code: "CRE", name: "Religious Education", category: "core", assessment_type: "both" },
-    { code: "BUSS", name: "Business Studies", category: "elective", assessment_type: "both" },
-    { code: "PHE", name: "PE & Health", category: "co_curricular", assessment_type: "continuous" },
-    { code: "LIFE", name: "Life Skills", category: "life_skills", assessment_type: "continuous" },
-  ],
-  k844: [
-    { code: "ENG", name: "English", category: "core", assessment_type: "both" },
-    { code: "KIS", name: "Kiswahili", category: "core", assessment_type: "both" },
-    { code: "MATH", name: "Mathematics", category: "core", assessment_type: "both" },
-    { code: "BIO", name: "Biology", category: "core", assessment_type: "both" },
-    { code: "CHEM", name: "Chemistry", category: "core", assessment_type: "both" },
-    { code: "PHYS", name: "Physics", category: "core", assessment_type: "both" },
-    { code: "HIST", name: "History & Government", category: "elective", assessment_type: "both" },
-    { code: "GEO", name: "Geography", category: "elective", assessment_type: "both" },
-    { code: "CRE", name: "CRE", category: "elective", assessment_type: "both" },
-    { code: "BUSS", name: "Business Studies", category: "elective", assessment_type: "both" },
-  ],
-  igcse_ls: [
-    { code: "ENG", name: "English Language", category: "core", assessment_type: "both" },
-    { code: "MATH", name: "Mathematics", category: "core", assessment_type: "both" },
-    { code: "SCI", name: "Combined Science", category: "core", assessment_type: "both" },
-    { code: "GLP", name: "Global Perspectives", category: "core", assessment_type: "continuous" },
-    { code: "ICT", name: "ICT", category: "elective", assessment_type: "both" },
-  ],
-  cam_primary: [
-    { code: "ENG", name: "English", category: "core", assessment_type: "both" },
-    { code: "MATH", name: "Mathematics", category: "core", assessment_type: "both" },
-    { code: "SCI", name: "Science", category: "core", assessment_type: "both" },
-    { code: "ART", name: "Art & Design", category: "co_curricular", assessment_type: "continuous" },
-    { code: "PE", name: "Physical Education", category: "co_curricular", assessment_type: "continuous" },
-  ],
-};
 const CBC_16 = [
   ["ENG", "English", "core"], ["KIS", "Kiswahili", "core"], ["MATH", "Mathematics", "core"],
   ["ISCI", "Integrated Science", "core"], ["SST", "Social Studies", "core"], ["PRTE", "Pre-Technical Studies", "core"],
@@ -74,13 +23,6 @@ const CBC_16 = [
   ["BUS", "Business Studies", "elective"], ["CS", "Computer Science", "elective"],
   ["LS", "Life Skills Education", "life_skills"], ["FL", "Foreign Languages", "elective"],
 ] as const;
-const PRESET_LABELS: Record<string, string> = {
-  cbc_primary: "CBC Primary Core",
-  cbc_jss: "CBC Junior Secondary",
-  k844: "8-4-4 Secondary",
-  igcse_ls: "IGCSE Lower Secondary",
-  cam_primary: "Cambridge Primary",
-};
 
 export function SubjectsTab() {
   const { profile } = useAuth();
@@ -91,7 +33,6 @@ export function SubjectsTab() {
   const [classSubjects, setClassSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
-  const [preset, setPreset] = useState<string>("cbc_primary");
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [form, setForm] = useState({ code: "", name: "", category: "core", assessment_type: "both" });
@@ -142,7 +83,7 @@ export function SubjectsTab() {
     const toInsert = CBC_16.map(([code, name, category]) => ({ code, name, category, assessment_type: category === "co_curricular" || category === "life_skills" ? "continuous" : "both", grade_levels: grades.map((g) => g.id), tenant_id: tenantId }));
     if (toInsert.length === 0) {
       setSeeding(false);
-      return toast({ title: "Nothing to seed", description: "All preset subjects already exist." });
+      return toast({ title: "Nothing to seed", description: "CBC subjects already exist." });
     }
     const { error } = await supabase.from("subjects").insert(toInsert as any);
     setSeeding(false);
@@ -196,15 +137,15 @@ export function SubjectsTab() {
       </Card>}
 
       {canManage && rows.length === 0 && <Card>
-        <CardHeader><CardTitle>Seed preset</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Set up CBC subjects</CardTitle></CardHeader>
         <CardContent className="flex flex-wrap items-end gap-2">
           <div>
-            <div className="text-xs text-muted-foreground mb-1">Curriculum preset</div>
+            <div className="text-xs text-muted-foreground mb-1">Curriculum</div>
             <p className="text-sm font-medium">Kenya CBC · 16 subjects</p>
           </div>
           <Button size="sm" onClick={seed} disabled={seeding}>
             {seeding ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Sparkles className="h-4 w-4 mr-1" />}
-            Seed preset
+            Add 16 subjects
           </Button>
         </CardContent>
       </Card>}
@@ -215,7 +156,7 @@ export function SubjectsTab() {
           {rows.length === 0 ? (
             <div className="text-center py-10 border rounded-lg border-dashed space-y-2">
               <p className="text-sm font-medium">Set up the subjects taught at your school</p>
-              <p className="text-xs text-muted-foreground">Choose a curriculum preset above and click <strong>Seed preset</strong>, or add subjects manually.</p>
+              <p className="text-xs text-muted-foreground">Add the 16-subject CBC set above, or add subjects manually.</p>
             </div>
           ) : (
             <>
