@@ -29,25 +29,34 @@ export default function StaffProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { profile } = useAuth();
-  const { can } = useTenant();
+  const { can, tenant } = useTenant();
   const [staff, setStaff] = useState<AnyRec | null>(null);
   const [docs, setDocs] = useState<AnyRec[]>([]);
+  const [qualifications, setQualifications] = useState<AnyRec[]>([]);
+  const [subjects, setSubjects] = useState<AnyRec[]>([]);
+  const [compensation, setCompensation] = useState<AnyRec | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const canSensitive = can("staff.view_sensitive");
+  const canPayroll = can("payroll.view");
 
   useEffect(() => {
     (async () => {
-      if (!id || !profile?.tenant_id) return;
+      if (!id || !tenant?.id) return;
       setLoading(true);
-      const { data, error } = await supabase.from("staff").select("*").eq("id", id).maybeSingle();
+      const { data, error } = await supabase.from("staff").select("*").eq("tenant_id", tenant.id).eq("id", id).maybeSingle();
       if (error || !data) { toast({ title: "Staff not found", variant: "destructive" }); navigate("/staff"); return; }
       setStaff(data as AnyRec);
       const { data: dd } = await supabase.from("documents").select("*").eq("owner_type", "staff").eq("owner_id", id).order("created_at", { ascending: false });
       setDocs(dd ?? []);
+      const [{ data: qq }, { data: ss }, { data: cc }] = await Promise.all([
+        supabase.from("staff_qualifications").select("*").eq("tenant_id", tenant.id).eq("staff_id", id).order("year_completed", { ascending: false }),
+        supabase.from("class_subjects").select("subjects(name,code), classes(name)").eq("tenant_id", tenant.id).eq("teacher_id", id),
+        canPayroll ? supabase.from("staff_compensation").select("*").eq("tenant_id", tenant.id).eq("staff_id", id).maybeSingle() : Promise.resolve({ data: null }),
+      ]);
+      setQualifications(qq ?? []); setSubjects(ss ?? []); setCompensation(cc as AnyRec | null);
       setLoading(false);
     })();
-  }, [id, profile?.tenant_id, navigate]);
+  }, [id, profile?.tenant_id, tenant?.id, navigate, canPayroll]);
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   if (!staff) return null;
@@ -91,9 +100,9 @@ export default function StaffProfile() {
       <Tabs defaultValue="overview" className="w-full">
         <TabsList>
           <TabsTrigger value="overview"><Briefcase className="h-4 w-4 mr-1.5" />Overview</TabsTrigger>
-          <TabsTrigger value="teaching"><GraduationCap className="h-4 w-4 mr-1.5" />Teaching</TabsTrigger>
-          <TabsTrigger value="payroll" disabled={!canSensitive}><Shield className="h-4 w-4 mr-1.5" />Payroll & IDs</TabsTrigger>
-          <TabsTrigger value="nok"><UsersIcon className="h-4 w-4 mr-1.5" />Next of Kin</TabsTrigger>
+          <TabsTrigger value="teaching"><GraduationCap className="h-4 w-4 mr-1.5" />Subjects</TabsTrigger>
+          <TabsTrigger value="qualifications"><UsersIcon className="h-4 w-4 mr-1.5" />Qualifications</TabsTrigger>
+          {canPayroll && <TabsTrigger value="payroll"><Shield className="h-4 w-4 mr-1.5" />Compensation</TabsTrigger>}
           <TabsTrigger value="documents"><FileText className="h-4 w-4 mr-1.5" />Documents</TabsTrigger>
         </TabsList>
 
@@ -115,7 +124,7 @@ export default function StaffProfile() {
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Subjects Taught</p>
               <div className="flex flex-wrap gap-1.5">
-                {subjects.length ? subjects.map((s, i) => <Badge key={i} variant="secondary">{s}</Badge>) : <p className="text-sm text-muted-foreground">None recorded</p>}
+                {subjects.length ? subjects.map((s: any, i) => <Badge key={i} variant="secondary">{s.subjects?.code} · {s.classes?.name}</Badge>) : <p className="text-sm text-muted-foreground">None assigned</p>}
               </div>
             </div>
             <div>
@@ -133,19 +142,14 @@ export default function StaffProfile() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="qualifications" className="mt-4"><Card className="p-6 space-y-3">{qualifications.map((q: any) => <div key={q.id} className="border-b border-border pb-3 last:border-0"><p className="font-medium">{q.qualification_name}</p><p className="text-sm text-muted-foreground">{q.qualification_type} · {q.institution || "Institution not recorded"} · {q.year_completed || "Year not recorded"}</p></div>)}{!qualifications.length && <p className="text-sm text-muted-foreground">No qualifications recorded.</p>}</Card></TabsContent>
+
         <TabsContent value="payroll" className="mt-4">
-          {canSensitive ? (
+          {canPayroll ? (
             <Card className="p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
-              <Field label="National ID" value={staff.national_id_number as string} />
-              <Field label="TSC Number" value={staff.tsc_number as string} />
-              <Field label="KRA PIN" value={staff.kra_pin as string} />
-              <Field label="NSSF" value={staff.nssf_number as string} />
-              <Field label="NHIF / SHIF" value={staff.nhif_or_shif_number as string} />
-              <Field label="Bank" value={staff.bank_name as string} />
-              <Field label="Bank Branch" value={staff.bank_branch as string} />
-              <Field label="Account #" value={staff.bank_account_number as string} />
-              <Field label="Salary Scale" value={staff.salary_scale as string} />
-              <Field label="Gross Salary" value={staff.gross_salary != null ? <Money amount={Number(staff.gross_salary)} /> : null} />
+              <Field label="Basic Salary" value={(compensation as any)?.basic_salary != null ? <Money amount={Number((compensation as any).basic_salary)} /> : null} />
+              <Field label="Housing Allowance" value={(compensation as any)?.housing_allowance != null ? <Money amount={Number((compensation as any).housing_allowance)} /> : null} />
+              <Field label="Transport Allowance" value={(compensation as any)?.transport_allowance != null ? <Money amount={Number((compensation as any).transport_allowance)} /> : null} />
             </Card>
           ) : (
             <Card className="p-10 text-center text-sm text-muted-foreground">You do not have permission to view sensitive staff data.</Card>
