@@ -30,7 +30,9 @@ interface NavSection { label: string; items: NavItem[]; superAdminOnly?: boolean
 const sections: NavSection[] = [
   { label: "Academics", tKey: "nav.section.academics", items: [
     { title: "Students", tKey: "nav.students", url: "/students", icon: Users, perm: "students.view" },
-    { title: "Classes & Subjects", tKey: "nav.classesSubjects", url: "/academics", icon: BookOpen, perm: "academics.view" },
+    { title: "Classes", url: "/academics/classes", icon: BookOpen, perm: "classes.view" },
+    { title: "Subjects", url: "/academics/subjects", icon: ClipboardList, perm: "subjects.view" },
+    { title: "Teachers & Staff", url: "/academics/staff", icon: Briefcase, perm: "staff.view" },
     { title: "Timetable", tKey: "nav.timetable", url: "/timetable", icon: CalendarDays, perm: "academics.view" },
     { title: "Examinations", tKey: "nav.examinations", url: "/examinations", icon: ClipboardList, perm: "exams.view" },
     { title: "Attendance", tKey: "nav.attendance", url: "/attendance", icon: UserCog, perm: "attendance.view" },
@@ -46,7 +48,6 @@ const sections: NavSection[] = [
   ]},
   { label: "Operations", tKey: "nav.section.operations", items: [
     { title: "Admissions", tKey: "nav.admissions", url: "/admissions", icon: UserPlus, perm: "admissions.view" },
-    { title: "Staff & HR", tKey: "nav.staffHr", url: "/staff", icon: Briefcase, perm: "staff.view" },
     { title: "Transport", tKey: "nav.transport", url: "/transport", icon: Bus, perm: "transport.view" },
     { title: "Library", tKey: "nav.library", url: "/library", icon: Library, perm: "library.view" },
     { title: "Inventory", tKey: "nav.inventory", url: "/inventory", icon: Package, perm: "inventory.view" },

@@ -33,6 +33,9 @@ const Finance = lazy(() => import("./pages/Finance"));
 const MobileMoney = lazy(() => import("./pages/MobileMoney"));
 const WhatsApp = lazy(() => import("./pages/WhatsApp"));
 const Academics = lazy(() => import("./pages/Academics"));
+const Classes = lazy(() => import("./pages/Classes"));
+const ClassDetail = lazy(() => import("./pages/ClassDetail"));
+const Subjects = lazy(() => import("./pages/Subjects"));
 const Examinations = lazy(() => import("./pages/Examinations"));
 const ExamGradeEntry = lazy(() => import("./pages/ExamGradeEntry"));
 const CbcAssessment = lazy(() => import("./pages/CbcAssessment"));
@@ -240,6 +243,11 @@ function AppRoutes() {
       <Route path="/admissions/new" element={<ProtectedRoute><DashboardLayout><AdmissionWizard /></DashboardLayout></ProtectedRoute>} />
       <Route path="/admissions" element={<ProtectedRoute><DashboardLayout><Admissions /></DashboardLayout></ProtectedRoute>} />
       <Route path="/academics" element={<ProtectedRoute><DashboardLayout><Academics /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/academics/classes" element={<ProtectedRoute><DashboardLayout><Classes /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/academics/classes/:id" element={<ProtectedRoute><DashboardLayout><ClassDetail /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/academics/subjects" element={<ProtectedRoute><DashboardLayout><Subjects /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/academics/staff" element={<ProtectedRoute><DashboardLayout><Staff /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/academics/staff/:id" element={<ProtectedRoute><DashboardLayout><StaffProfile /></DashboardLayout></ProtectedRoute>} />
       <Route path="/attendance" element={<ProtectedRoute><DashboardLayout><Attendance /></DashboardLayout></ProtectedRoute>} />
       <Route path="/examinations" element={<ProtectedRoute><DashboardLayout><Examinations /></DashboardLayout></ProtectedRoute>} />
       <Route path="/examinations/:examId/entry" element={<ProtectedRoute><DashboardLayout><ExamGradeEntry /></DashboardLayout></ProtectedRoute>} />

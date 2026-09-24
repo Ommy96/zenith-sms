@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
-  Search, Plus, Download, MoreHorizontal, Edit, Trash2, Eye,
+  Search, Plus, Download, MoreHorizontal, Edit, Trash2, Eye, Send,
   ChevronLeft, ChevronRight, Users, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,9 @@ import {
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import { toast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 
 type StaffMember = Record<string, any>;
@@ -49,11 +51,17 @@ const emptyForm = {
   role: "teacher",
   hire_date: "",
   status: "active",
+  middle_name: "",
+  employment_type: "permanent",
+  staff_number: "",
 };
 
 export default function Staff() {
-  const { profile } = useAuth();
-  const schoolId = profile?.tenant_id;
+  useAuth();
+  const { tenant, can } = useTenant();
+  const schoolId = tenant?.id;
+  const navigate = useNavigate();
+  const canManage = can("staff.manage");
 
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,6 +79,7 @@ export default function Staff() {
 
   const [deleteTarget, setDeleteTarget] = useState<StaffMember | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [inviting, setInviting] = useState<string | null>(null);
 
   const fetchStaff = useCallback(async () => {
     if (!schoolId) return;
@@ -121,6 +130,7 @@ export default function Staff() {
     setEditing(s);
     setForm({
       first_name: s.first_name,
+      middle_name: s.middle_name || "",
       last_name: s.last_name,
       email: s.email || "",
       phone: s.phone || "",
@@ -128,6 +138,8 @@ export default function Staff() {
       role: s.role || "teacher",
       hire_date: s.hire_date || "",
       status: s.status || "active",
+      employment_type: s.employment_type || "permanent",
+      staff_number: s.staff_number || "",
     });
     setDialogOpen(true);
   };
@@ -142,6 +154,7 @@ export default function Staff() {
 
     const payload = {
       first_name: form.first_name.trim(),
+      middle_name: form.middle_name.trim() || null,
       last_name: form.last_name.trim(),
       email: form.email.trim() || null,
       phone: form.phone.trim() || null,
@@ -149,6 +162,8 @@ export default function Staff() {
       role: form.role || "teacher",
       hire_date: form.hire_date || null,
       status: form.status,
+      employment_type: form.employment_type as any,
+      staff_number: form.staff_number.trim() || null,
       tenant_id: schoolId,
     };
 
@@ -165,6 +180,17 @@ export default function Staff() {
     setSaving(false);
     setDialogOpen(false);
     fetchStaff();
+  };
+
+  const invite = async (member: StaffMember) => {
+    if (!schoolId || !member.email) return toast({ title: "Add an email before inviting", variant: "destructive" });
+    setInviting(member.id);
+    const { data: role } = await supabase.from("roles").select("id").eq("name", "subject_teacher").is("tenant_id", null).maybeSingle();
+    if (!role) { setInviting(null); return toast({ title: "Teaching role is unavailable", variant: "destructive" }); }
+    const { data, error } = await supabase.functions.invoke("invite-staff", { body: { tenant_id: schoolId, staff_id: member.id, role_id: role.id } });
+    setInviting(null);
+    if (error || !data?.success) return toast({ title: "Invitation failed", description: data?.error || error?.message, variant: "destructive" });
+    toast({ title: "Invitation sent", description: data.email_sent_to });
   };
 
   const handleDelete = async () => {
@@ -190,7 +216,7 @@ export default function Staff() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="gap-1.5 text-xs"><Download className="h-3.5 w-3.5" /> Export</Button>
-          <Button size="sm" className="gap-1.5 text-xs" onClick={openAdd}><Plus className="h-3.5 w-3.5" /> Add Staff</Button>
+          {canManage && <Button size="sm" className="gap-1.5 text-xs" onClick={openAdd}><Plus className="h-3.5 w-3.5" /> Add Staff</Button>}
         </div>
       </motion.div>
 
@@ -277,10 +303,11 @@ export default function Staff() {
                         <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="text-sm gap-2" onClick={() => openEdit(s)}><Edit className="h-3.5 w-3.5" /> Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-sm gap-2"><Eye className="h-3.5 w-3.5" /> View Profile</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-sm gap-2 text-destructive" onClick={() => setDeleteTarget(s)}><Trash2 className="h-3.5 w-3.5" /> Delete</DropdownMenuItem>
+                        <DropdownMenuItem className="text-sm gap-2" onClick={() => navigate(`/academics/staff/${s.id}`)}><Eye className="h-3.5 w-3.5" /> View Profile</DropdownMenuItem>
+                        {canManage && <DropdownMenuItem className="text-sm gap-2" onClick={() => openEdit(s)}><Edit className="h-3.5 w-3.5" /> Edit</DropdownMenuItem>}
+                        {canManage && !s.user_id && <DropdownMenuItem className="text-sm gap-2" disabled={inviting === s.id} onClick={() => invite(s)}><Send className="h-3.5 w-3.5" /> Invite to Zenith</DropdownMenuItem>}
+                        {canManage && <DropdownMenuSeparator />}
+                        {canManage && <DropdownMenuItem className="text-sm gap-2 text-destructive" onClick={() => setDeleteTarget(s)}><Trash2 className="h-3.5 w-3.5" /> Delete</DropdownMenuItem>}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -317,6 +344,10 @@ export default function Staff() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Middle Name</Label><Input value={form.middle_name} onChange={(e) => setForm({ ...form, middle_name: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Staff Number</Label><Input value={form.staff_number} onChange={(e) => setForm({ ...form, staff_number: e.target.value })} placeholder="Generated when blank" /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Email</Label>
                 <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="staff@school.edu" type="email" />
@@ -326,6 +357,7 @@ export default function Staff() {
                 <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+254 700 000000" />
               </div>
             </div>
+            <div className="space-y-2"><Label>Employment Type</Label><Select value={form.employment_type} onValueChange={(v) => setForm({ ...form, employment_type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["permanent","part_time","contract","volunteer","intern","bom","tsc"].map((v) => <SelectItem key={v} value={v}>{v.replace("_", " ")}</SelectItem>)}</SelectContent></Select></div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Department</Label>
