@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +65,15 @@ const PRESETS: Record<string, { code: string; name: string; category: string; as
     { code: "PE", name: "Physical Education", category: "co_curricular", assessment_type: "continuous" },
   ],
 };
+const CBC_16 = [
+  ["ENG", "English", "core"], ["KIS", "Kiswahili", "core"], ["MATH", "Mathematics", "core"],
+  ["ISCI", "Integrated Science", "core"], ["SST", "Social Studies", "core"], ["PRTE", "Pre-Technical Studies", "core"],
+  ["AGRI", "Agriculture and Nutrition", "core"], ["CRE", "Christian Religious Education", "elective"],
+  ["IRE", "Islamic Religious Education", "elective"], ["HRE", "Hindu Religious Education", "elective"],
+  ["CA", "Creative Arts", "co_curricular"], ["PHE", "Physical and Health Education", "co_curricular"],
+  ["BUS", "Business Studies", "elective"], ["CS", "Computer Science", "elective"],
+  ["LS", "Life Skills Education", "life_skills"], ["FL", "Foreign Languages", "elective"],
+] as const;
 const PRESET_LABELS: Record<string, string> = {
   cbc_primary: "CBC Primary Core",
   cbc_jss: "CBC Junior Secondary",
@@ -74,7 +84,9 @@ const PRESET_LABELS: Record<string, string> = {
 
 export function SubjectsTab() {
   const { profile } = useAuth();
-  const tenantId = profile?.tenant_id;
+  const { tenant, can } = useTenant();
+  const tenantId = tenant?.id || profile?.tenant_id;
+  const canManage = can("subjects.manage");
   const [rows, setRows] = useState<any[]>([]);
   const [classSubjects, setClassSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,15 +95,17 @@ export function SubjectsTab() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [form, setForm] = useState({ code: "", name: "", category: "core", assessment_type: "both" });
+  const [grades, setGrades] = useState<any[]>([]);
 
   const load = useCallback(async () => {
     if (!tenantId) return;
     setLoading(true);
-    const [{ data: s }, { data: cs }] = await Promise.all([
+    const [{ data: s }, { data: cs }, { data: gg }] = await Promise.all([
       supabase.from("subjects").select("*").eq("tenant_id", tenantId),
       supabase.from("class_subjects").select("subject_id,class_id,teacher_id").eq("tenant_id", tenantId),
+      supabase.from("grade_levels").select("id,name,sort_order").eq("tenant_id", tenantId).order("sort_order"),
     ]);
-    setRows(s || []); setClassSubjects(cs || []); setLoading(false);
+    setRows(s || []); setClassSubjects(cs || []); setGrades(gg || []); setLoading(false);
   }, [tenantId]);
   useEffect(() => { load(); }, [load]);
 
@@ -122,10 +136,10 @@ export function SubjectsTab() {
 
   const seed = async () => {
     if (!tenantId) return;
+    if (rows.length > 0) return toast({ title: "CBC seed is only available before subjects are added", variant: "destructive" });
+    if (!confirm("Add the 16 CBC subjects to this school?")) return;
     setSeeding(true);
-    const list = PRESETS[preset] || [];
-    const existing = new Set(rows.map((r) => (r.code || "").toUpperCase()));
-    const toInsert = list.filter((p) => !existing.has(p.code)).map((p) => ({ ...p, tenant_id: tenantId }));
+    const toInsert = CBC_16.map(([code, name, category]) => ({ code, name, category, assessment_type: category === "co_curricular" || category === "life_skills" ? "continuous" : "both", grade_levels: grades.map((g) => g.id), tenant_id: tenantId }));
     if (toInsert.length === 0) {
       setSeeding(false);
       return toast({ title: "Nothing to seed", description: "All preset subjects already exist." });
@@ -164,7 +178,7 @@ export function SubjectsTab() {
 
   return (
     <div className="space-y-4">
-      <Card>
+      {canManage && <Card>
         <CardHeader><CardTitle>Add subject</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <div className="grid gap-2 md:grid-cols-5">
@@ -179,23 +193,21 @@ export function SubjectsTab() {
           </div>
           <Button size="sm" onClick={add}><Plus className="h-4 w-4 mr-1" />Add subject</Button>
         </CardContent>
-      </Card>
+      </Card>}
 
-      <Card>
+      {canManage && rows.length === 0 && <Card>
         <CardHeader><CardTitle>Seed preset</CardTitle></CardHeader>
         <CardContent className="flex flex-wrap items-end gap-2">
           <div>
             <div className="text-xs text-muted-foreground mb-1">Curriculum preset</div>
-            <select className="border rounded px-2 py-1 text-sm bg-background" value={preset} onChange={(e) => setPreset(e.target.value)}>
-              {Object.entries(PRESET_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
+            <p className="text-sm font-medium">Kenya CBC · 16 subjects</p>
           </div>
           <Button size="sm" onClick={seed} disabled={seeding}>
             {seeding ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Sparkles className="h-4 w-4 mr-1" />}
             Seed preset
           </Button>
         </CardContent>
-      </Card>
+      </Card>}
 
       <Card>
         <CardHeader><CardTitle>Subjects ({rows.length})</CardTitle></CardHeader>
@@ -242,7 +254,7 @@ export function SubjectsTab() {
                       <TableCell className="text-right">{classCounts[s.id]?.size || 0}</TableCell>
                       <TableCell className="text-right">{teacherCounts[s.id]?.size || 0}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="icon" variant="ghost" onClick={() => remove(s.id, s.code)}><Trash2 className="h-4 w-4" /></Button>
+                         {canManage && <Button size="icon" variant="ghost" onClick={() => remove(s.id, s.code)}><Trash2 className="h-4 w-4" /></Button>}
                       </TableCell>
                     </TableRow>
                   ))}

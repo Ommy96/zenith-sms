@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +18,10 @@ const STAGE_ORDER: Record<string, number> = {
 
 export function ClassesTab() {
   const { profile } = useAuth();
-  const tenantId = profile?.tenant_id;
+  const { tenant, can } = useTenant();
+  const tenantId = tenant?.id || profile?.tenant_id;
+  const navigate = useNavigate();
+  const canManage = can("classes.manage");
   const [rows, setRows] = useState<any[]>([]);
   const [grades, setGrades] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
@@ -102,7 +107,7 @@ export function ClassesTab() {
     <Card>
       <CardHeader><CardTitle>Classes</CardTitle></CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-2 md:grid-cols-6">
+        {canManage && <><div className="grid gap-2 md:grid-cols-6">
           <Input placeholder="Name (e.g. Grade 7 Blue)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="md:col-span-2" />
           <select className="border rounded px-2 py-1 text-sm bg-background" value={form.grade_level_id} onChange={(e) => setForm({ ...form, grade_level_id: e.target.value })}>
             <option value="">Grade…</option>
@@ -121,7 +126,7 @@ export function ClassesTab() {
         <div className="flex items-center gap-2">
           <Input placeholder="Capacity" type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })} className="w-32" />
           <Button size="sm" onClick={add}><Plus className="h-4 w-4 mr-1" />Add class</Button>
-        </div>
+        </div></>}
 
         {rows.length === 0 ? (
           <div className="text-center py-10 border rounded-lg border-dashed">
@@ -133,7 +138,7 @@ export function ClassesTab() {
               <div key={grade.id} className="space-y-2">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{grade.name}</h3>
                 <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                  {classes.map((c) => <ClassCard key={c.id} c={c} grade={grade} teachers={teachers} rooms={rooms} enrolled={enrollments[c.id] || 0} onRemove={() => remove(c.id)} />)}
+                  {classes.map((c) => <ClassCard key={c.id} c={c} grade={grade} teachers={teachers} rooms={rooms} enrolled={enrollments[c.id] || 0} onOpen={() => navigate(`/academics/classes/${c.id}`)} onRemove={canManage ? () => remove(c.id) : undefined} />)}
                 </div>
               </div>
             ))}
@@ -141,7 +146,7 @@ export function ClassesTab() {
               <div className="space-y-2">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Unassigned grade</h3>
                 <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                  {ungrouped.map((c) => <ClassCard key={c.id} c={c} grade={null} teachers={teachers} rooms={rooms} enrolled={enrollments[c.id] || 0} onRemove={() => remove(c.id)} />)}
+                  {ungrouped.map((c) => <ClassCard key={c.id} c={c} grade={null} teachers={teachers} rooms={rooms} enrolled={enrollments[c.id] || 0} onOpen={() => navigate(`/academics/classes/${c.id}`)} onRemove={canManage ? () => remove(c.id) : undefined} />)}
                 </div>
               </div>
             )}
@@ -153,7 +158,7 @@ export function ClassesTab() {
   );
 }
 
-function ClassCard({ c, grade, teachers, rooms, enrolled, onRemove }: any) {
+function ClassCard({ c, grade, teachers, rooms, enrolled, onOpen, onRemove }: any) {
   const teacher = teachers.find((x: any) => x.id === c.class_teacher_id);
   const room = rooms.find((x: any) => x.id === c.room_id);
   const capacity = c.capacity || 0;
@@ -161,7 +166,7 @@ function ClassCard({ c, grade, teachers, rooms, enrolled, onRemove }: any) {
   const over90 = capacity > 0 && enrolled / capacity > 0.9;
   const noTeacher = !teacher;
   return (
-    <div className="rounded-lg border p-4 bg-card hover:shadow-sm transition-shadow space-y-3">
+    <div className="rounded-lg border p-4 bg-card hover:shadow-sm transition-shadow space-y-3 cursor-pointer" onClick={onOpen}>
       <div className="flex items-start justify-between gap-2">
         <div className="space-y-1 min-w-0">
           <div className="font-semibold text-base truncate">{c.name}</div>
@@ -172,7 +177,7 @@ function ClassCard({ c, grade, teachers, rooms, enrolled, onRemove }: any) {
         </div>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button size="icon" variant="ghost" onClick={onRemove}><Trash2 className="h-4 w-4" /></Button>
+             {onRemove && <Button size="icon" variant="ghost" onClick={(event) => { event.stopPropagation(); onRemove(); }}><Trash2 className="h-4 w-4" /></Button>}
           </TooltipTrigger>
           <TooltipContent>Delete class</TooltipContent>
         </Tooltip>

@@ -33,7 +33,7 @@ export default function StaffProfile() {
   const [staff, setStaff] = useState<AnyRec | null>(null);
   const [docs, setDocs] = useState<AnyRec[]>([]);
   const [qualifications, setQualifications] = useState<AnyRec[]>([]);
-  const [subjects, setSubjects] = useState<AnyRec[]>([]);
+  const [assignedSubjects, setAssignedSubjects] = useState<AnyRec[]>([]);
   const [compensation, setCompensation] = useState<AnyRec | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,7 +53,7 @@ export default function StaffProfile() {
         supabase.from("class_subjects").select("subjects(name,code), classes(name)").eq("tenant_id", tenant.id).eq("teacher_id", id),
         canPayroll ? supabase.from("staff_compensation").select("*").eq("tenant_id", tenant.id).eq("staff_id", id).maybeSingle() : Promise.resolve({ data: null }),
       ]);
-      setQualifications(qq ?? []); setSubjects(ss ?? []); setCompensation(cc as AnyRec | null);
+      setQualifications(qq ?? []); setAssignedSubjects(ss ?? []); setCompensation(cc as AnyRec | null);
       setLoading(false);
     })();
   }, [id, profile?.tenant_id, tenant?.id, navigate, canPayroll]);
@@ -64,9 +64,6 @@ export default function StaffProfile() {
   const fn = String(staff.first_name ?? "");
   const ln = String(staff.last_name ?? "");
   const initials = `${fn[0] || ""}${ln[0] || ""}`.toUpperCase();
-  const subjects = Array.isArray(staff.subjects_taught) ? (staff.subjects_taught as string[]) : [];
-  const classes = Array.isArray(staff.classes_taught) ? (staff.classes_taught as string[]) : [];
-  const certs = Array.isArray(staff.professional_certifications) ? (staff.professional_certifications as string[]) : [];
 
   return (
     <div className="space-y-6">
@@ -124,19 +121,19 @@ export default function StaffProfile() {
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Subjects Taught</p>
               <div className="flex flex-wrap gap-1.5">
-                {subjects.length ? subjects.map((s: any, i) => <Badge key={i} variant="secondary">{s.subjects?.code} · {s.classes?.name}</Badge>) : <p className="text-sm text-muted-foreground">None assigned</p>}
+                {assignedSubjects.length ? assignedSubjects.map((s: any, i) => <Badge key={i} variant="secondary">{s.subjects?.code} · {s.classes?.name}</Badge>) : <p className="text-sm text-muted-foreground">None assigned</p>}
               </div>
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Classes Taught</p>
               <div className="flex flex-wrap gap-1.5">
-                {classes.length ? classes.map((s, i) => <Badge key={i} variant="outline">{s}</Badge>) : <p className="text-sm text-muted-foreground">None recorded</p>}
+                {assignedSubjects.length ? [...new Set(assignedSubjects.map((s: any) => s.classes?.name).filter(Boolean))].map((s, i) => <Badge key={i} variant="outline">{String(s)}</Badge>) : <p className="text-sm text-muted-foreground">None recorded</p>}
               </div>
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Certifications</p>
               <div className="flex flex-wrap gap-1.5">
-                {certs.length ? certs.map((s, i) => <Badge key={i} variant="secondary">{s}</Badge>) : <p className="text-sm text-muted-foreground">None recorded</p>}
+                <p className="text-sm text-muted-foreground">See Qualifications for verified credentials.</p>
               </div>
             </div>
           </Card>
