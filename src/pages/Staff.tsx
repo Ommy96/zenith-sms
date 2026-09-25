@@ -189,7 +189,14 @@ export default function Staff() {
     if (!role) { setInviting(null); return toast({ title: "Teaching role is unavailable", variant: "destructive" }); }
     const { data, error } = await supabase.functions.invoke("invite-staff", { body: { tenant_id: schoolId, staff_id: member.id, role_id: role.id } });
     setInviting(null);
-    if (error || !data?.success) return toast({ title: "Invitation failed", description: data?.error || error?.message, variant: "destructive" });
+    if (error || !data?.success) {
+      let description: string | undefined = data?.error;
+      const ctx = (error as any)?.context;
+      if (!description && ctx && typeof ctx.json === "function") {
+        try { description = (await ctx.json())?.error; } catch { /* body not JSON */ }
+      }
+      return toast({ title: "Invitation failed", description: description || error?.message, variant: "destructive" });
+    }
     toast({ title: "Invitation sent", description: data.email_sent_to });
   };
 

@@ -48,7 +48,18 @@ Deno.serve(async (req) => {
     });
     if (inviteError) {
       await admin.from("staff_invitations").delete().eq("staff_id", staff_id).eq("token_hash", token_hash);
-      throw new EdgeAuthError(400, "Invitation could not be sent. Check whether this email already has an account.");
+      const status = (inviteError as any).status ?? null;
+      const code = (inviteError as any).code ?? null;
+      // Log only the provider error category — never the email address or token.
+      console.error("invite-staff: auth invite failed", { status, code, message: inviteError.message });
+      const reason = status === 429 || code === "over_email_send_rate_limit"
+        ? "The email sending limit has been reached. Try again later or configure custom SMTP."
+        : code === "email_exists" || /already/i.test(inviteError.message)
+        ? "This email already has an account."
+        : /smtp|mail|send/i.test(inviteError.message)
+        ? "The invitation email could not be sent. Check the email (SMTP) settings for this project."
+        : "Invitation could not be sent.";
+      throw new EdgeAuthError(400, reason);
     }
     return reply({ success: true, email_sent_to: email });
   } catch (error) {
