@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/contexts/TenantContext";
@@ -16,38 +14,21 @@ import { ClassSubjectsTab } from "@/components/academics/ClassSubjectsTab";
 export default function ClassDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { tenant, can } = useTenant();
+  const { tenant } = useTenant();
   const [data, setData] = useState<any>(null);
-  const [subjects, setSubjects] = useState<any[]>([]);
-  const [teachers, setTeachers] = useState<any[]>([]);
-  const [assignments, setAssignments] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ subject_id: "", teacher_id: "none", lessons: "5" });
   const load = async () => {
     if (!tenant?.id || !id) return;
     setLoading(true);
-    const [c, s, t, a, e] = await Promise.all([
+    const [c, e] = await Promise.all([
       supabase.from("classes").select("*, grade_levels(name,code), academic_years(name), rooms(name), staff!classes_class_teacher_fkey(first_name,last_name)").eq("tenant_id", tenant.id).eq("id", id).maybeSingle(),
-      supabase.from("subjects").select("id,name,code").eq("tenant_id", tenant.id).eq("is_active", true).order("name"),
-      supabase.from("staff").select("id,first_name,last_name").eq("tenant_id", tenant.id).eq("status", "active").eq("role", "teacher").order("first_name"),
-      supabase.from("class_subjects").select("id,lessons_per_week,teacher_id,subjects(id,name,code),staff(first_name,last_name)").eq("tenant_id", tenant.id).eq("class_id", id).eq("is_active", true),
       supabase.from("student_enrollments").select("id,students(id,first_name,last_name,admission_number)").eq("tenant_id", tenant.id).eq("class_id", id).eq("status", "active"),
     ]);
     if (c.error || !c.data) toast({ title: "Class not found", variant: "destructive" });
-    setData(c.data); setSubjects(s.data ?? []); setTeachers(t.data ?? []); setAssignments(a.data ?? []); setStudents(e.data ?? []); setLoading(false);
+    setData(c.data); setStudents(e.data ?? []); setLoading(false);
   };
   useEffect(() => { void load(); }, [tenant?.id, id]);
-  const assignedIds = useMemo(() => new Set(assignments.map((row) => row.subjects?.id)), [assignments]);
-  const assign = async () => {
-    if (!tenant?.id || !id || !form.subject_id) return;
-    const lessons = Number(form.lessons);
-    if (!Number.isInteger(lessons) || lessons < 1 || lessons > 20) return toast({ title: "Lessons must be between 1 and 20", variant: "destructive" });
-    const { error } = await supabase.from("class_subjects").insert({ tenant_id: tenant.id, class_id: id, subject_id: form.subject_id, teacher_id: form.teacher_id === "none" ? null : form.teacher_id, lessons_per_week: lessons });
-    if (error) return toast({ title: "Could not assign subject", description: error.message, variant: "destructive" });
-    toast({ title: "Subject assigned" }); setForm({ subject_id: "", teacher_id: "none", lessons: "5" }); void load();
-  };
-  const remove = async (assignmentId: string) => { await supabase.from("class_subjects").delete().eq("tenant_id", tenant?.id).eq("id", assignmentId); void load(); };
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!data) return <Button variant="ghost" onClick={() => navigate("/academics/classes")}>Back to classes</Button>;
   return <div className="space-y-6">
