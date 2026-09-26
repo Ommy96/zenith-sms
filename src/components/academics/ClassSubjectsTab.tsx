@@ -92,7 +92,7 @@ export function ClassSubjectsTab({ classId, className }: { classId: string; clas
         .select("id,subject_id,teacher_id,lessons_per_week,is_active,subjects!class_subjects_subject_id_fkey(id,name,code),staff!class_subjects_teacher_id_fkey(first_name,last_name)")
         .eq("tenant_id", tenantId).eq("class_id", classId);
       if (error) throw error;
-      return ((data ?? []) as Row[]).sort((a, b) => (a.subjects?.name ?? "").localeCompare(b.subjects?.name ?? ""));
+      return ((data ?? []) as unknown as Row[]).sort((a, b) => (a.subjects?.name ?? "").localeCompare(b.subjects?.name ?? ""));
     },
   });
 
