@@ -20,6 +20,7 @@ import { getStudentGovIdFields } from "@/lib/sis/countryFields";
 import { InlineEditCard } from "@/components/sis/InlineEditCard";
 import { ResponsiveContainer, LineChart, Line, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
 import { EmptyState } from "@/components/EmptyState";
+import { EnrollmentCard } from "@/components/sis/EnrollmentCard";
 
 export default function StudentProfile() {
   const { id } = useParams<{ id: string }>();
@@ -51,6 +52,7 @@ export default function StudentProfile() {
   const [stkForm, setStkForm] = useState({ amount: "", phone: "", invoice_id: "" });
   const [stkBusy, setStkBusy] = useState(false);
   const [stmtBusy, setStmtBusy] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const canViewMedical = can("students.view_medical");
   const canEditStudent = can("students.edit");
@@ -67,8 +69,8 @@ export default function StudentProfile() {
       const [{ data: sg }, { data: cls }, { data: inv }, { data: pay }, { data: act }, { data: dd }, { data: att }, { data: ex }] = await Promise.all([
         supabase.from("student_guardians").select("*, guardian:guardians!student_guardians_guardian_id_fkey(*)").eq("student_id", id),
         s.current_class_id ? supabase.from("classes").select("*").eq("id", s.current_class_id).maybeSingle() : Promise.resolve({ data: null }),
-        supabase.from("student_invoices").select("*, terms:term_id(name), academic_years:academic_year_id(name)").eq("student_id", id).order("created_at", { ascending: false }).limit(50),
-        supabase.from("student_payments").select("*").eq("student_id", id).order("paid_at", { ascending: false }).limit(50),
+        supabase.from("invoices").select("*, terms:term_id(name), academic_years:academic_year_id(name)").eq("tenant_id", s.tenant_id).eq("student_id", id).order("created_at", { ascending: false }).limit(50),
+        supabase.from("payments").select("*").eq("tenant_id", s.tenant_id).eq("student_id", id).order("paid_at", { ascending: false }).limit(50),
         supabase.from("student_activity").select("*").eq("student_id", id).order("occurred_at", { ascending: false }).limit(50),
         supabase.from("documents").select("*").eq("owner_type", "student").eq("owner_id", id).order("created_at", { ascending: false }),
         supabase.from("attendance").select("date,status").eq("student_id", id).order("date", { ascending: false }).limit(200),
@@ -104,7 +106,7 @@ export default function StudentProfile() {
       setAuditEvents(al ?? []);
       setLoading(false);
     })();
-  }, [id, profile?.tenant_id, navigate]);
+  }, [id, profile?.tenant_id, navigate, reloadKey]);
 
   useEffect(() => {
     if (student && searchParams.get("edit") === "1") {
@@ -120,11 +122,11 @@ export default function StudentProfile() {
   const govFields = getStudentGovIdFields(tenant?.country_code);
   const age = student.date_of_birth ? Math.floor((Date.now() - new Date(student.date_of_birth).getTime()) / (365.25 * 24 * 3600 * 1000)) : null;
   const balance = invoices
-    .filter((i: any) => i.status !== "void")
+    .filter((i: any) => !["void","cancelled"].includes(i.status))
     .reduce((acc, i) => acc + Number(i.balance || 0), 0);
-  const totalBilled = invoices.filter((i: any) => i.status !== "void" && i.status !== "draft").reduce((a, i) => a + Number(i.total || 0), 0);
-  const totalPaid = invoices.reduce((a, i) => a + Number(i.paid_total || 0), 0);
-  const outstandingInvoices = invoices.filter((i: any) => Number(i.balance) > 0 && i.status !== "void");
+  const totalBilled = invoices.filter((i: any) => !["void","cancelled"].includes(i.status) && i.status !== "draft").reduce((a, i) => a + Number(i.total || 0), 0);
+  const totalPaid = invoices.reduce((a, i) => a + Number(i.amount_paid || 0), 0);
+  const outstandingInvoices = invoices.filter((i: any) => Number(i.balance) > 0 && !["void","cancelled"].includes(i.status));
 
   // Attendance summary (current term ≈ last 90 days)
   const ninetyDaysAgo = Date.now() - 90 * 86400_000;
@@ -159,7 +161,7 @@ export default function StudentProfile() {
   // YTD fees summary
   const ytdStart = new Date(new Date().getFullYear(), 0, 1).getTime();
   const ytdPaid = payments.filter(p => new Date(p.paid_at).getTime() >= ytdStart).reduce((a, p) => a + Number(p.amount || 0), 0);
-  const ytdBilled = invoices.filter(i => new Date(i.created_at).getTime() >= ytdStart && i.status !== "void").reduce((a, i) => a + Number(i.total || 0), 0);
+  const ytdBilled = invoices.filter(i => new Date(i.created_at).getTime() >= ytdStart && !["void","cancelled"].includes(i.status)).reduce((a, i) => a + Number(i.total || 0), 0);
 
   const fullName = [student.first_name, student.middle_name, student.last_name].filter(Boolean).join(" ");
   const statusKey = (student.enrollment_status || student.status || "").toLowerCase();
@@ -928,6 +930,7 @@ export default function StudentProfile() {
 
         {/* Right rail */}
         <div className="space-y-4">
+          <EnrollmentCard student={student} onChanged={() => setReloadKey((k) => k + 1)} />
           <Card className="p-5">
             <h3 className="text-sm font-semibold mb-3">Guardians</h3>
             {guardians.length === 0 ? (
@@ -939,7 +942,7 @@ export default function StudentProfile() {
                 {guardians.map((sg: any) => (
                   <div key={sg.id} className="text-sm border-b last:border-0 pb-3 last:pb-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium">{sg.guardian?.full_name}</p>
+                      <button className="font-medium hover:text-primary" onClick={() => navigate(`/academics/guardians/${sg.guardian_id}`)}>{sg.guardian?.full_name}</button>
                       {sg.is_primary_contact && <Badge className="text-[10px]">Primary</Badge>}
                     </div>
                     <p className="text-xs text-muted-foreground capitalize">{sg.relationship}</p>
