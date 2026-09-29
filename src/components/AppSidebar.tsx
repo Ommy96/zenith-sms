@@ -29,7 +29,8 @@ interface NavSection { label: string; items: NavItem[]; superAdminOnly?: boolean
 
 const sections: NavSection[] = [
   { label: "Academics", tKey: "nav.section.academics", items: [
-    { title: "Students", tKey: "nav.students", url: "/students", icon: Users, perm: "students.view" },
+    { title: "Students", tKey: "nav.students", url: "/academics/students", icon: Users, perm: "students.view" },
+    { title: "Guardians", url: "/academics/guardians", icon: Users, perm: "students.view" },
     { title: "Classes", url: "/academics/classes", icon: BookOpen, perm: "classes.view" },
     { title: "Subjects", url: "/academics/subjects", icon: ClipboardList, perm: "subjects.view" },
     { title: "Teachers & Staff", url: "/academics/staff", icon: Briefcase, perm: "staff.view" },
