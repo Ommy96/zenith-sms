@@ -28,6 +28,8 @@ const Students = lazy(() => import("./pages/Students"));
 const StudentsImport = lazy(() => import("./pages/StudentsImport"));
 const StudentProfile = lazy(() => import("./pages/StudentProfile"));
 const StudentEdit = lazy(() => import("./pages/StudentEdit"));
+const Guardians = lazy(() => import("./pages/Guardians"));
+const GuardianProfile = lazy(() => import("./pages/GuardianProfile"));
 const AdmissionWizard = lazy(() => import("./pages/AdmissionWizard"));
 const Finance = lazy(() => import("./pages/Finance"));
 const MobileMoney = lazy(() => import("./pages/MobileMoney"));
@@ -236,6 +238,11 @@ function AppRoutes() {
           <DashboardLayout><Dashboard /></DashboardLayout>
         </ProtectedRoute>
       } />
+      <Route path="/academics/students" element={<ProtectedRoute><DashboardLayout><Students /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/academics/students/:id" element={<ProtectedRoute><DashboardLayout><StudentProfile /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/academics/students/:id/edit" element={<ProtectedRoute><DashboardLayout><StudentEdit /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/academics/guardians" element={<ProtectedRoute><DashboardLayout><Guardians /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/academics/guardians/:id" element={<ProtectedRoute><DashboardLayout><GuardianProfile /></DashboardLayout></ProtectedRoute>} />
       <Route path="/students" element={<ProtectedRoute><DashboardLayout><Students /></DashboardLayout></ProtectedRoute>} />
       <Route path="/students/import" element={<ProtectedRoute><DashboardLayout><StudentsImport /></DashboardLayout></ProtectedRoute>} />
       <Route path="/students/:id" element={<ProtectedRoute><DashboardLayout><StudentProfile /></DashboardLayout></ProtectedRoute>} />
