@@ -26,7 +26,7 @@ export default function ClassDetail() {
     setLoading(true);
     const [c, e] = await Promise.all([
       supabase.from("classes").select("*, grade_levels(name,code), academic_years(name), rooms(name), staff!classes_class_teacher_fkey(first_name,last_name)").eq("tenant_id", tenant.id).eq("id", id).maybeSingle(),
-      supabase.from("student_enrollments").select("id,students(id,first_name,last_name,admission_number,gender,date_of_birth,student_guardians(is_primary_contact,guardians(full_name,phone_primary)))").eq("tenant_id", tenant.id).eq("class_id", id).eq("status", "active"),
+      supabase.from("student_enrollments").select("id,students(id,first_name,last_name,admission_number,gender,date_of_birth,student_guardians(is_primary_contact,guardians!student_guardians_guardian_id_fkey(full_name,phone_primary)))").eq("tenant_id", tenant.id).eq("class_id", id).eq("status", "active"),
     ]);
     if (c.error || !c.data) toast({ title: "Class not found", variant: "destructive" });
     setData(c.data); setStudents(e.data ?? []); setLoading(false);
