@@ -5,3 +5,6 @@
 - [x] Build staff list/create/edit/detail and invitation flow
 - [x] Wire routes/sidebar and preserve legacy staff links
 - [ ] Verify authenticated acceptance paths (blocked: external unmanaged sign-in)
+
+## Stage 3 (students, guardians, enrollment)
+- [x] Built; signed-in acceptance steps 1-16 pending user test (external sign-in)
