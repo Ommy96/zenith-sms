@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { EntityFormDialog } from "@/components/scaffolding/EntityFormDialog";
-import EmptyState from "@/components/EmptyState";
+import { EmptyState } from "@/components/EmptyState";
 import { ErrorRetry, StudentPicker, useFinanceStudents, useLookups, useNameMap } from "@/components/finance/shared";
 import { FEE_CATEGORIES, SCHOLAR_TYPES, kes, numericInput, refreshSetup, studentName } from "@/lib/finance/format";
 
@@ -140,7 +140,7 @@ function FeeItemsTab() {
       </div>
 
       {q.isLoading ? <Skeleton className="h-48 w-full" /> : rows.length === 0 ? (
-        <EmptyState icon={Tags} title={q.data?.length ? "No items in this category" : "No fee items yet"}
+        <EmptyState icon={<Tags className="h-5 w-5" />} title={q.data?.length ? "No items in this category" : "No fee items yet"}
           description="Fee items are the things you can charge for — tuition, lunch, transport and so on." />
       ) : (
         <div className="rounded-lg border"><Table>
@@ -250,7 +250,7 @@ function StructuresTab() {
         <Button size="sm" onClick={() => { setForm({ name: "", academic_year_id: lk.data?.currentYear ?? "", grade_level_id: "all", scholar_type: "day", is_active: true }); setOpen(true); }}>
           <Plus className="h-4 w-4 mr-1" />New fee structure</Button>)}</div>
       {q.isLoading ? <Skeleton className="h-48 w-full" /> : !q.data?.length ? (
-        <EmptyState icon={Layers} title="No fee structures yet" description="A fee structure bundles fee items with amounts per term, e.g. “Grade 1 Day Scholar 2026”." />
+        <EmptyState icon={<Layers className="h-5 w-5" />} title="No fee structures yet" description="A fee structure bundles fee items with amounts per term, e.g. “Grade 1 Day Scholar 2026”." />
       ) : (
         <div className="rounded-lg border"><Table>
           <TableHeader><TableRow>
@@ -359,7 +359,7 @@ function AssignmentsTab() {
         <Button size="sm" onClick={() => { setForm({ student_id: "", fee_structure_id: "", academic_year_id: lk.data?.currentYear ?? "" }); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />Assign fee structure</Button>
       </div>}
       {q.isLoading ? <Skeleton className="h-48 w-full" /> : !q.data?.length ? (
-        <EmptyState icon={Users} title="No students assigned yet" description="Assign a fee structure so invoices can be generated from it." />
+        <EmptyState icon={<Users className="h-5 w-5" />} title="No students assigned yet" description="Assign a fee structure so invoices can be generated from it." />
       ) : (
         <div className="rounded-lg border"><Table>
           <TableHeader><TableRow><TableHead>Student</TableHead><TableHead>Class</TableHead><TableHead>Fee structure</TableHead><TableHead>Academic year</TableHead><TableHead>Assigned</TableHead><TableHead className="w-10" /></TableRow></TableHeader>
