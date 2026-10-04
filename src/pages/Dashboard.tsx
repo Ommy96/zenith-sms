@@ -162,7 +162,6 @@ export default function Dashboard() {
 
       const all = invAllRes.data || [];
       const totalBilled = all.reduce((s, i: any) => s + Number(i.total || 0), 0);
-      void all.reduce((s, i: any) => s + Number(i.amount_paid || 0), 0);
       const outstanding = all.reduce((s, i: any) => s + Number(i.balance || 0), 0);
 
       const activeStudents = studentsRes.count || 0;
