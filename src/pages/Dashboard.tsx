@@ -143,27 +143,27 @@ export default function Dashboard() {
 
     (async () => {
       const [schoolRes, absRes, defRes, admRes, invMonthRes, invAllRes, studentsRes, mpesaRes, invTrendRes] = await Promise.all([
-        supabase.from("tenants").select("payment_config").eq("id", schoolId).maybeSingle(),
+        supabase.from("tenants").select("currency_code").eq("id", schoolId).maybeSingle(),
         supabase.from("attendance").select("id, student_id", { count: "exact" }).eq("tenant_id", schoolId).eq("date", todayStr).eq("status", "absent"),
-        supabase.from("invoices").select("student_id").eq("tenant_id", schoolId).in("status", ["overdue", "pending"]).lte("due_date", todayStr).gte("due_date", weekAgo),
+        supabase.from("invoices").select("student_id").eq("tenant_id", schoolId).in("status", ["overdue", "issued", "partial"]).gt("balance", 0).lte("due_date", todayStr).gte("due_date", weekAgo),
         supabase.from("applications").select("id", { count: "exact", head: true }).eq("tenant_id", schoolId).eq("status", "under_review"),
-        supabase.from("invoices").select("paid_amount").eq("tenant_id", schoolId).gte("created_at", monthStart),
-        supabase.from("invoices").select("amount, paid_amount").eq("tenant_id", schoolId),
-        supabase.from("students").select("id, created_at", { count: "exact" }).eq("tenant_id", schoolId).eq("status", "active"),
-        supabase.from("invoices").select("id, invoice_number, paid_amount, created_at, student_id, description").eq("tenant_id", schoolId).gt("paid_amount", 0).gte("created_at", todayStr).order("created_at", { ascending: false }).limit(5),
-        supabase.from("invoices").select("paid_amount, created_at").eq("tenant_id", schoolId).gte("created_at", sixMonthsAgo),
+        supabase.from("payments").select("amount").eq("tenant_id", schoolId).eq("status", "confirmed").gte("paid_at", monthStart),
+        supabase.from("invoices").select("total, amount_paid, balance, status").eq("tenant_id", schoolId).not("status", "in", "(draft,cancelled,written_off)"),
+        supabase.from("students").select("id, created_at", { count: "exact" }).eq("tenant_id", schoolId).eq("enrollment_status", "active"),
+        supabase.from("payments").select("id, payment_number, reference, amount, paid_at, student_id").eq("tenant_id", schoolId).eq("method", "mpesa").eq("status", "confirmed").gte("paid_at", todayStr).order("paid_at", { ascending: false }).limit(5),
+        supabase.from("payments").select("amount, paid_at").eq("tenant_id", schoolId).eq("status", "confirmed").gte("paid_at", sixMonthsAgo),
       ]);
 
-      const cur = (schoolRes.data?.payment_config as any)?.currency || "KES";
+      const cur = (schoolRes.data as any)?.currency_code || "KES";
       setCurrency(cur);
 
       const defaulterStudents = new Set((defRes.data || []).map((r: any) => r.student_id));
-      const collectedMonth = (invMonthRes.data || []).reduce((s, i: any) => s + Number(i.paid_amount || 0), 0);
+      const collectedMonth = (invMonthRes.data || []).reduce((s, i: any) => s + Number(i.amount || 0), 0);
 
       const all = invAllRes.data || [];
-      const totalBilled = all.reduce((s, i: any) => s + Number(i.amount), 0);
-      const collectedAll = all.reduce((s, i: any) => s + Number(i.paid_amount || 0), 0);
-      const outstanding = totalBilled - collectedAll;
+      const totalBilled = all.reduce((s, i: any) => s + Number(i.total || 0), 0);
+      const collectedAll = all.reduce((s, i: any) => s + Number(i.amount_paid || 0), 0);
+      const outstanding = all.reduce((s, i: any) => s + Number(i.balance || 0), 0);
 
       const activeStudents = studentsRes.count || 0;
       const ninetyDaysAgo = new Date(today.getTime() - 90 * 86400000);
@@ -176,24 +176,24 @@ export default function Dashboard() {
         trend[`${d.getFullYear()}-${d.getMonth()}`] = 0;
       }
       (invTrendRes.data || []).forEach((inv: any) => {
-        const d = new Date(inv.created_at);
+        const d = new Date(inv.paid_at);
         const k = `${d.getFullYear()}-${d.getMonth()}`;
-        if (k in trend) trend[k] += Number(inv.paid_amount || 0);
+        if (k in trend) trend[k] += Number(inv.amount || 0);
       });
 
       // Fetch student names for mpesa
       const studentIds = [...new Set((mpesaRes.data || []).map((m: any) => m.student_id).filter(Boolean))];
       let nameMap: Record<string, string> = {};
       if (studentIds.length) {
-        const { data: studs } = await supabase.from("students").select("id, first_name, last_name, guardian_name").in("id", studentIds);
+        const { data: studs } = await supabase.from("students").select("id, first_name, last_name").in("id", studentIds);
         (studs || []).forEach((s: any) => { nameMap[s.id] = `${s.first_name} ${s.last_name}`; });
       }
       const mpesa: MpesaTxn[] = (mpesaRes.data || []).map((m: any) => ({
         id: m.id,
-        sender: m.invoice_number || "M-Pesa",
-        amount: Number(m.paid_amount),
-        student: nameMap[m.student_id] || m.description || "—",
-        at: formatDistanceToNow(new Date(m.created_at), { addSuffix: true }),
+        sender: m.reference || m.payment_number || "M-Pesa",
+        amount: Number(m.amount),
+        student: nameMap[m.student_id] || "—",
+        at: formatDistanceToNow(new Date(m.paid_at), { addSuffix: true }),
       }));
 
       setData({

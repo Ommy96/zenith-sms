@@ -39,8 +39,10 @@ const sections: NavSection[] = [
     { title: "Attendance", tKey: "nav.attendance", url: "/attendance", icon: UserCog, perm: "attendance.view" },
   ]},
   { label: "Finance", tKey: "nav.section.finance", items: [
-    { title: "Fees & Invoices", tKey: "nav.feesInvoices", url: "/fees", icon: Receipt, perm: "fees.view" },
-    { title: "Payments", tKey: "nav.payments", url: "/finance/mobile-money", icon: Smartphone, perm: "fees.configure" },
+    { title: "Fees", url: "/finance/fees", icon: Receipt, perm: "fees.view" },
+    { title: "Invoices", url: "/finance/invoices", icon: Receipt, perm: "invoices.view" },
+    { title: "Payments", url: "/finance/payments", icon: Smartphone, perm: "payments.view" },
+    { title: "Mobile Money", url: "/finance/mobile-money", icon: Smartphone, perm: "fees.configure" },
   ]},
   { label: "Communication", tKey: "nav.section.communication", items: [
     { title: "Announcements", tKey: "nav.announcements", url: "/announcements", icon: Megaphone, perm: "communication.send" },
