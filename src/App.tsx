@@ -1,3 +1,4 @@
+import { RequirePermission } from "@/components/auth/RequirePermission";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -32,6 +33,12 @@ const Guardians = lazy(() => import("./pages/Guardians"));
 const GuardianProfile = lazy(() => import("./pages/GuardianProfile"));
 const AdmissionWizard = lazy(() => import("./pages/AdmissionWizard"));
 const Finance = lazy(() => import("./pages/Finance"));
+const FeesPage = lazy(() => import("./pages/finance/Fees"));
+const FeeStructureDetail = lazy(() => import("./pages/finance/FeeStructureDetail"));
+const InvoicesPage = lazy(() => import("./pages/finance/Invoices"));
+const InvoiceDetail = lazy(() => import("./pages/finance/InvoiceDetail"));
+const PaymentsPage = lazy(() => import("./pages/finance/Payments"));
+const PaymentDetail = lazy(() => import("./pages/finance/PaymentDetail"));
 const MobileMoney = lazy(() => import("./pages/MobileMoney"));
 const WhatsApp = lazy(() => import("./pages/WhatsApp"));
 const Academics = lazy(() => import("./pages/Academics"));
@@ -263,6 +270,12 @@ function AppRoutes() {
       <Route path="/timetable" element={<ProtectedRoute><DashboardLayout><Timetable /></DashboardLayout></ProtectedRoute>} />
       <Route path="/schemes" element={<ProtectedRoute><DashboardLayout><SchemesOfWork /></DashboardLayout></ProtectedRoute>} />
       <Route path="/lesson-plans" element={<ProtectedRoute><DashboardLayout><LessonPlans /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/finance/fees" element={<ProtectedRoute><DashboardLayout><RequirePermission permission="fees.view"><FeesPage /></RequirePermission></DashboardLayout></ProtectedRoute>} />
+      <Route path="/finance/fees/structures/:id" element={<ProtectedRoute><DashboardLayout><RequirePermission permission="fees.view"><FeeStructureDetail /></RequirePermission></DashboardLayout></ProtectedRoute>} />
+      <Route path="/finance/invoices" element={<ProtectedRoute><DashboardLayout><RequirePermission permission="invoices.view"><InvoicesPage /></RequirePermission></DashboardLayout></ProtectedRoute>} />
+      <Route path="/finance/invoices/:id" element={<ProtectedRoute><DashboardLayout><RequirePermission permission="invoices.view"><InvoiceDetail /></RequirePermission></DashboardLayout></ProtectedRoute>} />
+      <Route path="/finance/payments" element={<ProtectedRoute><DashboardLayout><RequirePermission permission="payments.view"><PaymentsPage /></RequirePermission></DashboardLayout></ProtectedRoute>} />
+      <Route path="/finance/payments/:id" element={<ProtectedRoute><DashboardLayout><RequirePermission permission="payments.view"><PaymentDetail /></RequirePermission></DashboardLayout></ProtectedRoute>} />
       <Route path="/fees" element={<ProtectedRoute><DashboardLayout><Finance /></DashboardLayout></ProtectedRoute>} />
       <Route path="/invoices" element={<ProtectedRoute><DashboardLayout><Finance /></DashboardLayout></ProtectedRoute>} />
       <Route path="/finance-reports" element={<ProtectedRoute><DashboardLayout><Finance /></DashboardLayout></ProtectedRoute>} />

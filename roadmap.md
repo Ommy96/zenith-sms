@@ -8,3 +8,7 @@
 
 ## Stage 3 (students, guardians, enrollment)
 - [x] Built; signed-in acceptance steps 1-16 pending user test (external sign-in)
+
+## Stage 4 — Fees, Invoices, Payments
+- [x] Fees (items, structures, assignments), invoices, payments, receipts, invoice PDF built
+- [ ] Acceptance steps 1–25 — needs signed-in test by user (external sign-in)
