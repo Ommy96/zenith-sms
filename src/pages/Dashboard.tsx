@@ -271,7 +271,7 @@ export default function Dashboard() {
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Today's Focus</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <ActionTile delay={0.05} title="Today's Absences" value={data.absencesToday.toLocaleString()} cta="View list" icon={UserX} color="warning" to="/attendance?filter=absent&date=today" />
-          <ActionTile delay={0.1} title="Fee Defaulters This Week" value={data.defaultersWeek.toLocaleString()} cta="Send reminders" icon={AlertTriangle} color="destructive" to="/fees?filter=defaulters&range=week" />
+          <ActionTile delay={0.1} title="Fee Defaulters This Week" value={data.defaultersWeek.toLocaleString()} cta="Send reminders" icon={AlertTriangle} color="destructive" to="/finance/invoices" />
           <ActionTile delay={0.15} title="Pending Admissions" value={data.pendingAdmissions.toLocaleString()} cta="Review applications" icon={FileText} color="info" to="/admissions?status=under_review" />
         </div>
       </div>
@@ -297,7 +297,7 @@ export default function Dashboard() {
             cta="View invoices"
             icon={Receipt}
             color="warning"
-            to="/invoices?status=outstanding"
+            to="/finance/invoices"
             hint={<span>{outstandingPct}% of total billed</span>}
           />
           <ActionTile
