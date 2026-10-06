@@ -7351,6 +7351,7 @@ export type Database = {
       }
       is_super_admin: { Args: never; Returns: boolean }
       is_tenant_member: { Args: { _tenant: string }; Returns: boolean }
+      normalize_kenya_phone: { Args: { input: string }; Returns: string }
       portal_link_guardian_user: {
         Args: { _phone: string; _user_id: string }
         Returns: number
