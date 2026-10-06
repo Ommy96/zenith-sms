@@ -28,6 +28,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { toast } from "@/hooks/use-toast";
+import { PHONE_ERROR, normalizeKenyaPhone } from "@/lib/sis/people";
 import { useNavigate } from "react-router-dom";
 
 
@@ -150,6 +151,11 @@ export default function Staff() {
       toast({ title: "First and last name are required", variant: "destructive" });
       return;
     }
+    const phone = form.phone.trim() ? normalizeKenyaPhone(form.phone) : null;
+    if (form.phone.trim() && !phone) {
+      toast({ title: PHONE_ERROR, variant: "destructive" });
+      return;
+    }
     setSaving(true);
 
     const payload = {
@@ -157,7 +163,7 @@ export default function Staff() {
       middle_name: form.middle_name.trim() || null,
       last_name: form.last_name.trim(),
       email: form.email.trim() || null,
-      phone: form.phone.trim() || null,
+      phone,
       department: form.department.trim() || null,
       role: form.role || "teacher",
       hire_date: form.hire_date || null,

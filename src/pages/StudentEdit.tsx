@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { toast } from "sonner";
+import { PHONE_ERROR, normalizeKenyaPhone } from "@/lib/sis/people";
 import { getStudentGovIdFields } from "@/lib/sis/countryFields";
 import {
   identitySectionSchema, academicSectionSchema, contactSectionSchema,
@@ -271,7 +272,11 @@ export default function StudentEdit() {
           all[`guardians.${i}.${issue.path.join(".")}`] = issue.message;
         }
       } else {
-        guardianClean.push({ ...g, ...r.data });
+        const phone = normalizeKenyaPhone(r.data.phone_primary as string | undefined);
+        const wa = r.data.whatsapp_number ? normalizeKenyaPhone(r.data.whatsapp_number as string) : null;
+        if (r.data.phone_primary && !phone) { all[`guardians.${i}.phone_primary`] = PHONE_ERROR; return; }
+        if (r.data.whatsapp_number && !wa) { all[`guardians.${i}.whatsapp_number`] = PHONE_ERROR; return; }
+        guardianClean.push({ ...g, ...r.data, phone_primary: phone ?? r.data.phone_primary, whatsapp_number: wa ?? r.data.whatsapp_number });
         if (r.data.is_primary_contact) primaryCount++;
       }
     });
