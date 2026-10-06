@@ -1,17 +1,21 @@
 import { z } from "zod";
 
-/** Accepts +254XXXXXXXXX, 254XXXXXXXXX or 0XXXXXXXXX; returns E.164 or null. */
-export function normalizeKenyaPhone(raw?: string | null): string | null {
-  const v = (raw ?? "").replace(/[\s-]/g, "");
-  if (!v) return null;
-  if (/^\+254[17]\d{8}$/.test(v)) return v;
-  if (/^254[17]\d{8}$/.test(v)) return `+${v}`;
-  if (/^0[17]\d{8}$/.test(v)) return `+254${v.slice(1)}`;
+export const PHONE_ERROR = "Please enter a valid phone number (format: 0712345678 or +254712345678)";
+
+/** Kenya-first E.164 normalisation. Returns null when the input can't be normalised. */
+export function normalizeKenyaPhone(input?: string | null): string | null {
+  if (!input) return null;
+  const digits = input.replace(/[\s()\-]/g, "");
+  if (/^\+254[0-9]{9}$/.test(digits)) return digits;
+  if (/^254[0-9]{9}$/.test(digits)) return "+" + digits;
+  if (/^0[0-9]{9}$/.test(digits)) return "+254" + digits.slice(1);
+  if (/^\+[0-9]{10,15}$/.test(digits)) return digits;
   return null;
 }
+export const isValidKenyaPhone = (input?: string | null) => normalizeKenyaPhone(input) !== null;
 
-export const kenyaPhone = z.string().trim().refine((v) => !!normalizeKenyaPhone(v), "Use +2547XXXXXXXX or 07XXXXXXXX");
-export const optionalKenyaPhone = z.string().trim().refine((v) => !v || !!normalizeKenyaPhone(v), "Use +2547XXXXXXXX or 07XXXXXXXX");
+export const kenyaPhone = z.string().trim().refine((v) => !!normalizeKenyaPhone(v), PHONE_ERROR);
+export const optionalKenyaPhone = z.string().trim().refine((v) => !v || !!normalizeKenyaPhone(v), PHONE_ERROR);
 
 /** Student status: 'transferred' in the database is shown as "Withdrawn" (no 'withdrawn' enum value exists). */
 export const STATUS_FILTERS = [
