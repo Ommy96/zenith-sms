@@ -1,8 +1,8 @@
 import {
   LayoutDashboard, Users, CreditCard, ClipboardList,
-  BookOpen, UserCog, Bus, Library, BarChart3, Settings,
-  ChevronRight, Briefcase, CalendarDays, UserPlus,
-  Megaphone, Mail, Receipt, Package, Smartphone, MessageCircle,
+  BookOpen, UserCog, BarChart3, Settings,
+  ChevronRight, Briefcase,
+  Mail, Receipt, Smartphone, MessageCircle,
   Bot,
   Database, ShieldCheck, GraduationCap as GradCap,
   Lock,
@@ -34,8 +34,10 @@ const sections: NavSection[] = [
     { title: "Classes", url: "/academics/classes", icon: BookOpen, perm: "classes.view" },
     { title: "Subjects", url: "/academics/subjects", icon: ClipboardList, perm: "subjects.view" },
     { title: "Teachers & Staff", url: "/academics/staff", icon: Briefcase, perm: "staff.view" },
-    { title: "Timetable", tKey: "nav.timetable", url: "/timetable", icon: CalendarDays, perm: "academics.view" },
-    { title: "Examinations", tKey: "nav.examinations", url: "/examinations", icon: ClipboardList, perm: "exams.view" },
+    // Hidden pending rewire — see docs/HIDDEN_MODULES.md
+    // { title: "Timetable", tKey: "nav.timetable", url: "/timetable", icon: CalendarDays, perm: "academics.view" },
+    // Hidden pending rewire — see docs/HIDDEN_MODULES.md
+    // { title: "Examinations", tKey: "nav.examinations", url: "/examinations", icon: ClipboardList, perm: "exams.view" },
     { title: "Attendance", tKey: "nav.attendance", url: "/attendance", icon: UserCog, perm: "attendance.view" },
   ]},
   { label: "Finance", tKey: "nav.section.finance", items: [
@@ -45,15 +47,20 @@ const sections: NavSection[] = [
     { title: "Mobile Money", url: "/finance/mobile-money", icon: Smartphone, perm: "fees.configure" },
   ]},
   { label: "Communication", tKey: "nav.section.communication", items: [
-    { title: "Announcements", tKey: "nav.announcements", url: "/announcements", icon: Megaphone, perm: "communication.send" },
+    // Hidden pending rewire — see docs/HIDDEN_MODULES.md
+    // { title: "Announcements", tKey: "nav.announcements", url: "/announcements", icon: Megaphone, perm: "communication.send" },
     { title: "Messages", tKey: "nav.messages", url: "/messaging", icon: Mail, perm: "communication.send" },
     { title: "WhatsApp", tKey: "nav.whatsapp", url: "/communication/whatsapp", icon: MessageCircle, perm: "communication.send" },
   ]},
   { label: "Operations", tKey: "nav.section.operations", items: [
-    { title: "Admissions", tKey: "nav.admissions", url: "/admissions", icon: UserPlus, perm: "admissions.view" },
-    { title: "Transport", tKey: "nav.transport", url: "/transport", icon: Bus, perm: "transport.view" },
-    { title: "Library", tKey: "nav.library", url: "/library", icon: Library, perm: "library.view" },
-    { title: "Inventory", tKey: "nav.inventory", url: "/inventory", icon: Package, perm: "inventory.view" },
+    // Hidden pending rewire — see docs/HIDDEN_MODULES.md
+    // { title: "Admissions", tKey: "nav.admissions", url: "/admissions", icon: UserPlus, perm: "admissions.view" },
+    // Hidden pending rewire — see docs/HIDDEN_MODULES.md
+    // { title: "Transport", tKey: "nav.transport", url: "/transport", icon: Bus, perm: "transport.view" },
+    // Hidden pending rewire — see docs/HIDDEN_MODULES.md
+    // { title: "Library", tKey: "nav.library", url: "/library", icon: Library, perm: "library.view" },
+    // Hidden pending rewire — see docs/HIDDEN_MODULES.md
+    // { title: "Inventory", tKey: "nav.inventory", url: "/inventory", icon: Package, perm: "inventory.view" },
   ]},
   { label: "Compliance", items: [
     { title: "NEMIS (KE)", url: "/integrations/nemis", icon: Database, perm: "settings.manage" },

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { DatePicker } from "@/components/finance/DatePicker";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -109,7 +110,7 @@ export function RecordPaymentDialog({ open, onOpenChange }: { open: boolean; onO
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Amount ({tenant?.currency_code ?? "KES"})</Label><Input inputMode="decimal" className="font-mono" value={f.amount}
               onChange={(e) => { const v = numericInput(e.target.value); setF({ ...f, amount: v }); autoAllocate(v); }} /></div>
-            <div><Label>Payment date</Label><Input type="date" max={todayISO()} value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></div>
+            <div><Label>Payment date</Label><DatePicker max={todayISO()} value={f.date} onChange={(v) => setF({ ...f, date: v })} /></div>
           </div>
           <div><Label>Method</Label>
             <RadioGroup value={f.method} onValueChange={(v) => setF({ ...f, method: v })} className="flex flex-wrap gap-4 mt-1">
