@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { DatePicker } from "@/components/finance/DatePicker";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -114,8 +115,8 @@ export function NewInvoiceDialog({ open, onOpenChange }: { open: boolean; onOpen
               <SelectContent>{lk.data?.years.map((y: any) => <SelectItem key={y.id} value={y.id}>{y.name}</SelectItem>)}</SelectContent></Select></div>
             <div><Label>Term</Label><Select value={f.term} onValueChange={(v) => setF({ ...f, term: v })}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>{yearTerms.map((t: any) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent></Select></div>
-            <div><Label>Issue date</Label><Input type="date" value={f.issue} onChange={(e) => setF({ ...f, issue: e.target.value, due: addDays(e.target.value, 14) })} /></div>
-            <div><Label>Due date</Label><Input type="date" value={f.due} onChange={(e) => setF({ ...f, due: e.target.value })} /></div>
+            <div><Label>Issue date</Label><DatePicker value={f.issue} onChange={(v) => setF({ ...f, issue: v, due: addDays(v, 14) })} /></div>
+            <div><Label>Due date</Label><DatePicker value={f.due} onChange={(v) => setF({ ...f, due: v })} /></div>
           </div>
 
           {f.student_id && f.term && (
@@ -243,7 +244,7 @@ export function GenerateTermDialog({ open, onOpenChange }: { open: boolean; onOp
           {feeOptions.length > 0 && <div><Label>Fees to include</Label><div className="grid grid-cols-2 gap-1 mt-1">{feeOptions.map((i: any) => (
             <label key={i.fee_item_id} className="flex items-center gap-2 text-sm"><Checkbox checked={!!fees[i.fee_item_id]} onCheckedChange={(v) => setFees({ ...fees, [i.fee_item_id]: !!v })} />{i.fee_items?.name}{!i.is_mandatory && <span className="text-xs text-muted-foreground">optional</span>}</label>))}</div></div>}
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Issue date</Label><Input type="date" value={f.issue} onChange={(e) => setF({ ...f, issue: e.target.value })} /></div>
+            <div><Label>Issue date</Label><DatePicker value={f.issue} onChange={(v) => setF({ ...f, issue: v })} /></div>
             <div><Label>Due in (days)</Label><Input inputMode="numeric" value={f.offset} onChange={(e) => setF({ ...f, offset: e.target.value.replace(/\D/g, "").slice(0, 3) })} /></div>
           </div>
           <div className="rounded-md bg-muted p-3 text-sm">

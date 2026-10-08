@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { DatePicker } from "@/components/finance/DatePicker";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,7 +90,7 @@ function PeriodsView({ tenantId, canManage }: { tenantId: string; canManage: boo
                       {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
                     </select>
                   </div>
-                  <div className="col-span-2"><Label>Pay date</Label><Input type="date" value={form.pay_date} onChange={(e) => setForm({ ...form, pay_date: e.target.value })} /></div>
+                  <div className="col-span-2"><Label>Pay date</Label><DatePicker value={form.pay_date} onChange={(v) => setForm({ ...form, pay_date: v })} /></div>
                 </div>
                 <DialogFooter><Button onClick={createPeriod}>Create</Button></DialogFooter>
               </DialogContent>

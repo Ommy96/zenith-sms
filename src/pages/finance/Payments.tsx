@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DatePicker } from "@/components/finance/DatePicker";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -92,8 +93,8 @@ export default function Payments() {
           <SelectContent><SelectItem value="all">All methods</SelectItem>{PAYMENT_METHODS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent></Select>
         <Select value={f.status} onValueChange={(v) => setF({ ...f, status: v })}><SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem value="all">All statuses</SelectItem>{["confirmed", "pending", "reversed", "failed"].map((s) => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent></Select>
-        <Input type="date" className="w-40" aria-label="From" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} />
-        <Input type="date" className="w-40" aria-label="To" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
+        <DatePicker className="w-44" aria-label="From" value={f.from} onChange={(v) => setF({ ...f, from: v })} />
+        <DatePicker className="w-44" aria-label="To" value={f.to} onChange={(v) => setF({ ...f, to: v })} />
       </div>
 
       {q.isError ? <ErrorRetry onRetry={() => q.refetch()} /> : q.isLoading ? <Skeleton className="h-64 w-full" /> : rows.length === 0 ? (

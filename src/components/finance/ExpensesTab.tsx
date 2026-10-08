@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { DatePicker } from "@/components/finance/DatePicker";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -159,8 +160,8 @@ export function ExpensesTab({ tenantId, canManage, canApprove }: { tenantId: str
         <CardHeader className="flex flex-row items-center justify-between gap-3 flex-wrap">
           <CardTitle className="text-base flex items-center gap-2"><Receipt className="h-4 w-4" />Expenses</CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="w-36" />
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="w-36" />
+            <DatePicker value={from} onChange={(v) => setFrom(v)} className="w-36" />
+            <DatePicker value={to} onChange={(v) => setTo(v)} className="w-36" />
             <Input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-44" />
             <select className="border rounded px-2 py-1.5 text-sm bg-background" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="all">All status</option>
@@ -296,7 +297,7 @@ function ExpenseForm({ open, onOpenChange, tenantId, categories, vendors, onSave
         <DialogHeader><DialogTitle>New expense</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="grid gap-2 md:grid-cols-2">
-            <Input type="date" value={form.expense_date} onChange={(e) => setForm({ ...form, expense_date: e.target.value })} />
+            <DatePicker value={form.expense_date} onChange={(v) => setForm({ ...form, expense_date: v })} />
             <select className="border rounded px-2 py-1.5 text-sm bg-background" value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })}>
               <option value="">Category…</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
