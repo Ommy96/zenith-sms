@@ -1,8 +1,8 @@
 import {
   LayoutDashboard, Users, CreditCard, ClipboardList,
-  BookOpen, UserCog, Bus, Library, BarChart3, Settings,
-  ChevronRight, Briefcase, CalendarDays, UserPlus,
-  Megaphone, Mail, Receipt, Package, Smartphone, MessageCircle,
+  BookOpen, UserCog, BarChart3, Settings,
+  ChevronRight, Briefcase,
+  Mail, Receipt, Smartphone, MessageCircle,
   Bot,
   Database, ShieldCheck, GraduationCap as GradCap,
   Lock,
