@@ -6758,12 +6758,14 @@ export type Database = {
           is_demo: boolean
           locale: string
           logo_url: string | null
+          motto: string | null
           name: string
           nemis_code: string | null
           phone: string | null
           primary_color: string | null
           registration_number: string | null
           school_type: string | null
+          secondary_color: string | null
           slug: string
           subscription_plan: string
           subscription_status: string
@@ -6782,12 +6784,14 @@ export type Database = {
           is_demo?: boolean
           locale?: string
           logo_url?: string | null
+          motto?: string | null
           name: string
           nemis_code?: string | null
           phone?: string | null
           primary_color?: string | null
           registration_number?: string | null
           school_type?: string | null
+          secondary_color?: string | null
           slug: string
           subscription_plan?: string
           subscription_status?: string
@@ -6806,12 +6810,14 @@ export type Database = {
           is_demo?: boolean
           locale?: string
           logo_url?: string | null
+          motto?: string | null
           name?: string
           nemis_code?: string | null
           phone?: string | null
           primary_color?: string | null
           registration_number?: string | null
           school_type?: string | null
+          secondary_color?: string | null
           slug?: string
           subscription_plan?: string
           subscription_status?: string
