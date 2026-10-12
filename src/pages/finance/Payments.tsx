@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { downloadDocument } from "@/lib/downloadDocument";
 import { DatePicker } from "@/components/finance/DatePicker";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -16,7 +17,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorRetry, KpiRow } from "@/components/finance/shared";
 import { RecordPaymentDialog } from "@/components/finance/RecordPaymentDialog";
 import { useInvoices } from "./Invoices";
-import { PAYMENT_METHODS, PAYMENT_STATUS, fnError, kes, methodLabel, openSignedPdf, studentName, todayISO } from "@/lib/finance/format";
+import { PAYMENT_METHODS, PAYMENT_STATUS, fnError, kes, methodLabel, studentName, todayISO } from "@/lib/finance/format";
 
 export async function receiptFor(paymentId: string) {
   const { data } = await supabase.from("student_receipts").select("id, receipt_number").eq("payment_id", paymentId).maybeSingle();
@@ -25,7 +26,7 @@ export async function receiptFor(paymentId: string) {
 export async function printReceiptForPayment(paymentId: string) {
   const r = await receiptFor(paymentId);
   if (!r) return toast.error("No receipt exists for this payment yet");
-  try { await openSignedPdf("generate-receipt-pdf", { receipt_id: r.id }, `${r.receipt_number}.pdf`); } catch (e) { toast.error((e as Error).message); }
+  try { await downloadDocument("receipt", r.id, `Receipt-${r.receipt_number}.pdf`); } catch (e) { toast.error((e as Error).message); }
 }
 export async function emailReceiptForPayment(paymentId: string) {
   const r = await receiptFor(paymentId);

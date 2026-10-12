@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { downloadDocument } from "@/lib/downloadDocument";
 import { usePortal } from "@/contexts/PortalContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -83,15 +84,10 @@ export default function PortalFees() {
     const { data: rcp } = await supabase
       .from("student_receipts").select("id, receipt_number").eq("payment_id", paymentId).maybeSingle();
     if (!rcp?.id) return toast.message("Receipt is still generating — try again shortly");
-    const { data, error } = await supabase.functions.invoke("generate-receipt-pdf", { body: { receipt_id: rcp.id } });
-    if (error || !(data as any)?.url) return toast.error((data as any)?.error || error?.message || "Could not load receipt");
-    const url = (data as any).url as string;
-    if (action === "view") return void window.open(url, "_blank", "noopener");
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Receipt_${rcp.receipt_number || paymentId}_${studentName.replace(/\s+/g, "")}.pdf`;
-    a.target = "_blank"; a.rel = "noopener";
-    document.body.appendChild(a); a.click(); a.remove();
+    // Both "view" and "download" save the file locally; signed Storage links are often ad-blocked.
+    void action;
+    try { await downloadDocument("receipt", rcp.id, `Receipt_${rcp.receipt_number || paymentId}_${studentName.replace(/\s+/g, "")}.pdf`); }
+    catch (e) { toast.error((e as Error).message); }
   };
 
   if (loading) return <Skeleton className="h-40 w-full" />;
