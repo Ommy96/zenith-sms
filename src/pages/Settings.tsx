@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { clearDemoData, seedDemoData } from "@/lib/demoSeed";
 import { AiSettingsTab } from "@/components/settings/AiSettingsTab";
 import { SchoolInfoTab } from "@/components/settings/SchoolInfoTab";
+import { BrandingTab } from "@/components/settings/BrandingTab";
 
 /** Persisted school-level toggle: auto-email every new receipt to the guardian. */
 function AutoEmailReceiptsCard() {
@@ -249,32 +250,9 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="branding" className="mt-6">
-          <div className="rounded-xl border border-border bg-card p-6 space-y-6">
-            <h3 className="text-sm font-semibold text-card-foreground mb-4">School Branding</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm">Primary Color</Label>
-                <div className="flex items-center gap-2">
-                  <div className="h-9 w-9 rounded-lg bg-primary border border-border" />
-                  <Input defaultValue="#6366f1" className="flex-1" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm">School Logo</Label>
-                <div className="h-9 rounded-lg border border-dashed border-border flex items-center justify-center text-xs text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors">
-                  Click to upload logo
-                </div>
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="text-sm">School Motto</Label>
-                <Input defaultValue="Excellence in Education, Character in Action" />
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <Button size="sm">Save Changes</Button>
-            </div>
-          </div>
+          <BrandingTab />
         </TabsContent>
+
 
         <TabsContent value="notifications" className="mt-6">
           <div className="mb-4">
