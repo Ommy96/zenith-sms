@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { downloadDocument } from "@/lib/downloadDocument";
 import { Link, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -93,7 +94,7 @@ export default function InvoiceDetail() {
   };
   const print = async () => {
     setPrinting(true);
-    try { await openSignedPdf("generate-invoice-pdf", { invoice_id: id }, `${inv.invoice_number}.pdf`); }
+    try { await downloadDocument("invoice", id!, `Invoice-${inv.invoice_number}.pdf`); }
     catch (e) { toast.error((e as Error).message); } finally { setPrinting(false); }
   };
 

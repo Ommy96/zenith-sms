@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { downloadDocument } from "@/lib/downloadDocument";
 import { DatePicker } from "@/components/finance/DatePicker";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -94,7 +95,7 @@ export function RecordPaymentDialog({ open, onOpenChange }: { open: boolean; onO
       if (rErr) { toast.success(`Payment ${pay.payment_number} recorded`); return; }
       toast.success(`Payment recorded — receipt ${rcp.receipt_number}`, {
         duration: 12000,
-        action: { label: "Print receipt", onClick: () => openSignedPdf("generate-receipt-pdf", { receipt_id: rcp.id }, `${rcp.receipt_number}.pdf`).catch((e) => toast.error(e.message)) },
+        action: { label: "Print receipt", onClick: () => downloadDocument("receipt", rcp.id, `Receipt-${rcp.receipt_number}.pdf`).catch((e) => toast.error(e.message)) },
         cancel: { label: "Email receipt", onClick: () => emailReceiptForPayment(pay.id) },
       });
       nav(`/finance/payments/${pay.id}`);

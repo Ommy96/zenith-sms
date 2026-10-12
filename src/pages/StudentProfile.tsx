@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { downloadDocument } from "@/lib/downloadDocument";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Edit, Loader2, Mail, Phone, MapPin, Shield, FileText, Heart, GraduationCap, DollarSign, Smartphone, Download, MoreHorizontal, Printer, UserMinus, ArrowRightLeft, KeyRound, MessageSquare, AlertTriangle, Bell, BookOpen, CalendarDays, Award, UploadCloud, Syringe, Stethoscope, Star, Activity as ActivityIcon, Link2, Trash2, ExternalLink } from "lucide-react";
@@ -264,22 +265,7 @@ export default function StudentProfile() {
   const downloadStatement = async () => {
     setStmtBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-statement-pdf", {
-        body: { student_id: student.id },
-      });
-      if (error) {
-        let detail = error.message;
-        const res = (error as any)?.context;
-        if (res && typeof res.json === "function") {
-          const payload = await res.json().catch(() => null);
-          if (payload?.error) detail = payload.error;
-        }
-        throw new Error(detail);
-      }
-      // edge function returns { url }
-      const url = (data as any)?.url;
-      if (url) window.open(url, "_blank");
-      else toast({ title: "Statement generated", description: "Saved to documents." });
+      await downloadDocument("statement", student.id, "Statement.pdf");
     } catch (e: any) {
       toast({ title: "Could not print statement", description: e.message, variant: "destructive" });
 

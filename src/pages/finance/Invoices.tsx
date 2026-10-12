@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { downloadDocument } from "@/lib/downloadDocument";
 import { DatePicker } from "@/components/finance/DatePicker";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -68,7 +69,7 @@ export default function Invoices() {
   const outstanding = live.reduce((a: number, i: any) => a + Number(i.balance), 0);
   const overdue = live.filter((i: any) => i.due_date && i.due_date < today).reduce((a: number, i: any) => a + Number(i.balance), 0);
 
-  const print = (i: any) => openSignedPdf("generate-invoice-pdf", { invoice_id: i.id }, `${i.invoice_number}.pdf`).catch((e) => toast.error(e.message));
+  const print = (i: any) => downloadDocument("invoice", i.id, `Invoice-${i.invoice_number}.pdf`).catch((e) => toast.error(e.message));
 
   return (
     <div className="space-y-6 p-6">
