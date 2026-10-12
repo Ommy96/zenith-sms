@@ -14,6 +14,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -195,7 +196,23 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { profile, role } = useAuth();
-  const { can, permissions, loading: tenantLoading } = useTenant();
+  const { can, permissions, loading: tenantLoading, tenant } = useTenant();
+  const schoolName = tenant?.name || "Zenith";
+  const schoolInitial = schoolName.trim().charAt(0).toUpperCase() || "Z";
+  const [logoSrc, setLogoSrc] = useState<string | null>(null);
+  const [logoFailed, setLogoFailed] = useState(false);
+  // tenant-logos is private: turn the stored path into a short-lived signed link.
+  useEffect(() => {
+    setLogoFailed(false);
+    const raw = tenant?.logo_url;
+    if (!raw) { setLogoSrc(null); return; }
+    const path = raw.includes("/tenant-logos/") ? decodeURIComponent(raw.split("/tenant-logos/")[1].split("?")[0]) : raw.split("?")[0];
+    let live = true;
+    supabase.storage.from("tenant-logos").createSignedUrl(path, 3600).then(({ data }) => {
+      if (live) setLogoSrc(data?.signedUrl ?? null);
+    });
+    return () => { live = false; };
+  }, [tenant?.logo_url, tenant?.id]);
   // Show every nav item when the user is a tenant admin OR when we haven't
   // loaded any permissions yet — permission gating still happens at the
   // page/RLS level. This prevents the sidebar from collapsing to just
@@ -214,10 +231,15 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="px-3 py-3 border-b border-sidebar-border">
         <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold text-sm">S</div>
+          {logoSrc && !logoFailed ? (
+            <img src={logoSrc} alt={`${schoolName} logo`} onError={() => setLogoFailed(true)}
+              className="h-8 w-8 shrink-0 rounded-md object-contain bg-card" />
+          ) : (
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold text-sm">{schoolInitial}</div>
+          )}
           {!collapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-semibold text-foreground tracking-tight truncate">Zenith</span>
+              <span className="text-sm font-semibold text-foreground tracking-tight truncate">{schoolName}</span>
               <span className="text-[11px] text-muted-foreground truncate">School OS</span>
             </div>
           )}

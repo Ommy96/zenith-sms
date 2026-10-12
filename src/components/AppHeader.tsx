@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useTenantLogo } from "@/hooks/useTenantLogo";
 import {
   Search, Plus, ChevronDown, LogOut, Settings,
   Command as CommandIcon, UserPlus, Wallet, ClipboardCheck,
@@ -23,6 +24,9 @@ import {
 export function AppHeader() {
   const { profile, signOut } = useAuth();
   const { tenant } = useTenant();
+  const logoSrc = useTenantLogo(tenant?.logo_url);
+  const [logoFailed, setLogoFailed] = useState(false);
+  useEffect(() => setLogoFailed(false), [logoSrc]);
   const { open, setOpen } = useCommandPalette();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -77,10 +81,10 @@ export function AppHeader() {
           title="Tap 5× to force-refresh"
           className="hidden md:flex items-center gap-2 pr-3 border-r border-border h-8 hover:opacity-80 transition-opacity"
         >
-          {tenant.logo_url ? (
-            <img src={tenant.logo_url} alt="" className="h-6 w-6 rounded" />
+          {logoSrc && !logoFailed ? (
+            <img src={logoSrc} alt={`${tenant.name} logo`} onError={() => setLogoFailed(true)} className="h-8 w-8 rounded-md object-contain bg-card" />
           ) : (
-            <div className="h-6 w-6 rounded bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
+            <div className="h-8 w-8 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
               {tenant.name.slice(0, 1).toUpperCase()}
             </div>
           )}
