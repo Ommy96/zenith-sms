@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useTenantLogo } from "@/hooks/useTenantLogo";
 import {
   Search, Plus, ChevronDown, LogOut, Settings,
   Command as CommandIcon, UserPlus, Wallet, ClipboardCheck,
