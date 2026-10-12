@@ -9,6 +9,7 @@ import { adminClient, authErrorResponse, authedUser } from "../_shared/auth.ts";
 import { requireOwnsResource } from "../_shared/ownership.ts";
 import { corsHeaders, jsonResponse } from "../_shared/messaging.ts";
 
+const TEMPLATE = "amber-v2";
 const SIGNED_URL_TTL = 60 * 60 * 24 * 30;
 
 function money(n: number, currency: string) {
@@ -37,13 +38,15 @@ Deno.serve(async (req) => {
       .eq("id", receipt_id).maybeSingle();
     if (!receipt) return jsonResponse({ error: "Receipt not found" }, 404);
 
-    if (receipt.pdf_url && !force) {
-      return jsonResponse({ ok: true, url: receipt.pdf_url, cached: true });
-    }
-
     const { data: tenant } = await admin.from("tenants")
       .select("name, address, phone, email, currency_code, logo_url").eq("id", receipt.tenant_id).maybeSingle();
     const currency = receipt.currency ?? tenant?.currency_code ?? "KES";
+
+    // Reuse the stored PDF only if it was rendered with the current template and logo.
+    const meta = (receipt.metadata ?? {}) as Record<string, unknown>;
+    if (receipt.pdf_url && !force && meta.template === TEMPLATE && (meta.logo ?? null) === (tenant?.logo_url ?? null)) {
+      return jsonResponse({ ok: true, url: receipt.pdf_url, path: meta.storage_path, cached: true });
+    }
 
     const W = 595.28, H = 841.89, M = 56.7, CW = W - M * 2;
     const C = {
@@ -56,6 +59,8 @@ Deno.serve(async (req) => {
     const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
     const regular = await pdf.embedFont(StandardFonts.Helvetica);
     const mono = await pdf.embedFont(StandardFonts.CourierBold);
+    const monoReg = await pdf.embedFont(StandardFonts.Courier);
+    const italic = await pdf.embedFont(StandardFonts.HelveticaOblique);
     page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: C.paper });
     const fit = (s: string, max: number, size: number, f = regular) => {
       if (f.widthOfTextAtSize(s, size) <= max) return s;
@@ -92,7 +97,7 @@ Deno.serve(async (req) => {
       page.drawCircle({ x: W / 2, y: y - 31, size: 31, color: C.amberSoft });
       center(mark, y - 38, 20, bold, C.amber); y -= 76;
     }
-    center(fit(schoolName, CW, 22, bold), y, 22, bold, C.amber); y -= 18;
+    center(fit(schoolName, CW, 24, bold), y, 24, bold, C.amber); y -= 19;
     const contact = [tenant?.address, tenant?.phone, tenant?.email].filter(Boolean).join("  ·  ");
     if (contact) center(fit(contact, CW, 9.5), y, 9.5, regular, C.muted);
     y -= 18;
@@ -152,7 +157,7 @@ Deno.serve(async (req) => {
       pdf_url: signed?.signedUrl ?? null,
       pdf_generated_at: new Date().toISOString(),
       ...(force ? { is_regenerated: true, regenerated_at: new Date().toISOString() } : {}),
-      metadata: { ...(receipt.metadata ?? {}), storage_path: path },
+      metadata: { ...meta, storage_path: path, template: TEMPLATE, logo: tenant?.logo_url ?? null },
     }).eq("id", receipt_id);
 
     return jsonResponse({ ok: true, url: signed?.signedUrl, path });
