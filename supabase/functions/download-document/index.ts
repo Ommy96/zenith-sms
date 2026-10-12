@@ -32,17 +32,37 @@ Deno.serve(async (req) => {
     const user = await authedUser(req);
     await requireOwnsResource({ user, resourceType: cfg.owned, resourceId: id, functionName: 'download-document', req });
 
-    // Render (or reuse) via the existing generator, as the caller.
+    const admin = adminClient();
+    const force = body?.force_regenerate === true;
+
+    // Invoices: reuse the stored PDF if it is newer than the invoice and the school record.
+    let bytes: Uint8Array | null = null;
+    if (kind === 'invoice' && !force) {
+      const { data: inv } = await admin.from('invoices').select('tenant_id, invoice_number, updated_at').eq('id', id).maybeSingle();
+      if (inv?.invoice_number) {
+        const { data: t } = await admin.from('tenants').select('updated_at').eq('id', inv.tenant_id).maybeSingle();
+        const file = String(inv.invoice_number).replace(/[^\w.-]/g, '-') + '.pdf';
+        const { data: list } = await admin.storage.from('receipts').list(`${inv.tenant_id}/invoices`, { search: file });
+        const hit = (list ?? []).find((f: any) => f.name === file);
+        const stamp = hit?.updated_at ?? hit?.created_at;
+        const fresh = stamp && new Date(stamp) > new Date(inv.updated_at) && (!t?.updated_at || new Date(stamp) > new Date(t.updated_at));
+        if (fresh) {
+          const { data } = await admin.storage.from('receipts').download(`${inv.tenant_id}/invoices/${file}`);
+          if (data) bytes = new Uint8Array(await data.arrayBuffer());
+        }
+      }
+    }
+
+    // Otherwise render (receipts reuse their own stored copy) via the generator, as the caller.
+    if (!bytes) {
     const gen = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/${cfg.fn}`, {
       method: 'POST',
       headers: { Authorization: req.headers.get('Authorization') ?? '', apikey: req.headers.get('apikey') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? '', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ [cfg.key]: id }),
+      body: JSON.stringify({ [cfg.key]: id, ...(force && kind === 'receipt' ? { force: true } : {}) }),
     });
     const out = await gen.json().catch(() => ({}));
     if (!gen.ok) return json({ error: out?.error || 'Could not create the PDF' }, gen.status);
 
-    const admin = adminClient();
-    let bytes: Uint8Array | null = null;
     if (out?.path) {
       const { data } = await admin.storage.from('receipts').download(out.path);
       if (data) bytes = new Uint8Array(await data.arrayBuffer());
@@ -50,6 +70,7 @@ Deno.serve(async (req) => {
     if (!bytes && out?.url) {
       const r = await fetch(out.url);
       if (r.ok) bytes = new Uint8Array(await r.arrayBuffer());
+    }
     }
     if (!bytes) return json({ error: 'The PDF could not be found' }, 404);
 
