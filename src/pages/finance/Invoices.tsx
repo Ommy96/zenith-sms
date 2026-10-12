@@ -16,7 +16,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorRetry, InvoiceStatusChip, KpiRow, useFinanceStudents, useLookups, useNameMap } from "@/components/finance/shared";
 import { GenerateTermDialog, NewInvoiceDialog } from "@/components/finance/InvoiceDialogs";
-import { INVOICE_STATUS, kes, openSignedPdf, studentName, todayISO } from "@/lib/finance/format";
+import { INVOICE_STATUS, kes, studentName, todayISO } from "@/lib/finance/format";
 
 const all = "all";
 

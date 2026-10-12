@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StudentPicker, useFinanceStudents } from "./shared";
-import { PAYMENT_METHODS, kes, numericInput, openSignedPdf, refreshSetup, todayISO } from "@/lib/finance/format";
+import { PAYMENT_METHODS, kes, numericInput, refreshSetup, todayISO } from "@/lib/finance/format";
 import { emailReceiptForPayment } from "@/pages/finance/Payments";
 
 export function RecordPaymentDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {

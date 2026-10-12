@@ -17,7 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { EntityFormDialog } from "@/components/scaffolding/EntityFormDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorRetry, InvoiceStatusChip, useFinanceStudents, useLookups, useNameMap } from "@/components/finance/shared";
-import { kes, methodLabel, numericInput, openSignedPdf, refreshSetup, studentName } from "@/lib/finance/format";
+import { kes, methodLabel, numericInput, refreshSetup, studentName } from "@/lib/finance/format";
 
 export default function InvoiceDetail() {
   const { id } = useParams();

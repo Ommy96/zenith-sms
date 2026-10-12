@@ -17,7 +17,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorRetry, KpiRow } from "@/components/finance/shared";
 import { RecordPaymentDialog } from "@/components/finance/RecordPaymentDialog";
 import { useInvoices } from "./Invoices";
-import { PAYMENT_METHODS, PAYMENT_STATUS, fnError, kes, methodLabel, openSignedPdf, studentName, todayISO } from "@/lib/finance/format";
+import { PAYMENT_METHODS, PAYMENT_STATUS, fnError, kes, methodLabel, studentName, todayISO } from "@/lib/finance/format";
 
 export async function receiptFor(paymentId: string) {
   const { data } = await supabase.from("student_receipts").select("id, receipt_number").eq("payment_id", paymentId).maybeSingle();
