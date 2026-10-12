@@ -45,70 +45,94 @@ Deno.serve(async (req) => {
       .select("name, address, phone, email, currency_code, logo_url").eq("id", receipt.tenant_id).maybeSingle();
     const currency = receipt.currency ?? tenant?.currency_code ?? "KES";
 
+    const W = 595.28, H = 841.89, M = 56.7, CW = W - M * 2;
+    const C = {
+      amber: rgb(0.851, 0.467, 0.024), amberSoft: rgb(0.992, 0.957, 0.886),
+      ink: rgb(0.102, 0.122, 0.157), secondary: rgb(0.290, 0.310, 0.345), muted: rgb(0.420, 0.400, 0.350),
+      border: rgb(0.898, 0.898, 0.878), paper: rgb(0.992, 0.992, 0.984),
+    };
     const pdf = await PDFDocument.create();
-    const page = pdf.addPage([595.28, 841.89]);
+    const page = pdf.addPage([W, H]);
     const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
     const regular = await pdf.embedFont(StandardFonts.Helvetica);
-    const ink = rgb(0.07, 0.09, 0.15);
-    const muted = rgb(0.42, 0.45, 0.5);
-    let y = 790;
+    const mono = await pdf.embedFont(StandardFonts.CourierBold);
+    page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: C.paper });
+    const fit = (s: string, max: number, size: number, f = regular) => {
+      if (f.widthOfTextAtSize(s, size) <= max) return s;
+      while (s.length > 1 && f.widthOfTextAtSize(`${s}…`, size) > max) s = s.slice(0, -1);
+      return `${s}…`;
+    };
+    const text = (s: string, x: number, yy: number, size = 10, font = regular, color = C.ink) =>
+      page.drawText(s ?? "", { x, y: yy, size, font, color });
+    const center = (s: string, yy: number, size: number, font = regular, color = C.ink) =>
+      text(s, (W - font.widthOfTextAtSize(s, size)) / 2, yy, size, font, color);
+    const right = (s: string, r: number, yy: number, size = 10, font = regular, color = C.ink) =>
+      text(s, r - font.widthOfTextAtSize(s, size), yy, size, font, color);
+    let y = H - M;
 
-    // Optional school logo from the tenant-logos bucket.
+    // Centered header: tenant logo, or amber monogram fallback.
+    let logo = false;
     if (tenant?.logo_url) {
       try {
-        const path = tenant.logo_url.includes("/tenant-logos/")
-          ? tenant.logo_url.split("/tenant-logos/")[1].split("?")[0]
-          : tenant.logo_url;
+        const m = "/tenant-logos/";
+        const path = tenant.logo_url.includes(m) ? decodeURIComponent(tenant.logo_url.split(m)[1].split("?")[0]) : tenant.logo_url.split("?")[0];
         const { data: blob } = await admin.storage.from("tenant-logos").download(path);
         if (blob) {
           const bytes = new Uint8Array(await blob.arrayBuffer());
-          const img = path.toLowerCase().endsWith(".png")
-            ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
-          const dims = img.scale(48 / img.height);
-          page.drawImage(img, { x: 50, y: y - dims.height + 14, width: dims.width, height: dims.height });
+          const img = /\.png$/i.test(path) ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
+          const d = img.scale(Math.min(1, 72 / img.height, 140 / img.width));
+          page.drawImage(img, { x: (W - d.width) / 2, y: y - d.height, width: d.width, height: d.height });
+          y -= d.height + 14; logo = true;
         }
       } catch (e) { console.warn("[receipt] logo skipped", (e as Error).message); }
     }
+    const schoolName = tenant?.name ?? "School";
+    if (!logo) {
+      const mark = schoolName.trim().split(/\s+/).slice(0, 2).map((p: string) => p[0]).join("").toUpperCase();
+      page.drawCircle({ x: W / 2, y: y - 31, size: 31, color: C.amberSoft });
+      center(mark, y - 38, 20, bold, C.amber); y -= 76;
+    }
+    center(fit(schoolName, CW, 22, bold), y, 22, bold, C.amber); y -= 18;
+    const contact = [tenant?.address, tenant?.phone, tenant?.email].filter(Boolean).join("  ·  ");
+    if (contact) center(fit(contact, CW, 9.5), y, 9.5, regular, C.muted);
+    y -= 18;
+    page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 1, color: C.amber });
+    y -= 34;
 
-    const text = (s: string, x: number, yy: number, size = 10, font = regular, color = ink) =>
-      page.drawText(s ?? "", { x, y: yy, size, font, color });
+    center("OFFICIAL FEE RECEIPT", y, 15, bold, C.secondary); y -= 20;
+    const rn = receipt.receipt_number ?? "—";
+    center(rn, y, 12, mono, C.ink); y -= 30;
 
-    text(tenant?.name ?? "School", 120, y, 16, bold);
-    y -= 16;
-    text([tenant?.address, tenant?.phone, tenant?.email].filter(Boolean).join("  •  "), 120, y, 9, regular, muted);
-    y -= 40;
-
-    text("OFFICIAL FEE RECEIPT", 50, y, 13, bold);
-    text(receipt.receipt_number ?? "", 420, y, 13, bold);
-    y -= 10;
-    page.drawLine({ start: { x: 50, y }, end: { x: 545, y }, thickness: 1, color: muted });
-    y -= 28;
+    // Amount received card.
+    page.drawRectangle({ x: M, y: y - 70, width: CW, height: 70, color: C.amberSoft });
+    center("AMOUNT RECEIVED", y - 24, 9, bold, C.muted);
+    center(money(receipt.amount, currency), y - 52, 24, bold, C.amber);
+    y -= 100;
 
     const s = receipt.students as any;
     const p = receipt.payments as any;
-    const rows: [string, string][] = [
-      ["Student", [s?.first_name, s?.middle_name, s?.last_name].filter(Boolean).join(" ")],
-      ["Admission No.", s?.admission_number ?? "—"],
-      ["Payment No.", p?.payment_number ?? "—"],
-      ["Method", (p?.method ?? "—").toUpperCase()],
-      ["Reference", p?.reference ?? "—"],
-      ["Date", new Date(p?.paid_at ?? receipt.issued_at ?? Date.now()).toLocaleString("en-KE")],
+    const rows: [string, string, boolean][] = [
+      ["Student", [s?.first_name, s?.middle_name, s?.last_name].filter(Boolean).join(" ") || "—", false],
+      ["Admission no.", s?.admission_number ?? "—", true],
+      ["Payment no.", p?.payment_number ?? "—", true],
+      ["Method", ({ mpesa: "M-Pesa", bank_transfer: "Bank transfer", cash: "Cash", cheque: "Cheque", card: "Card" } as Record<string, string>)[p?.method] ?? (p?.method ?? "—"), false],
+      ["Reference", p?.reference ?? "—", true],
+      ["Date paid", new Date(p?.paid_at ?? receipt.issued_at ?? Date.now()).toLocaleString("en-KE", { dateStyle: "medium", timeStyle: "short" }), false],
     ];
-    for (const [label, value] of rows) {
-      text(label, 50, y, 10, regular, muted);
-      text(String(value), 200, y, 10, bold);
-      y -= 20;
+    for (const [label, value, isMono] of rows) {
+      text(label, M + 8, y, 10, regular, C.muted);
+      right(fit(String(value), CW - 160, 10.5, isMono ? mono : bold), W - M - 8, y, 10.5, isMono ? mono : bold);
+      y -= 10;
+      page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 0.6, color: C.border });
+      y -= 18;
     }
 
-    y -= 14;
-    page.drawRectangle({ x: 50, y: y - 34, width: 495, height: 44, color: rgb(0.96, 0.96, 0.98) });
-    text("AMOUNT RECEIVED", 66, y - 12, 10, regular, muted);
-    text(money(receipt.amount, currency), 380, y - 16, 16, bold);
-    y -= 70;
-
-    if (receipt.is_regenerated) text("DUPLICATE COPY", 50, y, 10, bold, muted);
-    text("This is a computer-generated receipt and is valid without a signature.", 50, 60, 8, regular, muted);
-    text(`Generated ${new Date().toLocaleString("en-KE")} • Zenith OS`, 50, 48, 8, regular, muted);
+    y -= 10;
+    if (receipt.is_regenerated) center("DUPLICATE COPY", y, 10, bold, C.amber);
+    center("This is a computer-generated receipt and is valid without a signature.", 82, 8.5, regular, C.muted);
+    page.drawLine({ start: { x: M, y: 57 }, end: { x: W - M, y: 57 }, thickness: 0.8, color: C.amber });
+    text(fit(`Generated by Zenith · ${schoolName}`, 260, 8), M, 44, 8, regular, C.muted);
+    right(`Receipt ${rn}`, W - M, 44, 8, regular, C.muted);
 
     const bytes = await pdf.save();
     const year = new Date(receipt.issued_at ?? Date.now()).getFullYear();
