@@ -51,12 +51,13 @@ Deno.serve(async (req) => {
     const admin = adminClient();
     const tail = normalized.replace(/\D/g, "").slice(-9);
 
-    const [{ data: guardians }, { data: students }] = await Promise.all([
+    const [{ data: guardians, error: gErr }, { data: students, error: sErr }] = await Promise.all([
       admin.from("guardians").select("id, tenant_id, full_name, phone_primary, whatsapp_number")
         .or(`phone_primary.ilike.%${tail},whatsapp_number.ilike.%${tail}`).limit(1),
       admin.from("students").select("id, tenant_id, first_name, last_name, phone")
         .ilike("phone", `%${tail}`).limit(1),
     ]);
+    if (gErr || sErr) console.error("[portal-send-otp] lookup error", gErr?.message, sErr?.message);
     const guardian = guardians?.[0];
     const student = students?.[0];
     if (!guardian && !student) {
