@@ -147,10 +147,14 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     load();
 
     // Hard timeout — never hang on a spinner (allows for login clock-skew retries).
+    // A timeout is an error, not "this user has no school".
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       setLoading((prev) => {
-        if (prev) console.warn("[Tenant] load timed out after 10s");
+        if (prev) {
+          console.warn("[Tenant] load timed out after 10s");
+          setError("Loading your school is taking longer than expected");
+        }
         return false;
       });
     }, 10000);

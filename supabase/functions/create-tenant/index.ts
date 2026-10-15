@@ -38,12 +38,17 @@ Deno.serve(async (req) => {
     const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     // Idempotency — already a member of a tenant?
-    const { data: existing } = await admin
+    // If this check itself fails we must NOT go on to create a second school.
+    const { data: existing, error: exErr } = await admin
       .from("user_tenants")
       .select("tenant_id, tenants!inner(id, slug, name)")
       .eq("user_id", userId)
       .limit(1)
       .maybeSingle();
+    if (exErr) {
+      console.error("[create-tenant] membership check failed:", exErr.message);
+      return json({ error: "We couldn't check your school right now. Please try again in a minute.", retry: true });
+    }
     if (existing) {
       const t = (existing as any).tenants;
       return json({ tenant_id: t.id, tenant_slug: t.slug, tenant_name: t.name, created: false });
