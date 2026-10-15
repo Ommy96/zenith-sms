@@ -146,14 +146,14 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     load();
 
-    // Hard 5s timeout — never hang on a spinner.
+    // Hard timeout — never hang on a spinner (allows for login clock-skew retries).
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       setLoading((prev) => {
-        if (prev) console.warn("[Tenant] load timed out after 5s");
+        if (prev) console.warn("[Tenant] load timed out after 10s");
         return false;
       });
-    }, 5000);
+    }, 10000);
 
     return () => {
       if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
