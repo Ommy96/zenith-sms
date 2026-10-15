@@ -65,6 +65,8 @@ export default function Provisioning() {
     if (error || (data as any)?.error) {
       const message = (data as any)?.error ?? error?.message ?? "Something went wrong";
       setFailed(message);
+      // Membership check couldn't run: re-load the school instead of offering to create one.
+      if ((data as any)?.retry) void refresh();
       return;
     }
     sessionStorage.removeItem("zenith.pending_school_name");
@@ -81,11 +83,22 @@ export default function Provisioning() {
             {failed ? <AlertTriangle className="h-6 w-6 text-destructive" /> : <School className="h-6 w-6 text-primary" />}
           </div>
           <CardTitle className="text-xl">
-            {failed ? "We couldn't create your school" : working ? "Setting up your school" : "Name your school"}
+            {tenantError || tenantLoading
+              ? "Loading your school"
+              : failed ? "We couldn't create your school" : working ? "Setting up your school" : "Name your school"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {working ? (
+          {tenantError || tenantLoading ? (
+            <div className="space-y-2 py-6 text-center text-sm text-muted-foreground">
+              <div className="flex items-center justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Connecting to your school…
+              </div>
+              {retryCount > 0 && (
+                <p>The server is slow to accept your sign-in. We'll keep trying automatically.</p>
+              )}
+            </div>
+          ) : working ? (
             <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> This only takes a moment…
             </div>
