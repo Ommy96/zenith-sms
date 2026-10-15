@@ -50,7 +50,7 @@ export default function Provisioning() {
 
   useEffect(() => {
     const name = schoolName.trim();
-    if (attempted.current || !user || tenantLoading || tenant || !name) return;
+    if (attempted.current || !user || tenantLoading || tenant || tenantError || !name) return;
     attempted.current = true;
     void provision(name);
     // eslint-disable-next-line react-hooks/exhaustive-deps
