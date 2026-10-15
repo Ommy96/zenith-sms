@@ -1,99 +1,87 @@
 import { ReactNode } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, GraduationCap, Wallet, MessageSquare, ChevronDown, LogOut, Megaphone, Sparkles } from "lucide-react";
+import { Home, Wallet, CalendarCheck, FileText, MessageSquare, User, ChevronDown, LogOut } from "lucide-react";
 import { usePortal } from "@/contexts/PortalContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/NotificationsBell";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { useTranslation } from "react-i18next";
+
+const TABS = [
+  { to: "/portal", icon: Home, label: "Home", end: true },
+  { to: "/portal/fees", icon: Wallet, label: "Fees" },
+  { to: "/portal/attendance", icon: CalendarCheck, label: "Attendance" },
+  { to: "/portal/report-cards", icon: FileText, label: "Reports" },
+  { to: "/portal/messages", icon: MessageSquare, label: "Messages" },
+  { to: "/portal/profile", icon: User, label: "Profile" },
+];
+
+const initialsOf = (s?: string | null) =>
+  (s || "?").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 
 export function PortalLayout({ children }: { children: ReactNode }) {
-  const { activeChild, children: kids, setActiveChildId } = usePortal();
+  const { activeChild, children: kids, setActiveChildId, school } = usePortal();
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { t } = useTranslation();
-  const tabs = [
-    { to: "/portal", icon: Home, label: t("portal.welcome"), end: true },
-    { to: "/portal/academics", icon: GraduationCap, label: t("portal.academics") },
-    { to: "/portal/study-buddy", icon: Sparkles, label: t("portal.studyBuddy") },
-    { to: "/portal/fees", icon: Wallet, label: t("portal.fees") },
-    { to: "/portal/messages", icon: MessageSquare, label: t("portal.messages") },
-  ];
-  const initials = activeChild
-    ? `${activeChild.first_name?.[0] || ""}${activeChild.last_name?.[0] || ""}`.toUpperCase()
-    : "?";
+  const doSignOut = async () => { await signOut(); navigate("/portal/login", { replace: true }); };
 
   return (
-    <div className="min-h-screen bg-muted/30 flex flex-col">
-      {/* Top bar */}
-      <header className="sticky top-0 z-30 bg-background border-b">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-xl px-2 py-1 hover:bg-muted transition">
-                <Avatar className="h-9 w-9">
-                  {activeChild?.photo_url && <AvatarImage src={activeChild.photo_url} />}
-                  <AvatarFallback className="bg-primary text-primary-foreground text-sm">{initials}</AvatarFallback>
-                </Avatar>
-                <div className="text-left">
-                  <div className="text-sm font-semibold leading-tight">{activeChild?.full_name || "Select child"}</div>
-                  <div className="text-xs text-muted-foreground leading-tight">
-                    {activeChild?.admission_number || "—"}
-                  </div>
-                </div>
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-64">
-              <DropdownMenuLabel>{t("portal.myChildren")}</DropdownMenuLabel>
-              {kids.map((k) => (
-                <DropdownMenuItem key={k.id} onClick={() => setActiveChildId(k.id)}>
-                  <Avatar className="h-7 w-7 mr-2">
-                    {k.photo_url && <AvatarImage src={k.photo_url} />}
-                    <AvatarFallback className="text-xs">{(k.first_name?.[0] || "") + (k.last_name?.[0] || "")}</AvatarFallback>
-                  </Avatar>
-                  <span className="truncate">{k.full_name}</span>
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={async () => { await signOut(); navigate("/portal/login", { replace: true }); }}>
-                <LogOut className="h-4 w-4 mr-2" /> {t("common.signOut")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <div className="flex items-center gap-1">
-            <LanguageSwitcher />
-            <Button size="icon" variant="ghost" onClick={() => navigate("/portal/announcements")} title="Announcements">
-              <Megaphone className="h-5 w-5" />
-            </Button>
+    <div className="min-h-screen bg-muted/30 flex flex-col text-base">
+      <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b">
+        <div className="max-w-2xl mx-auto px-3 h-16 flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-sm font-bold text-primary" title={school?.name}>
+              {initialsOf(school?.name)}
+            </div>
+            <span className="hidden sm:block truncate font-semibold">{school?.name}</span>
+          </div>
+          <div className="ml-auto flex items-center gap-1">
+            {kids.length > 1 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex min-h-11 items-center gap-2 rounded-xl px-2 hover:bg-muted">
+                    <Avatar className="h-8 w-8">
+                      {activeChild?.photo_url && <AvatarImage src={activeChild.photo_url} />}
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">{initialsOf(activeChild?.full_name)}</AvatarFallback>
+                    </Avatar>
+                    <span className="max-w-[7rem] truncate text-sm font-medium">{activeChild?.first_name}</span>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuLabel>My children</DropdownMenuLabel>
+                  {kids.map((k) => (
+                    <DropdownMenuItem key={k.id} className="min-h-11" onClick={() => setActiveChildId(k.id)}>
+                      <span className="truncate">{k.full_name}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : activeChild ? (
+              <span className="max-w-[9rem] truncate px-2 text-sm font-medium">{activeChild.first_name}</span>
+            ) : null}
             <NotificationsBell portal />
+            <Button size="icon" variant="ghost" className="h-11 w-11" onClick={doSignOut} aria-label="Sign out">
+              <LogOut className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 max-w-md w-full mx-auto px-4 py-4 pb-24">{children}</main>
+      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-4 pb-28">{children}</main>
 
-      {/* Bottom tab bar */}
-      <nav className="fixed bottom-0 inset-x-0 z-30 bg-background border-t">
-        <div className="max-w-md mx-auto grid grid-cols-5">
-          {tabs.map((t) => {
+      <nav className="fixed bottom-0 inset-x-0 z-30 bg-background border-t pb-[env(safe-area-inset-bottom)]">
+        <div className="max-w-2xl mx-auto grid grid-cols-6">
+          {TABS.map((t) => {
             const active = t.end ? location.pathname === t.to : location.pathname.startsWith(t.to);
             return (
-              <NavLink
-                key={t.to}
-                to={t.to}
-                end={t.end}
-                className={`flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium transition ${
-                  active ? "text-primary" : "text-muted-foreground"
-                }`}
-              >
-                <t.icon className={`h-5 w-5 ${active ? "scale-110" : ""} transition`} />
+              <NavLink key={t.to} to={t.to} end={t.end}
+                className={`flex min-h-14 flex-col items-center justify-center gap-1 text-[11px] font-medium transition ${active ? "text-primary" : "text-muted-foreground"}`}>
+                <t.icon className="h-5 w-5" />
                 {t.label}
               </NavLink>
             );

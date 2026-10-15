@@ -94,16 +94,33 @@ Deno.serve(async (req) => {
       { code, minutes: "10", name, school_name: schoolName },
     );
 
-    const messageId = await logQueuedMessage({
-      tenantId, channel: "sms", body,
-      recipientPhone: normalized, recipientName: name || null,
+    const common = {
+      tenantId, body, recipientPhone: normalized, recipientName: name || null,
       recipientType: guardian ? "guardian" : "student",
       recipientId: guardian?.id ?? student?.id ?? null,
-      studentId: student?.id ?? null,
-      templateKey: "portal_otp",
-    });
-    callInternal("send-sms", { message_id: messageId, tenant_id: tenantId }).catch(() => {});
+      studentId: student?.id ?? null, templateKey: "portal_otp",
+    };
 
+    // WhatsApp first (Meta template 'portal_otp', code as {{1}}).
+    const waId = await logQueuedMessage({ ...common, channel: "whatsapp" });
+    const waRes = await callInternal("send-whatsapp", {
+      message_id: waId, tenant_id: tenantId,
+      template: { name: "portal_otp", language: "en", params: [code], button_param: code },
+    }).catch(() => null);
+    const wa = waRes ? await waRes.json().catch(() => ({})) : {};
+    if (waRes?.ok && wa?.ok) return jsonResponse({ ...(await generic(normalized).json()), via: "whatsapp" });
+    console.warn("[portal-send-otp] whatsapp failed:", wa?.error ?? "no response");
+
+    // Fallback to SMS only when the school has SMS configured.
+    const smsReady = !!Deno.env.get("AFRICASTALKING_API_KEY") && !!Deno.env.get("AFRICASTALKING_USERNAME");
+    if (smsReady) {
+      const smsId = await logQueuedMessage({ ...common, channel: "sms" });
+      const smsRes = await callInternal("send-sms", { message_id: smsId, tenant_id: tenantId }).catch(() => null);
+      const sms = smsRes ? await smsRes.json().catch(() => ({})) : {};
+      if (smsRes?.ok && sms?.ok !== false) return jsonResponse({ ...(await generic(normalized).json()), via: "sms" });
+      console.warn("[portal-send-otp] sms fallback failed:", sms?.error ?? "no response");
+    }
+    return jsonResponse({ error: "WhatsApp OTP template pending approval. Try again in 24-48 hours." }, 200);
     return generic(normalized);
   } catch (e) {
     console.error("[portal-send-otp]", (e as Error).message);

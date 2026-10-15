@@ -14,10 +14,11 @@
 - [ ] Acceptance steps 1–25 — needs signed-in test by user (external sign-in)
 
 ## Parent portal (6 pages)
-- [ ] DB: parent read access for activity, attendance dates, school info, guardian messages; self-edit profile
-- [ ] Portal layout + Dashboard, Fees, Attendance, Report Cards, Messages, Profile
-- [ ] Report card downloads via download proxy
-- [ ] WhatsApp template sends + OTP WhatsApp-first with SMS fallback; login wording
+- [x] DB: parent read access for activity, attendance dates, school info, guardian messages; self-edit profile
+- [x] Portal layout + Dashboard, Fees, Attendance, Report Cards, Messages, Profile
+- [x] Report card downloads via download proxy
+- [x] WhatsApp template sends + OTP WhatsApp-first with SMS fallback; login wording
 - [ ] Fee reminder job WhatsApp-first (blocked: job targets a removed table — needs rewrite)
 - [ ] Test parent account (blocked: needs Brian's WhatsApp number)
-- [ ] Phone/email change with verification (deferred)
+- [ ] Phone/email change with verification (deferred — parents told to contact school)
+- [ ] Parent signed-in walkthrough + 375px dashboard screenshot (blocked: needs test parent)
