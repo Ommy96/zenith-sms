@@ -51,12 +51,13 @@ Deno.serve(async (req) => {
     const admin = adminClient();
     const tail = normalized.replace(/\D/g, "").slice(-9);
 
-    const [{ data: guardians }, { data: students }] = await Promise.all([
+    const [{ data: guardians, error: gErr }, { data: students, error: sErr }] = await Promise.all([
       admin.from("guardians").select("id, tenant_id, full_name, phone_primary, whatsapp_number")
         .or(`phone_primary.ilike.%${tail},whatsapp_number.ilike.%${tail}`).limit(1),
       admin.from("students").select("id, tenant_id, first_name, last_name, phone")
         .ilike("phone", `%${tail}`).limit(1),
     ]);
+    if (gErr || sErr) console.error("[portal-send-otp] lookup error", gErr?.message, sErr?.message);
     const guardian = guardians?.[0];
     const student = students?.[0];
     if (!guardian && !student) {
@@ -78,13 +79,19 @@ Deno.serve(async (req) => {
       purpose: "portal_login",
     });
 
-    const { data: tpl } = await admin.from("message_templates")
-      .select("body_template").eq("key", "portal_otp").eq("language", "en")
-      .or(`tenant_id.eq.${tenantId},tenant_id.is.null`).order("tenant_id", { nullsFirst: false })
-      .limit(1).maybeSingle();
+    const [{ data: tpl }, { data: tenantRow }] = await Promise.all([
+      admin.from("message_templates")
+        .select("body_template").eq("key", "portal_otp").eq("language", "en")
+        .or(`tenant_id.eq.${tenantId},tenant_id.is.null`).order("tenant_id", { nullsFirst: false })
+        .limit(1).maybeSingle(),
+      tenantId
+        ? admin.from("tenants").select("name").eq("id", tenantId).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+    const schoolName = (tenantRow as any)?.name?.trim() || "your school";
     const body = renderTemplate(
-      tpl?.body_template ?? "Your Zenith code is {{code}}. It expires in 10 minutes.",
-      { code, minutes: "10", name },
+      tpl?.body_template ?? "Your {{school_name}} portal code is {{code}}. Valid 10 minutes.",
+      { code, minutes: "10", name, school_name: schoolName },
     );
 
     const messageId = await logQueuedMessage({
