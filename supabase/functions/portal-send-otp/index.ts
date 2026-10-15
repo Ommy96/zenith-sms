@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
     console.warn("[portal-send-otp] whatsapp failed:", wa?.error ?? "no response");
 
     // Fallback to SMS only when the school has SMS configured.
-    const smsReady = !!Deno.env.get("AT_API_KEY") && !!Deno.env.get("AT_USERNAME");
+    const smsReady = !!Deno.env.get("AFRICASTALKING_API_KEY") && !!Deno.env.get("AFRICASTALKING_USERNAME");
     if (smsReady) {
       const smsId = await logQueuedMessage({ ...common, channel: "sms" });
       const smsRes = await callInternal("send-sms", { message_id: smsId, tenant_id: tenantId }).catch(() => null);
