@@ -14,16 +14,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function Provisioning() {
   const { user, loading: authLoading } = useAuth();
   const { tenant, loading: tenantLoading, refresh, error: tenantError } = useTenant();
-  const retried = useRef(false);
+  const [retryCount, setRetryCount] = useState(0);
 
-  // If loading the school failed (e.g. a brief login hiccup), retry before offering to create one.
+  // If loading the school failed (e.g. the server briefly rejecting a fresh login),
+  // keep retrying. Never offer to create a school while we can't tell whether one exists.
   useEffect(() => {
-    if (tenantError && !retried.current && !tenantLoading) {
-      retried.current = true;
-      const t = setTimeout(() => { void refresh(); }, 1500);
-      return () => clearTimeout(t);
-    }
-  }, [tenantError, tenantLoading, refresh]);
+    if (!tenantError || tenantLoading) return;
+    const t = setTimeout(() => { setRetryCount((n) => n + 1); void refresh(); }, 5000);
+    return () => clearTimeout(t);
+  }, [tenantError, tenantLoading, refresh, retryCount]);
   const navigate = useNavigate();
   const [schoolName, setSchoolName] = useState(
     sessionStorage.getItem("zenith.pending_school_name") ??
