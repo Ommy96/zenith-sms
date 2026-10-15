@@ -105,7 +105,6 @@ const PortalProfile = lazy(() => import("./pages/portal/PortalProfile"));
 const PortalCalendar = lazy(() => import("./pages/portal/PortalCalendar"));
 const PortalAnnouncements = lazy(() => import("./pages/portal/PortalAnnouncements"));
 const PortalNotifications = lazy(() => import("./pages/portal/PortalNotifications"));
-const PortalStudyBuddy = lazy(() => import("./pages/portal/PortalStudyBuddy"));
 const PortalAttendance = lazy(() => import("./pages/portal/PortalAttendance"));
 const PortalReportCards = lazy(() => import("./pages/portal/PortalReportCards"));
 
