@@ -27,6 +27,13 @@ export default function Provisioning() {
     if (!authLoading && !user) navigate("/auth/login", { replace: true });
   }, [authLoading, user, navigate]);
 
+  // Fill the name from sign-up details once the account has loaded.
+  useEffect(() => {
+    const metaName = user?.user_metadata?.requested_school_name;
+    if (!schoolName && typeof metaName === "string" && metaName.trim()) setSchoolName(metaName.trim());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   useEffect(() => {
     if (tenant) navigate("/setup", { replace: true });
   }, [tenant, navigate]);

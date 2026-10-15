@@ -50,9 +50,12 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const rawName = typeof body?.school_name === "string" ? body.school_name.trim() : "";
-    if (rawName.length < 2 || rawName.length > 120) {
-      return json({ error: "school_name must be between 2 and 120 characters" }, 400);
+    const fromBody = typeof body?.school_name === "string" ? body.school_name.trim() : "";
+    const meta = userData.user.user_metadata?.requested_school_name;
+    const fromMeta = typeof meta === "string" ? meta.trim() : "";
+    const rawName = (fromBody.length >= 2 ? fromBody : fromMeta).slice(0, 120);
+    if (rawName.length < 2) {
+      return json({ error: "Please enter your school's name (at least 2 characters).", needs_name: true });
     }
 
     // Unique slug: base, base-2, base-3 ...
