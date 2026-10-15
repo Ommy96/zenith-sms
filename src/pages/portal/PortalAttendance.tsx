@@ -12,7 +12,7 @@ const COLOR: Record<string, string> = {
   present: "bg-success text-success-foreground",
   absent: "bg-destructive text-destructive-foreground",
   late: "bg-primary text-primary-foreground",
-  excused: "bg-accent text-accent-foreground ring-2 ring-inset ring-ring",
+  excused: "bg-background text-foreground ring-2 ring-inset ring-primary",
 };
 const LABEL: Record<string, string> = { present: "Present", absent: "Absent", late: "Late", excused: "Excused" };
 

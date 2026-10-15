@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
   let messageId: string | null = null;
   try {
     requireInternalSecret(req);
-    const { tenant_id, recipient_phone, body, message_id, media } = await req.json();
+    const { tenant_id, recipient_phone, body, message_id, media, template } = await req.json();
     messageId = message_id ?? null;
     if (!message_id) return jsonResponse({ error: "message_id required" }, 400);
 
@@ -35,8 +35,8 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: true, dry_run: true });
     }
 
-    const token = Deno.env.get("META_WHATSAPP_TOKEN");
-    const phoneNumberId = Deno.env.get("META_WHATSAPP_PHONE_NUMBER_ID");
+    const token = Deno.env.get("META_WHATSAPP_TOKEN") ?? Deno.env.get("WHATSAPP_API_KEY");
+    const phoneNumberId = Deno.env.get("META_WHATSAPP_PHONE_NUMBER_ID") ?? Deno.env.get("BUSINESS_PHONE_NUMBER_ID");
     if (!token || !phoneNumberId) {
       await markFailed(message_id, "WhatsApp not configured", "meta");
       return jsonResponse({ ok: false, error: "WhatsApp not configured" }, 400);
@@ -44,7 +44,19 @@ Deno.serve(async (req) => {
 
     await updateMessageStatus(message_id, { status: "sending" });
 
-    const payload = media?.link
+    // Template messages: { name, language?, params?: string[] } — body params map to {{1}}, {{2}}…
+    // Authentication templates also need the code repeated on the copy-code button.
+    const tplPayload = template?.name ? {
+      messaging_product: "whatsapp", to: phone, type: "template",
+      template: {
+        name: template.name, language: { code: template.language ?? "en" },
+        components: [
+          ...(template.params?.length ? [{ type: "body", parameters: template.params.map((t: string) => ({ type: "text", text: String(t) })) }] : []),
+          ...(template.button_param ? [{ type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: String(template.button_param) }] }] : []),
+        ],
+      },
+    } : null;
+    const payload = tplPayload ? tplPayload : media?.link
       ? { messaging_product: "whatsapp", to: phone, type: media.type ?? "document",
           [media.type ?? "document"]: { link: media.link, caption: text } }
       : { messaging_product: "whatsapp", to: phone, type: "text", text: { body: text } };
@@ -61,7 +73,7 @@ Deno.serve(async (req) => {
     }
     const err = data?.error?.message || data?.__raw || `HTTP ${res.status}`;
     await markFailed(message_id, String(err), "meta");
-    return jsonResponse({ ok: false, error: String(err) }, 502);
+    return jsonResponse({ ok: false, error: String(err), code: data?.error?.code ?? null }, 502);
   } catch (e) {
     if (messageId) await markFailed(messageId, (e as Error).message).catch(() => {});
     return authErrorResponse(e, corsHeaders);
