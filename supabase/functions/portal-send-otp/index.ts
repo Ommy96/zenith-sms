@@ -78,13 +78,19 @@ Deno.serve(async (req) => {
       purpose: "portal_login",
     });
 
-    const { data: tpl } = await admin.from("message_templates")
-      .select("body_template").eq("key", "portal_otp").eq("language", "en")
-      .or(`tenant_id.eq.${tenantId},tenant_id.is.null`).order("tenant_id", { nullsFirst: false })
-      .limit(1).maybeSingle();
+    const [{ data: tpl }, { data: tenantRow }] = await Promise.all([
+      admin.from("message_templates")
+        .select("body_template").eq("key", "portal_otp").eq("language", "en")
+        .or(`tenant_id.eq.${tenantId},tenant_id.is.null`).order("tenant_id", { nullsFirst: false })
+        .limit(1).maybeSingle(),
+      tenantId
+        ? admin.from("tenants").select("name").eq("id", tenantId).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+    const schoolName = (tenantRow as any)?.name?.trim() || "your school";
     const body = renderTemplate(
-      tpl?.body_template ?? "Your Zenith code is {{code}}. It expires in 10 minutes.",
-      { code, minutes: "10", name },
+      tpl?.body_template ?? "Your {{school_name}} portal code is {{code}}. Valid 10 minutes.",
+      { code, minutes: "10", name, school_name: schoolName },
     );
 
     const messageId = await logQueuedMessage({
