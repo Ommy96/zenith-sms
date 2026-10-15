@@ -7308,6 +7308,18 @@ export type Database = {
           tenant_id: string
         }[]
       }
+      portal_school_info: {
+        Args: { _tenant: string }
+        Returns: {
+          currency_code: string
+          logo_url: string
+          name: string
+        }[]
+      }
+      portal_update_my_guardian: {
+        Args: { _address: string; _occupation: string; _prefs: Json }
+        Returns: number
+      }
       recompute_invoice_totals: {
         Args: { p_invoice_id: string }
         Returns: undefined
