@@ -80,7 +80,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      const [{ data: memberships, error: mErr }, { data: roleRows, error: rErr }] = await Promise.all([
+      const fetchAll = () => Promise.all([
         supabase
           .from("user_tenants")
           .select(`tenant_id, is_active, tenants!inner(${TENANT_COLUMNS})`)
@@ -90,6 +90,15 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           .select("tenant_id, roles!inner(name, role_permissions(permissions(name)))")
           .eq("user_id", user.id),
       ]);
+      // A freshly issued login can be briefly rejected ("JWT issued at future")
+      // due to small clock skew between auth and the API. Wait and retry.
+      const isSkew = (e: any) => e?.code === "PGRST303" || /issued at future/i.test(e?.message ?? "");
+      let res = await fetchAll();
+      for (let i = 0; i < 4 && (isSkew(res[0].error) || isSkew(res[1].error)); i++) {
+        await new Promise((r) => setTimeout(r, 1500));
+        res = await fetchAll();
+      }
+      const [{ data: memberships, error: mErr }, { data: roleRows, error: rErr }] = res;
       if (mErr) throw mErr;
       if (rErr) throw rErr;
 
@@ -137,14 +146,14 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     load();
 
-    // Hard 5s timeout — never hang on a spinner.
+    // Hard timeout — never hang on a spinner (allows for login clock-skew retries).
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
       setLoading((prev) => {
-        if (prev) console.warn("[Tenant] load timed out after 5s");
+        if (prev) console.warn("[Tenant] load timed out after 10s");
         return false;
       });
-    }, 5000);
+    }, 10000);
 
     return () => {
       if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }

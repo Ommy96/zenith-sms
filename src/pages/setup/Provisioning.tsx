@@ -13,7 +13,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 /** Holding page for a fresh sign-up whose school hasn't been created yet. */
 export default function Provisioning() {
   const { user, loading: authLoading } = useAuth();
-  const { tenant, loading: tenantLoading, refresh } = useTenant();
+  const { tenant, loading: tenantLoading, refresh, error: tenantError } = useTenant();
+  const retried = useRef(false);
+
+  // If loading the school failed (e.g. a brief login hiccup), retry before offering to create one.
+  useEffect(() => {
+    if (tenantError && !retried.current && !tenantLoading) {
+      retried.current = true;
+      const t = setTimeout(() => { void refresh(); }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [tenantError, tenantLoading, refresh]);
   const navigate = useNavigate();
   const [schoolName, setSchoolName] = useState(
     sessionStorage.getItem("zenith.pending_school_name") ??
@@ -40,7 +50,7 @@ export default function Provisioning() {
 
   useEffect(() => {
     const name = schoolName.trim();
-    if (attempted.current || !user || tenantLoading || tenant || !name) return;
+    if (attempted.current || !user || tenantLoading || tenant || tenantError || !name) return;
     attempted.current = true;
     void provision(name);
     // eslint-disable-next-line react-hooks/exhaustive-deps
