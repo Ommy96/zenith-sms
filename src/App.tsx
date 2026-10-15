@@ -106,6 +106,8 @@ const PortalCalendar = lazy(() => import("./pages/portal/PortalCalendar"));
 const PortalAnnouncements = lazy(() => import("./pages/portal/PortalAnnouncements"));
 const PortalNotifications = lazy(() => import("./pages/portal/PortalNotifications"));
 const PortalStudyBuddy = lazy(() => import("./pages/portal/PortalStudyBuddy"));
+const PortalAttendance = lazy(() => import("./pages/portal/PortalAttendance"));
+const PortalReportCards = lazy(() => import("./pages/portal/PortalReportCards"));
 
 // Tuned cache defaults — fewer redundant refetches on focus/navigation.
 const queryClient = new QueryClient({
@@ -237,7 +239,9 @@ function AppRoutes() {
       <Route path="/portal/calendar" element={<PortalProtectedRoute><PortalCalendar /></PortalProtectedRoute>} />
       <Route path="/portal/announcements" element={<PortalProtectedRoute><PortalAnnouncements /></PortalProtectedRoute>} />
       <Route path="/portal/notifications" element={<PortalProtectedRoute><PortalNotifications /></PortalProtectedRoute>} />
-      <Route path="/portal/study-buddy" element={<PortalProtectedRoute><PortalStudyBuddy /></PortalProtectedRoute>} />
+      <Route path="/portal/attendance" element={<PortalProtectedRoute><PortalAttendance /></PortalProtectedRoute>} />
+      <Route path="/portal/report-cards" element={<PortalProtectedRoute><PortalReportCards /></PortalProtectedRoute>} />
+      <Route path="/portal/study-buddy" element={<Navigate to="/portal" replace />} />
 
       {/* Protected routes */}
       <Route path="/app" element={

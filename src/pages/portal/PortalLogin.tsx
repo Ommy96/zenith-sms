@@ -19,7 +19,7 @@ export default function PortalLogin() {
   const navigate = useNavigate();
 
   const sendCode = async () => {
-    if (!phone.trim()) return toast.error("Enter your phone number");
+    if (!phone.trim()) return toast.error("Enter your WhatsApp number");
     setSending(true);
     const { data, error } = await supabase.functions.invoke("portal-send-otp", { body: { phone } });
     setSending(false);
@@ -28,7 +28,7 @@ export default function PortalLogin() {
     }
     setMaskedPhone((data as any).masked);
     setStep("code");
-    toast.success("Code sent via SMS");
+    toast.success((data as any).via === "sms" ? "Code sent by SMS" : "Code sent via WhatsApp");
   };
 
   const verify = async () => {
@@ -57,14 +57,14 @@ export default function PortalLogin() {
           </div>
           <h1 className="pt-3 text-3xl font-semibold">Parent Portal</h1>
           <p className="text-sm text-muted-foreground">
-            {step === "phone" ? "Sign in with your registered phone number." : `Enter the 6-digit code sent to ${maskedPhone}`}
+            {step === "phone" ? "Sign in with your registered WhatsApp number." : `Enter the 6-digit code sent to ${maskedPhone}`}
           </p>
         </div>
         <div className="mt-7 space-y-4">
           {step === "phone" ? (
             <>
               <div className="space-y-2">
-                <Label>Phone number</Label>
+                <Label>WhatsApp number</Label>
                 <Input
                   type="tel"
                   placeholder="0712 345 678"
@@ -72,6 +72,7 @@ export default function PortalLogin() {
                   onChange={(e) => setPhone(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && sendCode()}
                 />
+                <p className="text-sm text-muted-foreground">We'll send your code via WhatsApp. Make sure this number has WhatsApp installed.</p>
               </div>
               <Button className="h-11 w-full" onClick={sendCode} disabled={sending}>
                 {sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Send verification code

@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type DocumentKind = "receipt" | "invoice" | "statement";
+export type DocumentKind = "receipt" | "invoice" | "statement" | "report_card";
 
 /**
  * Downloads a PDF as bytes through the download-document function and saves it
