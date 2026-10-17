@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./AuthContext";
+import { getPortalLogoUrl } from "@/lib/portal/logo";
 
 export interface PortalChild {
   id: string;
@@ -76,11 +77,6 @@ export function PortalProvider({ children: kids }: { children: ReactNode }) {
     }));
     setItems(list);
     setGuardian((g as any) ?? null);
-    const tenant = list[0]?.tenant_id;
-    if (tenant) {
-      const { data: info } = await supabase.rpc("portal_school_info" as any, { _tenant: tenant });
-      setSchool(((info as any[]) || [])[0] ?? null);
-    }
     if (list.length && (!activeId || !list.find((c) => c.id === activeId))) {
       setActiveId(list[0].id);
       localStorage.setItem("portal_active_child", list[0].id);
@@ -96,6 +92,25 @@ export function PortalProvider({ children: kids }: { children: ReactNode }) {
   };
 
   const activeChild = items.find((c) => c.id === activeId) || items[0] || null;
+  const schoolTenantId = activeChild?.tenant_id;
+  useEffect(() => {
+    setSchool(null);
+    if (!user || !schoolTenantId) return;
+    let live = true;
+    const loadSchool = async () => {
+      const { data: info } = await supabase.rpc("portal_school_info" as any, { _tenant: schoolTenantId });
+      const next = ((info as PortalSchool[] | null) || [])[0];
+      if (!next) return;
+      const logo = next.logo_url ? await getPortalLogoUrl(user.id, next.logo_url, async (path, seconds) => {
+        const { data } = await supabase.storage.from("tenant-logos").createSignedUrl(path, seconds);
+        return data?.signedUrl ?? null;
+      }) : null;
+      if (live) setSchool({ ...next, logo_url: logo });
+    };
+    void loadSchool().catch(() => { if (live) setSchool(null); });
+    const timer = window.setInterval(() => { void loadSchool().catch(() => {}); }, 60_000);
+    return () => { live = false; window.clearInterval(timer); };
+  }, [user, schoolTenantId]);
   const isPortalUser = !!user && !!(user.user_metadata as any)?.portal;
 
   return (

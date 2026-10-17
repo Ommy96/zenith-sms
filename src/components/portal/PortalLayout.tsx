@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Home, Wallet, CalendarCheck, FileText, MessageSquare, User, ChevronDown, LogOut } from "lucide-react";
 import { usePortal } from "@/contexts/PortalContext";
@@ -27,6 +27,7 @@ export function PortalLayout({ children }: { children: ReactNode }) {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [failedLogo, setFailedLogo] = useState<string | null>(null);
   const doSignOut = async () => { await signOut(); navigate("/portal/login", { replace: true }); };
 
   return (
@@ -35,7 +36,9 @@ export function PortalLayout({ children }: { children: ReactNode }) {
         <div className="max-w-2xl mx-auto px-3 h-16 flex items-center gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-sm font-bold text-primary" title={school?.name}>
-              {initialsOf(school?.name)}
+              {school?.logo_url && failedLogo !== school.logo_url ? (
+                <img src={school.logo_url} alt={`${school.name} logo`} className="h-full w-full rounded-lg object-contain" onError={() => setFailedLogo(school.logo_url)} />
+              ) : initialsOf(school?.name)}
             </div>
             <span className="hidden sm:block truncate font-semibold">{school?.name}</span>
           </div>
