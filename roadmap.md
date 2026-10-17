@@ -1,4 +1,11 @@
 # Stage 2 roadmap
+## School logo access
+- [x] Diagnose bucket privacy, logo policies, and Karama logo path
+- [ ] Make only tenant-logos publicly readable if workspace allows
+- [ ] Render portal logo with initials fallback
+- [ ] Verify anonymous logo access and sensitive bucket privacy
+- [ ] Verify signed-in admin/parent display and upload permissions (blocked: external unmanaged sign-in)
+
 - [x] Add staff management permission and secure invite acceptance linking
 - [x] Build classes list/create/detail and class-subject assignment
 - [x] Build subjects list/create and 16-subject CBC seed
