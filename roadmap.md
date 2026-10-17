@@ -1,9 +1,11 @@
 # Stage 2 roadmap
 ## Finalized Zenith identity
-- [ ] Create supplied Stepped Summit SVG lockups, favicons, home-screen icons and social preview
-- [ ] Rebuild landing, replace sidebar product mark, preserve school logos and add portal attribution
-- [ ] Add email headers and PDF footer monograms without altering delivery or layouts
-- [ ] Verify desktop/mobile landing, assets, PDF drawing and email wrapping; record authenticated/live blockers
+- [x] Create supplied Stepped Summit SVG lockups, favicons, home-screen icons and social preview
+- [x] Rebuild landing, replace sidebar product mark, preserve school logos and add portal attribution
+- [x] Add email headers and PDF footer monograms without altering delivery or layouts
+- [x] Verify desktop/mobile landing, asset dimensions and loading, rendered sample PDF footer and email header; preview build OK
+- [ ] Verify signed-in sidebar, parent attribution, regenerated receipt and delivered email (blocked: external unmanaged sign-in and live delivery access)
+- [ ] Replace placeholder legal email links with approved Privacy/Terms pages (blocked: approved legal content not supplied)
 
 ## School logo access
 - [x] Diagnose bucket privacy, logo policies, and Karama logo path
