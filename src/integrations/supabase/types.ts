@@ -1622,40 +1622,58 @@ export type Database = {
       fee_reminders: {
         Row: {
           amount_owed_at_send: number
+          attempted_at: string
           channel: string
+          created_at: string
+          error: string | null
+          failed_at: string | null
           id: string
           invoice_id: string | null
           message_id: string | null
+          reminder_tier: string | null
           reminder_type: string
-          sent_at: string
+          sent_at: string | null
           sent_by: string | null
           sent_to: string
+          status: string
           student_id: string
           tenant_id: string
         }
         Insert: {
           amount_owed_at_send: number
+          attempted_at?: string
           channel: string
+          created_at?: string
+          error?: string | null
+          failed_at?: string | null
           id?: string
           invoice_id?: string | null
           message_id?: string | null
+          reminder_tier?: string | null
           reminder_type: string
-          sent_at?: string
+          sent_at?: string | null
           sent_by?: string | null
           sent_to: string
+          status?: string
           student_id: string
           tenant_id: string
         }
         Update: {
           amount_owed_at_send?: number
+          attempted_at?: string
           channel?: string
+          created_at?: string
+          error?: string | null
+          failed_at?: string | null
           id?: string
           invoice_id?: string | null
           message_id?: string | null
+          reminder_tier?: string | null
           reminder_type?: string
-          sent_at?: string
+          sent_at?: string | null
           sent_by?: string | null
           sent_to?: string
+          status?: string
           student_id?: string
           tenant_id?: string
         }
@@ -7244,6 +7262,17 @@ export type Database = {
       }
       cbc_performance_level: {
         Args: { p_marks: number; p_max: number }
+        Returns: string
+      }
+      claim_fee_reminder: {
+        Args: {
+          p_amount: number
+          p_invoice_id: string
+          p_phone: string
+          p_student_id: string
+          p_tenant_id: string
+          p_tier: string
+        }
         Returns: string
       }
       current_academic_year: { Args: { p_tenant_id: string }; Returns: string }
