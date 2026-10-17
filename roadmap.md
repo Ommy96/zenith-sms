@@ -18,8 +18,12 @@
 - [x] Portal layout + Dashboard, Fees, Attendance, Report Cards, Messages, Profile
 - [x] Report card downloads via download proxy
 - [x] WhatsApp template sends + OTP WhatsApp-first with SMS fallback; login wording
-- [ ] Rebuild fee reminder job for current schema, WhatsApp-first and daily deduplication
-- [ ] Verify dry-run delivery, tier boundaries and tenant opt-out without changing live invoices
+- [x] Rebuild fee reminder job for current schema, WhatsApp-first and daily deduplication
+- [x] Verify isolated full dry-run flow, tier boundaries, duplicate skip and tenant opt-out; 15 tests pass
+- [x] Invoke deployed worker twice safely; HTTP 200, zero errors, unauthorized request HTTP 401
+- [ ] Live reminder/message read-back (blocked: no overdue invoices; Brian due 22 October, live invoice unchanged)
+- [ ] Custom school send-time execution (blocked: retained single daily 08:00 EAT schedule; requires separate scheduling decision)
+- [ ] Real WhatsApp delivery (blocked: user must submit three Meta Utility templates and configure provider credentials; dry-run flag untouched)
 - [ ] Test parent account (blocked: needs Brian's WhatsApp number)
 - [ ] Phone/email change with verification (deferred — parents told to contact school)
 - [ ] Parent signed-in walkthrough + 375px dashboard screenshot (blocked: needs test parent)
