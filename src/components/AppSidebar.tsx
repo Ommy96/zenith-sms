@@ -231,19 +231,18 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="px-3 py-3 border-b border-sidebar-border">
         <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          {logoSrc && !logoFailed ? (
-            <img src={logoSrc} alt={`${schoolName} logo`} onError={() => setLogoFailed(true)}
-              className="h-8 w-8 shrink-0 rounded-md object-contain bg-card" />
-          ) : (
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold text-sm">{schoolInitial}</div>
-          )}
+          <img src="/logo-mark.svg" alt="Zenith" className="h-8 w-8 shrink-0 rounded-md" />
           {!collapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-semibold text-foreground tracking-tight truncate">{schoolName}</span>
+              <span className="zenith-wordmark text-sm font-medium text-foreground truncate">Zenith</span>
               <span className="text-[11px] text-muted-foreground truncate">School OS</span>
             </div>
           )}
         </div>
+        {!collapsed && tenant && <div className="mt-3 flex min-w-0 items-center gap-2 border-t border-sidebar-border pt-3">
+          {logoSrc && !logoFailed ? <img src={logoSrc} alt={`${schoolName} logo`} onError={() => setLogoFailed(true)} className="h-6 w-6 shrink-0 rounded-md object-contain bg-card" /> : <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-primary/10 text-xs text-primary">{schoolInitial}</span>}
+          <span className="truncate text-xs text-muted-foreground">{schoolName}</span>
+        </div>}
       </SidebarHeader>
 
       <SidebarContent className="px-2 gap-1 overflow-y-auto pt-2">
