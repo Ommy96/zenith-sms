@@ -4,3 +4,5 @@
 - Reminder messages start in sending or dry_run, never queued; the generic dispatcher does not carry Meta template parameters.
 - Tenant reminder preferences use tenant_settings key/value entries; preserve its shared settings structure.
 - Parent portal logo links are resolved in PortalContext for the active child's school, using user-scoped in-memory 24-hour signed-link caching; keep the admin logo helper unchanged to avoid regressions while public buckets are blocked.
+- Product identity uses public SVG lockups with outlined wordmarks and a shared animated SteppedSummit component; tenant branding remains independent so school logos and permissions are preserved.
+- PDF footer marks are drawn as local vectors and email branding wraps the central send-email HTML only; this avoids external image fetches in PDF generation and preserves send behavior.

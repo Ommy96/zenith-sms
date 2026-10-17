@@ -75,7 +75,12 @@ export function PortalLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-4 pb-28">{children}</main>
+      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-4 pb-28">
+        {children}
+        <footer className="pt-8 text-center text-xs text-muted-foreground">
+          <NavLink to="/" className="inline-flex items-center gap-1.5"><img src="/logo-mark.svg" alt="" className="h-4 w-4" />Powered by Zenith</NavLink>
+        </footer>
+      </main>
 
       <nav className="fixed bottom-0 inset-x-0 z-30 bg-background border-t pb-[env(safe-area-inset-bottom)]">
         <div className="max-w-2xl mx-auto grid grid-cols-6">
