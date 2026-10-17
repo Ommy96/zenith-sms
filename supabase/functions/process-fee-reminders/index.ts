@@ -70,6 +70,7 @@ Deno.serve(async (req: Request) => {
             const guardian = checked(await admin.from('guardians')
               .select('id,full_name,preferred_name,phone_primary,whatsapp_number')
               .eq('tenant_id', tenant.id).eq('id', link.guardian_id).single());
+            if (!guardian) { summary.skipped++; continue; }
             const phone = normalizePhone(guardian.whatsapp_number || guardian.phone_primary || '');
             const smsPhone = normalizePhone(guardian.phone_primary || guardian.whatsapp_number || '');
             const validPhone = /^\+[1-9]\d{7,14}$/;
@@ -109,6 +110,7 @@ Deno.serve(async (req: Request) => {
                 status: dryRun ? 'dry_run' : 'sending', sent_at: dryRun ? now : null,
                 related_entity_type: 'fee_reminder', related_entity_id: reminderId,
               }).select('id').single());
+              if (!msg) throw new Error('Reminder message was not saved');
               messageId = msg.id;
               checked(await admin.from('fee_reminders').update({ message_id: msg.id, channel, sent_to: recipient }).eq('id', reminderId));
               return { msg, body, recipient, tpl };
