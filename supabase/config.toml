@@ -26,6 +26,10 @@ verify_jwt = false
 [functions.dispatch-messages]
 verify_jwt = false
 
+# Daily fee reminders validate the encrypted cron key or internal secret in code.
+[functions.process-fee-reminders]
+verify_jwt = false
+
 # User-facing: guarded by authedUser() + requireOwnsResource().
 [functions.mpesa-stk-push]
 verify_jwt = false
