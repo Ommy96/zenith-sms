@@ -6,6 +6,11 @@ import { eatDay } from './rules.ts';
 Deno.test('full dry-run flow: logging, duplicate skip, tiers, opt-out', async () => {
   const originalFetch = globalThis.fetch;
   const originalServe = Deno.serve;
+  const originalInterval = globalThis.setInterval;
+  const intervals: number[] = [];
+  globalThis.setInterval = ((...args: Parameters<typeof setInterval>) => {
+    const id = originalInterval(...args); intervals.push(id); return id;
+  }) as typeof setInterval;
   const names = ['SUPABASE_URL','SUPABASE_SERVICE_ROLE_KEY','ZENITH_INTERNAL_SECRET','MESSAGING_DRY_RUN'];
   const previous = names.map(name => Deno.env.get(name));
   Deno.env.set('SUPABASE_URL','https://reminder-test.invalid');
@@ -78,6 +83,8 @@ Deno.test('full dry-run flow: logging, duplicate skip, tiers, opt-out', async ()
     enabled=false; claimed=false;
     assertEquals((await invoke()).tenants,0); assertEquals(reminders.length,3);
   } finally {
+    intervals.forEach(id => clearInterval(id));
+    globalThis.setInterval = originalInterval;
     globalThis.fetch=originalFetch; Deno.serve=originalServe;
     names.forEach((name,index) => {const value=previous[index]; if(value===undefined) Deno.env.delete(name); else Deno.env.set(name,value);});
   }
