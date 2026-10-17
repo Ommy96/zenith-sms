@@ -18,7 +18,8 @@
 - [x] Portal layout + Dashboard, Fees, Attendance, Report Cards, Messages, Profile
 - [x] Report card downloads via download proxy
 - [x] WhatsApp template sends + OTP WhatsApp-first with SMS fallback; login wording
-- [ ] Fee reminder job WhatsApp-first (blocked: job targets a removed table — needs rewrite)
+- [ ] Rebuild fee reminder job for current schema, WhatsApp-first and daily deduplication
+- [ ] Verify dry-run delivery, tier boundaries and tenant opt-out without changing live invoices
 - [ ] Test parent account (blocked: needs Brian's WhatsApp number)
 - [ ] Phone/email change with verification (deferred — parents told to contact school)
 - [ ] Parent signed-in walkthrough + 375px dashboard screenshot (blocked: needs test parent)
