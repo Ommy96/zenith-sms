@@ -4,6 +4,7 @@
 // Env: MESSAGING_DRY_RUN, ZENITH_INTERNAL_SECRET, RESEND_API_KEY, RESEND_FROM_EMAIL
 
 import { adminClient, authErrorResponse, requireInternalSecret } from "../_shared/auth.ts";
+import { withZenithEmailHeader } from "../_shared/brand-email.ts";
 import {
   corsHeaders, jsonResponse, isDryRun, markDryRun, markFailed, markSent,
   readBody, updateMessageStatus,
@@ -63,8 +64,8 @@ Deno.serve(async (req) => {
       catch (e) { console.warn("[send-email] attachment skipped", (e as Error).message); }
     }
 
-    const html = `<div style="font-family:system-ui,sans-serif;font-size:14px;line-height:1.5;color:#111">${
-      String(text).replace(/\n/g, "<br>")}</div>`;
+    const html = withZenithEmailHeader(`<div style="font-family:system-ui,sans-serif;font-size:14px;line-height:1.5;color:#111">${
+      String(text).replace(/\n/g, "<br>")}</div>`);
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",

@@ -23,9 +23,9 @@ export function usePublicTheme() {
 export function ZenithMark({ compact = false }: { compact?: boolean }) {
   return (
     <Link to="/" className="inline-flex items-center gap-3" aria-label="Zenith home">
-      <span className="grid h-9 w-9 place-items-center rounded-md border border-primary/40 bg-primary/10 font-semibold text-primary">Z</span>
+      <img src="/logo-mark.svg" alt="" className="h-9 w-9 rounded-md" />
       <span>
-        <span className="block text-sm font-semibold text-foreground">ZENITH</span>
+        <span className="zenith-wordmark block text-lg font-medium text-foreground">Zenith</span>
         {!compact && <span className="block text-xs text-muted-foreground">School Operating System</span>}
       </span>
     </Link>
