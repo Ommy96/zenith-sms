@@ -1,9 +1,9 @@
 # Stage 2 roadmap
 ## School logo access
 - [x] Diagnose bucket privacy, logo policies, and Karama logo path
-- [ ] Make only tenant-logos publicly readable if workspace allows
-- [ ] Render portal logo with initials fallback
-- [ ] Verify anonymous logo access and sensitive bucket privacy
+- [ ] Make only tenant-logos publicly readable (blocked: workspace public_buckets_blocked; owner/admin must allow public buckets in Settings → Privacy & Security)
+- [x] Implement private fallback: own-school parent read policy, 24-hour cached logo links, initials on image failure; admin helper unchanged
+- [x] Verify all four buckets remain private; anonymous URLs return HTTP 400; seven portal tests pass and build OK
 - [ ] Verify signed-in admin/parent display and upload permissions (blocked: external unmanaged sign-in)
 
 - [x] Add staff management permission and secure invite acceptance linking
